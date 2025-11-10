@@ -1,0 +1,62 @@
+import React from 'react';
+import { useProjectContext } from '../../hooks/useProjectContext';
+import { TaskStatus } from '../../types';
+import Card from '../ui/Card';
+
+const NotificationLogTable: React.FC = () => {
+  const { projects } = useProjectContext();
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '—';
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  };
+
+  return (
+    <Card>
+      <h3 className="text-lg font-semibold text-slate-800 mb-4 px-1">Histórico de Cobranças</h3>
+      <div className="overflow-x-auto">
+        <table className="min-w-full">
+          <thead className="bg-slate-50">
+            <tr>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Empresa</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Contato</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tipo Projeto</th>
+              <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Tarefas Ativas</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data E-mail</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data WhatsApp</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-slate-200">
+            {projects.map((project) => {
+              const activeTasksCount = project.tasks.filter(t => 
+                t.status === TaskStatus.Pending || 
+                t.status === TaskStatus.ToDo || 
+                t.status === TaskStatus.InProgress
+              ).length;
+
+              return (
+                <tr key={project.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">{project.name || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{project.clientName || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{project.projectType}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 text-center font-semibold">{activeTasksCount}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{formatDate(project.lastEmailNotification)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{formatDate(project.lastWhatsappNotification)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {projects.length === 0 && (
+          <p className="text-center py-8 text-slate-500">Nenhum projeto para exibir.</p>
+        )}
+      </div>
+    </Card>
+  );
+};
+
+export default NotificationLogTable;
