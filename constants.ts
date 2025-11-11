@@ -1,12 +1,13 @@
-import { User, Project, Task, TaskStatus, TaskPriority, ProjectStatus, Attachment, Message, ProjectType, GlobalRole } from './types';
+import { User, Project, Task, TaskStatus, TaskPriority, ProjectStatus, Attachment, Message, ProjectType, GlobalRole, PermissionsByRole, PermissionAction } from './types';
 
 // Fix: Added the required 'role' property to each user object to match the 'User' type.
 export const USERS: User[] = [
-  { id: 'user-1', name: 'Alice', email: 'alice@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=alice', function: 'Gerente de Projetos', role: GlobalRole.Admin },
-  { id: 'user-2', name: 'Bob', email: 'bob@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=bob', function: 'Designer UI/UX', role: GlobalRole.Supervisor },
-  { id: 'user-3', name: 'Charlie', email: 'charlie@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=charlie', function: 'Desenvolvedor Frontend', role: GlobalRole.Engineer },
-  { id: 'user-4', name: 'Diana', email: 'diana@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=diana', function: 'Desenvolvedora Backend', role: GlobalRole.Engineer },
-  { id: 'user-5', name: 'Ethan', email: 'ethan@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=ethan', function: 'Engenheiro de QA', role: GlobalRole.Engineer },
+  { id: 'user-1', name: 'Cesar A Bressiani', email: 'cat@caterg.com.br', avatar: 'https://i.pravatar.cc/150?u=cesar', function: 'Diretor de Operações', role: GlobalRole.Admin },
+  { id: 'user-2', name: 'Alice', email: 'alice@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=alice', function: 'Gerente de Projetos', role: GlobalRole.Supervisor },
+  { id: 'user-3', name: 'Bob', email: 'bob@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=bob', function: 'Designer UI/UX', role: GlobalRole.Engineer },
+  { id: 'user-4', name: 'Charlie', email: 'charlie@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=charlie', function: 'Desenvolvedor Frontend', role: GlobalRole.Engineer },
+  { id: 'user-5', name: 'Diana', email: 'diana@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=diana', function: 'Desenvolvedora Backend', role: GlobalRole.Engineer },
+  { id: 'user-6', name: 'Ethan', email: 'ethan@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=ethan', function: 'Engenheiro de QA', role: GlobalRole.Engineer },
 ];
 
 const MOCK_FILES: Attachment[] = [
@@ -16,11 +17,11 @@ const MOCK_FILES: Attachment[] = [
 
 // Fix: Added the required 'project_id' property to each task object to match the 'Task' type.
 const MOCK_TASKS: Task[] = [
-    { id: 'task-1', name: 'Planejamento e Pesquisa', description: 'Definir escopo e requisitos.', status: TaskStatus.Done, priority: TaskPriority.High, dueDate: '2024-07-20', assignee: USERS[0], dependencies: [], comments: [], attachments: [], duration: 5, project_id: 'proj-1' },
-    { id: 'task-2', name: 'Design da UI/UX', description: 'Criar wireframes e mockups.', status: TaskStatus.InProgress, priority: TaskPriority.High, dueDate: '2024-08-01', assignee: USERS[1], dependencies: ['task-1'], comments: [], attachments: [], duration: 10, project_id: 'proj-1' },
-    { id: 'task-3', name: 'Desenvolvimento do Frontend', description: 'Implementar a interface do usuário.', status: TaskStatus.Pending, priority: TaskPriority.High, dueDate: '2024-08-15', assignee: USERS[2], dependencies: ['task-2'], comments: [], attachments: [], duration: 15, project_id: 'proj-1' },
-    { id: 'task-4', name: 'Desenvolvimento do Backend', description: 'Configurar servidor e banco de dados.', status: TaskStatus.Pending, priority: TaskPriority.High, dueDate: '2024-08-15', assignee: USERS[3], dependencies: ['task-2'], comments: [], attachments: [], duration: 15, project_id: 'proj-2' },
-    { id: 'task-5', name: 'Testes e QA', description: 'Garantir a qualidade do software.', status: TaskStatus.ToDo, priority: TaskPriority.Medium, dueDate: '2024-08-25', assignee: USERS[4], dependencies: ['task-3', 'task-4'], comments: [], attachments: [], duration: 8, project_id: 'proj-2' },
+    { id: 'task-1', name: 'Planejamento e Pesquisa', description: 'Definir escopo e requisitos.', status: TaskStatus.Done, priority: TaskPriority.High, dueDate: '2024-07-20', assignee: USERS[1], dependencies: [], comments: [], attachments: [], duration: 5, project_id: 'proj-1' },
+    { id: 'task-2', name: 'Design da UI/UX', description: 'Criar wireframes e mockups.', status: TaskStatus.InProgress, priority: TaskPriority.High, dueDate: '2024-08-01', assignee: USERS[2], dependencies: ['task-1'], comments: [], attachments: [], duration: 10, project_id: 'proj-1' },
+    { id: 'task-3', name: 'Desenvolvimento do Frontend', description: 'Implementar a interface do usuário.', status: TaskStatus.Pending, priority: TaskPriority.High, dueDate: '2024-08-15', assignee: USERS[3], dependencies: ['task-2'], comments: [], attachments: [], duration: 15, project_id: 'proj-1' },
+    { id: 'task-4', name: 'Desenvolvimento do Backend', description: 'Configurar servidor e banco de dados.', status: TaskStatus.Pending, priority: TaskPriority.High, dueDate: '2024-08-15', assignee: USERS[4], dependencies: ['task-2'], comments: [], attachments: [], duration: 15, project_id: 'proj-2' },
+    { id: 'task-5', name: 'Testes e QA', description: 'Garantir a qualidade do software.', status: TaskStatus.ToDo, priority: TaskPriority.Medium, dueDate: '2024-08-25', assignee: USERS[5], dependencies: ['task-3', 'task-4'], comments: [], attachments: [], duration: 8, project_id: 'proj-2' },
     { id: 'task-6', name: 'Lançamento', description: 'Implantar a aplicação em produção.', status: TaskStatus.ToDo, priority: TaskPriority.High, dueDate: '2024-09-01', assignee: USERS[0], dependencies: ['task-5'], comments: [], attachments: [], duration: 2, project_id: 'proj-2' },
 ];
 
@@ -126,4 +127,33 @@ export const KPI_MESSAGES = {
 export const CRITICAL_PATH_MESSAGES = {
   loading: "Calculando caminho crítico e gerando insights...",
   error: "Ocorreu um erro ao analisar o caminho crítico.",
+};
+
+export const PERMISSION_MODULES = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'projects', label: 'Projetos' },
+  { id: 'tasks', label: 'Tarefas' },
+  { id: 'schedule', label: 'Cronograma' },
+  { id: 'team', label: 'Equipe' },
+  { id: 'files', label: 'Arquivos' },
+  { id: 'reports', label: 'Relatórios' },
+  { id: 'communication', label: 'Comunicação' },
+  { id: 'notifications', label: 'Histórico de Cobranças' },
+];
+
+const ALL_PERMISSIONS: PermissionAction[] = ['visualizar', 'editar'];
+
+export const DEFAULT_ROLE_PERMISSIONS: PermissionsByRole = {
+  [GlobalRole.Admin]: PERMISSION_MODULES.reduce((acc, module) => {
+    acc[module.id] = [...ALL_PERMISSIONS];
+    return acc;
+  }, {} as PermissionsByRole[GlobalRole.Admin]),
+  [GlobalRole.Supervisor]: PERMISSION_MODULES.reduce((acc, module) => {
+    acc[module.id] = module.id === 'notifications' ? ['visualizar'] : [...ALL_PERMISSIONS];
+    return acc;
+  }, {} as PermissionsByRole[GlobalRole.Supervisor]),
+  [GlobalRole.Engineer]: PERMISSION_MODULES.reduce((acc, module) => {
+    acc[module.id] = ['visualizar'];
+    return acc;
+  }, {} as PermissionsByRole[GlobalRole.Engineer]),
 };

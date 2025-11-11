@@ -7,6 +7,12 @@ export enum GlobalRole {
   Engineer = 'Engenheiro',
 }
 
+export type PermissionAction = 'visualizar' | 'editar';
+
+export type RolePermissionSettings = Record<string, PermissionAction[]>;
+
+export type PermissionsByRole = Record<GlobalRole, RolePermissionSettings>;
+
 export interface User {
   id: string;
   name: string;

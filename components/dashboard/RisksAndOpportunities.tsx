@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
-import { analyzeRisksAndOpportunities } from '../../services/geminiService';
 import Card from '../ui/Card';
 import { KPI_MESSAGES } from '../../constants';
-import { LightbulbIcon, TrendingUpIcon } from '../ui/Icons';
+import { LightbulbIcon } from '../ui/Icons';
 import { marked } from 'marked';
 
 const RisksAndOpportunities: React.FC = () => {
@@ -17,6 +16,7 @@ const RisksAndOpportunities: React.FC = () => {
       try {
         setIsLoading(true);
         setError(null);
+        const { analyzeRisksAndOpportunities } = await import('../../services/geminiService');
         const result = await analyzeRisksAndOpportunities(projects);
         const htmlResult = marked(result) as string;
         setAnalysis(htmlResult);

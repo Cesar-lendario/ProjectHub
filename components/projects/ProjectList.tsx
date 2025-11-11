@@ -32,10 +32,10 @@ const ProjectCard: React.FC<{
   };
   
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col cursor-pointer group hover:shadow-xl hover:border-indigo-300 transition-all duration-200" onClick={onSelect}>
       <div className="flex-1">
         <div className="flex justify-between items-start">
-          <h3 className="font-bold text-lg text-slate-800 cursor-pointer hover:text-indigo-600" onClick={onSelect}>
+          <h3 className="font-bold text-lg text-slate-800 group-hover:text-indigo-600 transition-colors">
             {project.name}
           </h3>
           <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${statusColors[project.status]}`}>
@@ -51,7 +51,7 @@ const ProjectCard: React.FC<{
           <span className="font-semibold">{Math.round(progress)}%</span>
         </div>
         <div className="w-full bg-slate-200 rounded-full h-2">
-          <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${progress}%` }}></div>
+          <div className="bg-indigo-600 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
         </div>
       </div>
 
@@ -66,10 +66,10 @@ const ProjectCard: React.FC<{
             </div>
           )}
         </div>
-        <div className="flex gap-2">
-          <button onClick={onManageTeam} title="Gerenciar Equipe" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-full"><UsersIcon className="h-5 w-5"/></button>
-          <button onClick={onEdit} title="Editar" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-full"><EditIcon className="h-5 w-5"/></button>
-          <button onClick={onDelete} title="Excluir" className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-100 rounded-full"><TrashIcon className="h-5 w-5"/></button>
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+          <button onClick={onManageTeam} title="Gerenciar Equipe" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-full transition-colors"><UsersIcon className="h-5 w-5"/></button>
+          <button onClick={onEdit} title="Editar" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-full transition-colors"><EditIcon className="h-5 w-5"/></button>
+          <button onClick={onDelete} title="Excluir" className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors"><TrashIcon className="h-5 w-5"/></button>
         </div>
       </div>
     </Card>

@@ -13,6 +13,7 @@ import {
   CubeIcon,
   XIcon,
   EmailIcon,
+  CogIcon,
 } from '../ui/Icons';
 
 interface SidebarProps {
@@ -35,7 +36,7 @@ interface NavItemProps {
 const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, view, currentView, onSetView, onClose }) => {
   const isActive = currentView === view;
   const linkClasses = `flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-    isActive ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-200'
+    isActive ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
   }`;
 
   return (
@@ -80,8 +81,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetVi
   ];
   
   if (isGlobalAdmin) {
-    navItems.push({ icon: CubeIcon, label: 'Admin', view: 'admin' });
+    navItems.push({ icon: CubeIcon, label: 'Admin - Usuários', view: 'admin' });
   }
+
+  navItems.push({ icon: CogIcon, label: 'Configurações', view: 'permissions' });
 
   return (
     <>
@@ -96,13 +99,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetVi
       
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 transform flex-col border-r border-slate-200 bg-white transition-transform lg:static lg:inset-auto lg:z-auto lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 transform flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-all lg:static lg:inset-auto lg:z-auto lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex h-16 flex-shrink-0 items-center justify-between border-b px-4">
-          <span className="text-xl font-bold text-slate-800">ProjectHub</span>
-          <button onClick={onClose} className="lg:hidden text-slate-500 p-1">
+        <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 dark:border-slate-700 px-4">
+          <span className="text-xl font-bold text-slate-800 dark:text-white">ProjectHub</span>
+          <button onClick={onClose} className="lg:hidden text-slate-500 dark:text-slate-400 p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors">
             <XIcon className="h-6 w-6"/>
           </button>
         </div>

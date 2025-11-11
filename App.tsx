@@ -1,30 +1,31 @@
 
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { AuthProvider, useAuth } from './hooks/useAuth';
-import { ProjectProvider } from './hooks/useProjectContext';
+import { ThemeProvider } from './hooks/useTheme';
 import LoginPage from './components/auth/LoginPage';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
-import Dashboard from './components/dashboard/Dashboard';
-import ProjectList from './components/projects/ProjectList';
-import TaskList from './components/tasks/TaskList';
-import ScheduleView from './components/schedule/ScheduleView';
-import ReportsView from './components/reports/ReportsView';
-import FilesView from './components/files/FilesView';
-import CommunicationView from './components/communication/CommunicationView';
-import TeamManagementView from './components/team/TeamManagementView';
-import UserManagementView from './components/admin/UserManagementView';
-import NotificationLogTable from './components/tasks/NotificationLogTable';
+import { ProjectProvider, useProjectContext } from './hooks/useProjectContext';
 
-const App: React.FC = () => {
-  return (
+const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
+const ProjectList = lazy(() => import('./components/projects/ProjectList'));
+const TaskList = lazy(() => import('./components/tasks/TaskList'));
+const ScheduleView = lazy(() => import('./components/schedule/ScheduleView'));
+const ReportsView = lazy(() => import('./components/reports/ReportsView'));
+const FilesView = lazy(() => import('./components/files/FilesView'));
+const CommunicationView = lazy(() => import('./components/communication/CommunicationView'));
+const TeamManagementView = lazy(() => import('./components/team/TeamManagementView'));
+const UserManagementView = lazy(() => import('./components/admin/UserManagementView'));
+const NotificationLogTable = lazy(() => import('./components/tasks/NotificationLogTable'));
+const PermissionSettingsView = lazy(() => import('./components/admin/PermissionSettingsView'));
+
+const App: React.FC = () => (
+  <ThemeProvider>
     <AuthProvider>
-      <ProjectProvider>
-        <AppContent />
-      </ProjectProvider>
+      <AppContent />
     </AuthProvider>
-  );
-};
+  </ThemeProvider>
+);
 
 const AppContent: React.FC = () => {
   const { session, loading } = useAuth();
@@ -41,7 +42,11 @@ const AppContent: React.FC = () => {
     return <LoginPage />;
   }
   
-  return <MainApp />;
+  return (
+    <ProjectProvider>
+      <MainApp />
+    </ProjectProvider>
+  );
 };
 
 const MainApp: React.FC = () => {
@@ -67,6 +72,8 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, globalProjectFilter, setGlobalProjectFilter }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const { setFocusedUserId } = useProjectContext();
+  const { profile } = useAuth();
   
   const viewTitles: { [key: string]: string } = {
     dashboard: 'Dashboard',
@@ -77,7 +84,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
     files: 'Arquivos',
     reports: 'Relatórios',
     communication: 'Comunicação',
-    admin: 'Admin',
+    admin: 'Admin - Usuários',
+    permissions: 'Configurações',
     notifications: 'Histórico de Cobranças',
   };
 
@@ -92,9 +100,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
       case 'reports': return <ReportsView />;
       case 'communication': return <CommunicationView />;
       case 'admin': return <UserManagementView />;
+      case 'permissions': return <PermissionSettingsView />;
       case 'notifications': return <NotificationLogTable />;
       default: return <Dashboard />;
     }
+  };
+
+  const handleGoToProfile = () => {
+    if (profile?.id) {
+      setFocusedUserId(profile.id);
+    }
+    setCurrentView('team');
+  };
+
+  const handleGoToSettings = () => {
+    setCurrentView('permissions');
   };
 
   return (
@@ -110,9 +130,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
         <Header 
           title={viewTitles[currentView] || 'ProjectHub'} 
           onMenuClick={() => setSidebarOpen(true)} 
+          onGoToProfile={handleGoToProfile}
+          onGoToSettings={handleGoToSettings}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {renderView()}
+          <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-slate-500">Carregando...</div>}>
+            {renderView()}
+          </Suspense>
         </main>
       </div>
     </div>

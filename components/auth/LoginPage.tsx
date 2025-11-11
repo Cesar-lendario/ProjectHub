@@ -1,5 +1,6 @@
 import React, { useState, FormEvent } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { GlobalRole } from '../../types';
 import Card from '../ui/Card';
 
 const LoginPage: React.FC = () => {
@@ -7,6 +8,7 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [selectedRole, setSelectedRole] = useState<GlobalRole>(GlobalRole.Engineer);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { signInWithEmail, signUp } = useAuth();
@@ -24,7 +26,7 @@ const LoginPage: React.FC = () => {
         if (!fullName) {
             throw new Error("O nome completo é obrigatório para o cadastro.");
         }
-        const { error } = await signUp(email, password, fullName);
+        const { error } = await signUp(email, password, fullName, selectedRole);
         if (error) throw error;
         alert('Cadastro realizado! Por favor, verifique seu e-mail para confirmar a conta.');
       }
@@ -46,14 +48,30 @@ const LoginPage: React.FC = () => {
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
-              <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-slate-700">Nome Completo</label>
-                <input
-                  type="text" id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)}
-                  className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required={!isLogin}
-                />
-              </div>
+              <>
+                <div>
+                  <label htmlFor="fullName" className="block text-sm font-medium text-slate-700">Nome Completo</label>
+                  <input
+                    type="text" id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)}
+                    className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    required={!isLogin}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="roleSelect" className="block text-sm font-medium text-slate-700">Perfil</label>
+                  <select
+                    id="roleSelect"
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value as GlobalRole)}
+                    className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    required={!isLogin}
+                  >
+                    {Object.values(GlobalRole).map(role => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
             )}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700">Email</label>

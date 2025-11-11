@@ -12,6 +12,7 @@ interface KanbanCardProps {
   task: EnhancedTask;
   onEdit: () => void;
   onDelete: () => void;
+  onView: () => void;
   canEdit: boolean;
 }
 
@@ -24,17 +25,42 @@ const getPriorityChip = (priority: TaskPriority) => {
     }
 }
 
-const KanbanCard: React.FC<KanbanCardProps> = ({ task, onEdit, onDelete, canEdit }) => {
+const KanbanCard: React.FC<KanbanCardProps> = ({ task, onEdit, onDelete, onView, canEdit }) => {
     const isOverdue = new Date(task.dueDate) < new Date() && task.status !== TaskStatus.Done;
     
     return (
-        <Card className="group relative">
+        <Card
+            className="group relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            onClick={onView}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onView();
+                }
+            }}
+        >
             {canEdit && (
-                <div className="absolute top-2 right-2 flex opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-                    <button onClick={onEdit} className="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-indigo-600">
+                <div className="absolute top-2 right-2 flex gap-1">
+                    <button
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            onEdit();
+                        }}
+                        className="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        aria-label="Editar tarefa"
+                    >
                         <EditIcon className="h-4 w-4" />
                     </button>
-                    <button onClick={onDelete} className="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-600">
+                    <button
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            onDelete();
+                        }}
+                        className="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        aria-label="Excluir tarefa"
+                    >
                         <TrashIcon className="h-4 w-4" />
                     </button>
                 </div>

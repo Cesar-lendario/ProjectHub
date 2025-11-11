@@ -1,15 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
-import { User } from '../types';
+import { User, GlobalRole } from '../types';
+import { mapUser } from '../services/api/mappers';
 
 interface AuthContextType {
   session: Session | null;
   profile: User | null;
   loading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | { message: string } | null }>;
+  signUp: (email: string, password: string, fullName: string, role: GlobalRole) => Promise<{ error: AuthError | { message: string } | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: AuthError | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,7 +38,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               throw error;
             }
             
-            setProfile(userProfile as User | null);
+            // Usar mapUser para garantir que o role seja convertido corretamente
+            setProfile(userProfile ? mapUser(userProfile) : null);
           } else {
             setProfile(null);
           }
@@ -59,7 +62,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, role: GlobalRole) => {
     // A inserção do perfil do usuário agora é tratada por um gatilho no banco de dados.
     // Apenas passamos os dados do usuário nos metadados.
     const { error } = await supabase.auth.signUp({
@@ -68,6 +71,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       options: {
         data: {
           full_name: fullName,
+          role: role,
         },
       },
     });
@@ -80,6 +84,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { error };
   };
 
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    return { error };
+  };
+
   const value: AuthContextType = {
     session,
     profile,
@@ -87,6 +98,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signInWithEmail,
     signUp,
     signOut,
+    updatePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

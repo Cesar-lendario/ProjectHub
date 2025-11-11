@@ -12,7 +12,8 @@ interface KanbanColumnProps {
   tasks: EnhancedTask[];
   onEditTask: (task: EnhancedTask) => void;
   onDeleteTask: (taskId: string) => void;
-  canEdit: boolean;
+  onViewTask: (task: EnhancedTask) => void;
+  canEditTask: (task: EnhancedTask) => boolean;
 }
 
 const getStatusAppearance = (status: TaskStatus) => {
@@ -24,7 +25,7 @@ const getStatusAppearance = (status: TaskStatus) => {
     }
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onEditTask, onDeleteTask, canEdit }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onEditTask, onDeleteTask, onViewTask, canEditTask }) => {
     const { bg, text, border } = getStatusAppearance(status);
 
     return (
@@ -40,7 +41,8 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onEditTask, 
                         task={task} 
                         onEdit={() => onEditTask(task)} 
                         onDelete={() => onDeleteTask(task.id)}
-                        canEdit={canEdit} />
+                        onView={() => onViewTask(task)}
+                        canEdit={canEditTask(task)} />
                 ))}
                 {tasks.length === 0 && (
                     <div className="text-center py-8 text-slate-500 text-sm">

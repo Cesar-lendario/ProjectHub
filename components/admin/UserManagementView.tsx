@@ -4,13 +4,16 @@ import { useAuth } from '../../hooks/useAuth';
 import { User, GlobalRole } from '../../types';
 import Card from '../ui/Card';
 import TeamForm from '../team/TeamForm';
+import DeleteUserModal from '../team/DeleteUserModal';
 import { EditIcon, TrashIcon } from '../ui/Icons';
 
 const UserManagementView: React.FC = () => {
-    const { users, updateUser, deleteUser } = useProjectContext();
+    const { users, projects, updateUser, deleteUser } = useProjectContext();
     const { profile } = useAuth();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [userToEdit, setUserToEdit] = useState<User | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
     const isGlobalAdmin = profile?.role === GlobalRole.Admin;
 
@@ -27,22 +30,19 @@ const UserManagementView: React.FC = () => {
         setIsFormOpen(true);
     };
 
-    const handleDeleteUser = async (userToDelete: User) => {
-        if (profile?.id === userToDelete.id) {
-            alert("Você não pode excluir seu próprio perfil.");
-            return;
-        }
-        if (userToDelete.role === GlobalRole.Admin) {
-            alert("Não é possível excluir o administrador do sistema. Para isso, promova outro usuário a administrador primeiro.");
-            return;
-        }
-        if (window.confirm(`Tem certeza que deseja excluir o usuário ${userToDelete.name}? A conta de autenticação não será removida, apenas o perfil.`)) {
-            try {
-                await deleteUser(userToDelete.id);
-            } catch (error) {
-                console.error(error);
-                alert(error instanceof Error ? error.message : 'Não foi possível excluir o usuário.');
-            }
+    const handleDeleteUser = (user: User) => {
+        setUserToDelete(user);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = async (userId: string, reassignToUserId: string | null) => {
+        try {
+            await deleteUser(userId, reassignToUserId);
+            setIsDeleteModalOpen(false);
+            setUserToDelete(null);
+        } catch (error) {
+            // Erro já é tratado no modal
+            throw error;
         }
     };
 
@@ -130,6 +130,17 @@ const UserManagementView: React.FC = () => {
                 onSave={handleSaveUser}
                 userToEdit={userToEdit}
                 currentUserProfile={profile}
+            />
+            <DeleteUserModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setUserToDelete(null);
+                }}
+                onConfirm={handleConfirmDelete}
+                user={userToDelete}
+                projects={projects}
+                users={users}
             />
         </>
     );

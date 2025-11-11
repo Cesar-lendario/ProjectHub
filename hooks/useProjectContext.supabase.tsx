@@ -34,7 +34,7 @@ interface ProjectContextType {
 
   addUser: (userData: Omit<User, 'id'>) => Promise<User>;
   updateUser: (userData: User) => Promise<void>;
-  deleteUser: (userId: string, reassignToUserId?: string | null) => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
   
   addUserToProject: (projectId: string, userId: string, role: TeamMember['role']) => Promise<void>;
   removeUserFromProject: (projectId: string, userId: string) => Promise<void>;
@@ -366,106 +366,24 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, []);
 
-  const deleteUser = useCallback(async (userId: string, reassignToUserId?: string | null) => {
+  const deleteUser = useCallback(async (userId: string) => {
     try {
       setLoading(true);
-      
-      // Buscar informações do usuário antes de excluir (para logs)
-      const userToDelete = users.find(u => u.id === userId);
-      if (!userToDelete) throw new Error('Usuário não encontrado');
-
-      // ===== VERIFICAÇÕES DE SEGURANÇA =====
-      
-      // 1. Não pode excluir a si mesmo
-      if (profile?.id === userId) {
-        throw new Error('Você não pode excluir seu próprio perfil.');
-      }
-
-      // 2. Não pode excluir o único administrador
-      if (userToDelete.role === GlobalRole.Admin) {
-        const adminCount = users.filter(u => u.role === GlobalRole.Admin).length;
-        if (adminCount <= 1) {
-          throw new Error('Não é possível excluir o único administrador do sistema. Promova outro usuário a administrador primeiro.');
-        }
-      }
-
-      // 3. Validar usuário de reatribuição se fornecido
-      if (reassignToUserId && !users.find(u => u.id === reassignToUserId)) {
-        throw new Error('Usuário para reatribuição não encontrado.');
-      }
-
-      // 4. Validar permissão (apenas admins podem excluir)
-      if (profile?.role !== GlobalRole.Admin) {
-        throw new Error('Apenas administradores podem excluir usuários.');
-      }
-
-      // Log de auditoria (registrar exclusão)
-      console.log('🗑️ [AUDIT] Exclusão de usuário:', {
-        userId: userToDelete.id,
-        userName: userToDelete.name,
-        userEmail: userToDelete.email,
-        userRole: userToDelete.role,
-        deletedAt: new Date().toISOString(),
-        deletedBy: profile?.id || 'unknown',
-        reassignTo: reassignToUserId || 'none',
-      });
-
-      // Se houver usuário para reatribuir
-      let reassignToUser: User | null = null;
-      if (reassignToUserId) {
-        reassignToUser = users.find(u => u.id === reassignToUserId) || null;
-        console.log('🔄 [AUDIT] Reatribuindo tarefas para:', {
-          newAssigneeId: reassignToUser?.id,
-          newAssigneeName: reassignToUser?.name,
-        });
-      }
-
-      // Calcular impacto (para logs)
-      const affectedProjects = projects.filter(p =>
-        p.team.some(tm => tm.user.id === userId)
-      );
-      const affectedTasks = projects.flatMap(p =>
-        p.tasks.filter(t => t.assignee?.id === userId)
-      );
-
-      console.log('📊 [AUDIT] Impacto da exclusão:', {
-        projectsAffected: affectedProjects.length,
-        tasksAffected: affectedTasks.length,
-        taskIds: affectedTasks.map(t => t.id),
-      });
-
-      // Reatribuir tarefas no banco (se necessário)
-      if (affectedTasks.length > 0) {
-        for (const task of affectedTasks) {
-          await TasksService.update(task.id, {
-            assignee_id: reassignToUserId || null,
-          });
-        }
-      }
-
-      // Excluir usuário do banco
       await UsersService.delete(userId);
       
-      // Atualizar estado local
       setUsers(prev => prev.filter(u => u.id !== userId));
       setProjects(prevProjects => prevProjects.map(p => ({
         ...p,
         team: p.team.filter(tm => tm.user.id !== userId),
-        tasks: p.tasks.map(t => 
-          t.assignee?.id === userId 
-            ? { ...t, assignee: reassignToUser, assignee_id: reassignToUserId || null }
-            : t
-        )
+        tasks: p.tasks.map(t => t.assignee?.id === userId ? { ...t, assignee: null, assignee_id: null } : t)
       })));
-
-      console.log('✅ [AUDIT] Usuário excluído com sucesso');
     } catch (err) {
-      console.error('❌ [AUDIT] Erro ao deletar usuário:', err);
+      console.error('Erro ao deletar usuário:', err);
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [users, projects, profile]);
+  }, []);
 
   const addUserToProject = useCallback(async (projectId: string, userId: string, role: TeamMember['role']) => {
     const user = users.find(u => u.id === userId);

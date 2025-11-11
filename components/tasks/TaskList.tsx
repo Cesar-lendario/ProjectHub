@@ -53,6 +53,10 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
     }
   };
 
+  const handleViewTask = (task: EnhancedTask) => {
+    setTaskToView(task);
+  };
+
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments'>) => {
     if (taskToEdit) {
         const assignee = projects.flatMap(p => p.tasks).find(t => t.id === taskToEdit.id)?.assignee;
@@ -72,8 +76,15 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
   };
 
   const isGlobalAdmin = profile?.role === GlobalRole.Admin;
-  const projectRole = getProjectRole(filterProjectId);
-  const canEditProject = isGlobalAdmin || projectRole === 'admin' || projectRole === 'editor';
+  const canEditTask = (task: EnhancedTask) => {
+    if (isGlobalAdmin) return true;
+    const role = getProjectRole(task.project_id);
+    if (role === undefined) {
+      // Sem informação de equipe? Permite edição para não bloquear admins locais.
+      return true;
+    }
+    return role === 'admin' || role === 'editor';
+  };
   
   return (
     <div className="space-y-6">
@@ -114,7 +125,8 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
             tasks={enhancedTasks.filter(t => t.status === status)}
             onEditTask={handleEditTask}
             onDeleteTask={handleDeleteTask}
-            canEdit={canEditProject}
+            onViewTask={handleViewTask}
+            canEditTask={canEditTask}
           />
         ))}
       </div>

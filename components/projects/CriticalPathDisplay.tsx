@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Project, CriticalPathResult } from '../../types';
 import { calculateCriticalPath } from '../../utils/criticalPath';
-import { getCriticalPathInsights } from '../../services/geminiService';
 import Card from '../ui/Card';
 import { CRITICAL_PATH_MESSAGES } from '../../constants';
 import { ZapIcon } from '../ui/Icons';
@@ -22,6 +21,7 @@ const CriticalPathDisplay: React.FC<{ project: Project }> = ({ project }) => {
         setCriticalPath(pathResult);
 
         if (pathResult && pathResult.path.length > 0) {
+          const { getCriticalPathInsights } = await import('../../services/geminiService');
           const geminiInsights = await getCriticalPathInsights(project, pathResult);
           setInsights(geminiInsights);
         } else {

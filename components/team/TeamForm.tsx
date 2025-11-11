@@ -23,6 +23,7 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
   const [isUploading, setIsUploading] = useState(false);
 
   const isAdmin = currentUserProfile?.role === GlobalRole.Admin;
+  const isEditing = Boolean(userToEdit);
 
   const resetForm = () => {
     setName('');
@@ -70,6 +71,10 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
       alert("Por favor, insira o nome do membro da equipe.");
       return;
     }
+    if (!isEditing && !email) {
+      alert("Informe o e-mail do novo membro.");
+      return;
+    }
 
     setIsUploading(true);
     try {
@@ -100,8 +105,8 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
         if (userToEdit) {
           await onSave({ ...userToEdit, ...userData });
         } else {
-          // A API para adicionar usuários não precisa do 'id', ele é gerado pelo DB.
           await onSave(userData as Omit<User, 'id'>);
+          resetForm();
         }
     } catch (error) {
         console.error("Erro ao salvar membro da equipe:", error);
@@ -132,16 +137,29 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
                 required
               />
             </div>
-            <div>
-              <label htmlFor="user-email" className="block text-sm font-medium text-slate-700">Email</label>
-              <input
-                type="email" id="user-email" value={email}
-                className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 bg-slate-100 sm:text-sm"
-                readOnly
-                disabled
-              />
-               <p className="text-xs text-slate-500 mt-1">O email está vinculado à conta de login e não pode ser alterado.</p>
-            </div>
+            {!isEditing && (
+              <div>
+                <label htmlFor="user-email" className="block text-sm font-medium text-slate-700">Email</label>
+                <input
+                  type="email"
+                  id="user-email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 sm:text-sm bg-white text-slate-900"
+                  required
+                />
+                <p className="text-xs text-slate-500 mt-1">O e-mail será utilizado para autenticação futura.</p>
+              </div>
+            )}
+            {isEditing && (
+              <div>
+                <label htmlFor="user-email-display" className="block text-sm font-medium text-slate-700">Email</label>
+                <div className="mt-1 block w-full border border-slate-200 rounded-md shadow-sm py-2 px-3 sm:text-sm bg-slate-50 text-slate-700">
+                  {email}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">O e-mail está vinculado à conta de login e não pode ser alterado.</p>
+              </div>
+            )}
             <div>
               <label htmlFor="user-function" className="block text-sm font-medium text-slate-700">Função</label>
               <input
