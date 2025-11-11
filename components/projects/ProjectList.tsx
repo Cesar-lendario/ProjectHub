@@ -1,155 +1,156 @@
-// Fix: Implemented the ProjectList component to display projects and manage selection and forms.
-import React, { useState, useMemo } from 'react';
+
+
+import React, { useState } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
-import { useAuth } from '../../hooks/useAuth';
-import { Project, ProjectStatus, TaskStatus, Project as ProjectType, GlobalRole } from '../../types';
+import { Project, ProjectStatus } from '../../types';
 import Card from '../ui/Card';
-import { PlusIcon, FolderIcon } from '../ui/Icons';
-import ProjectDetail from './ProjectDetail';
+import { PlusIcon, EditIcon, TrashIcon, UsersIcon } from '../ui/Icons';
 import ProjectForm from './ProjectForm';
+import TeamManagementModal from '../team/TeamManagementModal';
 
-const ProjectCard: React.FC<{ project: Project; onSelect: () => void; isSelected: boolean }> = ({ project, onSelect, isSelected }) => {
-    const totalTasks = project.tasks.length;
-    const completedTasks = project.tasks.filter(t => t.status === TaskStatus.Done).length;
-    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-  
-    const statusClasses: { [key in ProjectStatus]: string } = {
-        [ProjectStatus.InProgress]: 'bg-blue-100 text-blue-800',
-        [ProjectStatus.OnHold]: 'bg-yellow-100 text-yellow-800',
-        [ProjectStatus.Completed]: 'bg-green-100 text-green-800',
-        [ProjectStatus.Canceled]: 'bg-red-100 text-red-800',
-    };
-
-    return (
-        <Card onClick={onSelect} className={`cursor-pointer border-2 ${isSelected ? 'border-indigo-500 shadow-lg' : 'border-transparent hover:border-slate-300'}`}>
-            <div className="flex justify-between items-start">
-                <div>
-                    <h3 className="font-bold text-slate-800 truncate">{project.name}</h3>
-                    <p className="text-sm text-slate-500">{project.clientName}</p>
-                </div>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusClasses[project.status]}`}>{project.status}</span>
-            </div>
-            <p className="text-sm text-slate-600 my-3 line-clamp-2 h-10">{project.description}</p>
-            <div className="flex justify-between items-center text-sm text-slate-500">
-                <span>Progresso</span>
-                <span className="font-semibold text-slate-700">{Math.round(progress)}%</span>
-            </div>
-            <div className="w-full bg-slate-200 rounded-full h-1.5 mt-1">
-                <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
-            </div>
-        </Card>
-    )
+interface ProjectListProps {
+  setCurrentView: (view: string) => void;
+  setGlobalProjectFilter: (id: string) => void;
 }
 
+const ProjectCard: React.FC<{
+  project: Project;
+  onSelect: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onManageTeam: () => void;
+}> = ({ project, onSelect, onEdit, onDelete, onManageTeam }) => {
+  const progress = project.tasks.length > 0
+    ? (project.tasks.filter(t => t.status === 'Concluído').length / project.tasks.length) * 100
+    : 0;
 
-const ProjectList: React.FC = () => {
-    const { projects, addProject, updateProject, getProjectRole } = useProjectContext();
-    const { profile } = useAuth();
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projects.length > 0 ? projects[0].id : null);
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
-
-    const isGlobalAdmin = profile?.role === GlobalRole.Admin;
-
-    const selectedProject = useMemo(() => {
-        return projects.find(p => p.id === selectedProjectId);
-    }, [projects, selectedProjectId]);
-    
-    const canEditSelectedProject = selectedProject ? (isGlobalAdmin || getProjectRole(selectedProject.id) === 'admin') : false;
-
-    const handleAddProject = () => {
-        setProjectToEdit(null);
-        setIsFormOpen(true);
-    };
-
-    const handleEditProject = (project: Project) => {
-        setProjectToEdit(project);
-        setIsFormOpen(true);
-    }
-
-    const handleSaveProject = async (projectData: Omit<ProjectType, 'id'> | ProjectType) => {
-        try {
-            if ('id' in projectData) {
-                await updateProject(projectData);
-            } else {
-                await addProject(projectData);
-            }
-            setIsFormOpen(false);
-        } catch(error) {
-            console.error(error);
-            alert(error instanceof Error ? error.message : "Could not save project.");
-        }
-    }
-    
-    return (
-        <div className="flex flex-col lg:flex-row gap-6 h-full">
-            {/* Project List Column */}
-            <div className="w-full lg:w-1/3 xl:w-1/4 flex-shrink-0">
-                <Card className="h-full flex flex-col">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-slate-800">Projetos</h2>
-                        {isGlobalAdmin && (
-                            <button onClick={handleAddProject} className="flex items-center gap-1 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg">
-                                <PlusIcon className="h-4 w-4" />
-                                <span>Novo</span>
-                            </button>
-                        )}
-                    </div>
-                    <div className="flex-1 overflow-y-auto -mr-4 pr-4 space-y-3">
-                        {projects.map(p => (
-                            <ProjectCard 
-                                key={p.id}
-                                project={p}
-                                onSelect={() => setSelectedProjectId(p.id)}
-                                isSelected={p.id === selectedProjectId}
-                            />
-                        ))}
-                         {projects.length === 0 && (
-                            <div className="text-center py-10 text-slate-500">
-                                <FolderIcon className="mx-auto h-12 w-12 text-slate-400" />
-                                <p className="mt-2">Nenhum projeto encontrado.</p>
-                                {isGlobalAdmin && <p>Clique em "Novo" para começar.</p>}
-                            </div>
-                         )}
-                    </div>
-                </Card>
-            </div>
-            {/* Project Detail Column */}
-            <div className="flex-1 overflow-y-auto">
-                {selectedProject ? (
-                    <div>
-                         <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h1 className="text-2xl font-bold text-slate-800">{selectedProject.name}</h1>
-                                <p className="text-slate-600 mt-1">{selectedProject.projectType}</p>
-                            </div>
-                            {canEditSelectedProject && (
-                                <button onClick={() => handleEditProject(selectedProject)} className="text-sm font-medium text-white bg-slate-700 hover:bg-slate-800 px-4 py-2 rounded-lg">
-                                    Editar Projeto
-                                </button>
-                            )}
-                        </div>
-                        <ProjectDetail project={selectedProject} />
-                    </div>
-                ) : (
-                    <div className="flex h-full items-center justify-center">
-                        <Card className="text-center text-slate-500">
-                             <FolderIcon className="mx-auto h-16 w-16 text-slate-300" />
-                             <h2 className="mt-4 text-lg font-medium">Selecione um projeto</h2>
-                             <p>Escolha um projeto da lista para ver seus detalhes.</p>
-                        </Card>
-                    </div>
-                )}
-            </div>
-            
-            <ProjectForm
-                isOpen={isFormOpen}
-                onClose={() => setIsFormOpen(false)}
-                onSave={handleSaveProject}
-                projectToEdit={projectToEdit}
-            />
+  const statusColors: { [key in ProjectStatus]: string } = {
+    [ProjectStatus.InProgress]: 'bg-blue-100 text-blue-800',
+    [ProjectStatus.OnHold]: 'bg-yellow-100 text-yellow-800',
+    [ProjectStatus.Completed]: 'bg-green-100 text-green-800',
+    [ProjectStatus.Canceled]: 'bg-red-100 text-red-800',
+  };
+  
+  return (
+    <Card className="flex flex-col">
+      <div className="flex-1">
+        <div className="flex justify-between items-start">
+          <h3 className="font-bold text-lg text-slate-800 cursor-pointer hover:text-indigo-600" onClick={onSelect}>
+            {project.name}
+          </h3>
+          <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${statusColors[project.status]}`}>
+            {project.status}
+          </span>
         </div>
-    );
+        <p className="text-sm text-slate-600 mt-2 line-clamp-2">{project.description}</p>
+      </div>
+      
+      <div className="mt-4">
+        <div className="flex justify-between items-center text-sm text-slate-500 mb-2">
+          <span>Progresso</span>
+          <span className="font-semibold">{Math.round(progress)}%</span>
+        </div>
+        <div className="w-full bg-slate-200 rounded-full h-2">
+          <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${progress}%` }}></div>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-200">
+        <div className="flex -space-x-2">
+          {project.team.slice(0, 3).map(member => (
+            <img key={member.user.id} src={member.user.avatar} alt={member.user.name} className="w-8 h-8 rounded-full ring-2 ring-white" />
+          ))}
+          {project.team.length > 3 && (
+            <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-medium text-slate-600 ring-2 ring-white">
+              +{project.team.length - 3}
+            </div>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onManageTeam} title="Gerenciar Equipe" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-full"><UsersIcon className="h-5 w-5"/></button>
+          <button onClick={onEdit} title="Editar" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-full"><EditIcon className="h-5 w-5"/></button>
+          <button onClick={onDelete} title="Excluir" className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-100 rounded-full"><TrashIcon className="h-5 w-5"/></button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+
+const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProjectFilter }) => {
+  const { projects, addProject, updateProject, deleteProject } = useProjectContext();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+  const [teamModalProject, setTeamModalProject] = useState<Project | null>(null);
+
+  const handleProjectSelect = (projectId: string) => {
+    setGlobalProjectFilter(projectId);
+    setCurrentView('tasks');
+  };
+
+  const handleEdit = (project: Project) => {
+    setProjectToEdit(project);
+    setIsFormOpen(true);
+  };
+
+  const handleDelete = async (projectId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este projeto e todas as suas tarefas?')) {
+      await deleteProject(projectId);
+    }
+  };
+
+  const handleSave = async (projectData: Omit<Project, 'id'> | Project) => {
+    if ('id' in projectData) {
+      await updateProject(projectData as Project);
+    } else {
+      // Fix: The Omit utility type takes a union of keys as its second argument, not multiple arguments.
+      await addProject(projectData as Omit<Project, 'id' | 'tasks' | 'team' | 'files' | 'actualCost'>);
+    }
+    setIsFormOpen(false);
+    setProjectToEdit(null);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+            <h1 className="text-2xl font-bold text-slate-800">Projetos</h1>
+            <p className="mt-1 text-slate-600">Acompanhe todos os seus projetos em um só lugar.</p>
+        </div>
+        <button onClick={() => { setProjectToEdit(null); setIsFormOpen(true); }} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700">
+          <PlusIcon className="h-5 w-5" />
+          <span>Novo Projeto</span>
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {projects.map(project => (
+          <ProjectCard 
+            key={project.id} 
+            project={project} 
+            onSelect={() => handleProjectSelect(project.id)}
+            onEdit={() => handleEdit(project)}
+            onDelete={() => handleDelete(project.id)}
+            onManageTeam={() => setTeamModalProject(project)}
+          />
+        ))}
+      </div>
+       {projects.length === 0 && <p className="text-center py-10 text-slate-500">Nenhum projeto foi criado ainda.</p>}
+
+      <ProjectForm 
+        isOpen={isFormOpen}
+        onClose={() => { setIsFormOpen(false); setProjectToEdit(null); }}
+        onSave={handleSave}
+        projectToEdit={projectToEdit}
+      />
+      {teamModalProject && (
+        <TeamManagementModal 
+            isOpen={!!teamModalProject}
+            onClose={() => setTeamModalProject(null)}
+            project={teamModalProject}
+        />
+      )}
+    </div>
+  );
 };
 
 export default ProjectList;

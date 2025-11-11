@@ -1,163 +1,142 @@
-// Fix: Implemented the TaskList component as a Kanban board.
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Task, TaskStatus } from '../../types';
-import { useAuth } from '../../hooks/useAuth';
 import KanbanColumn from './KanbanColumn';
 import TaskForm from './TaskForm';
-import { PlusIcon, UsersIcon } from '../ui/Icons';
+import TaskDetail from './TaskDetail';
 import NotificationSenderModal from './NotificationSenderModal';
-import NotificationLogTable from './NotificationLogTable';
-import TeamManagementModal from '../team/TeamManagementModal'; // Import the new modal
+import { PlusIcon } from '../ui/Icons';
+import { GlobalRole } from '../../types';
 
 type EnhancedTask = Task & {
   projectName: string;
 };
 
-const TaskList: React.FC = () => {
-  const { projects, addTask, updateTask, deleteTask, getProjectRole } = useProjectContext();
-  const { profile } = useAuth();
-  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
-  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
-  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false); // State for the new modal
+interface TaskListProps {
+  globalProjectFilter: string;
+  setGlobalProjectFilter: (filter: string) => void;
+}
+
+const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProjectFilter }) => {
+  const { projects, addTask, updateTask, deleteTask, profile, getProjectRole } = useProjectContext();
+  const [filterProjectId, setFilterProjectId] = useState<string>(globalProjectFilter);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<EnhancedTask | null>(null);
-  const [filterProject, setFilterProject] = useState<string>(projects[0]?.id || 'all');
+  const [taskToView, setTaskToView] = useState<EnhancedTask | null>(null);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
 
-  const selectedProject = useMemo(() => projects.find(p => p.id === filterProject), [projects, filterProject]);
-  
-  const userRoleInProject = selectedProject ? getProjectRole(selectedProject.id) : null;
-  const isGlobalAdmin = profile?.role === 'admin';
-  const canEdit = isGlobalAdmin || userRoleInProject === 'admin' || userRoleInProject === 'editor';
-  const canManageTeam = isGlobalAdmin || userRoleInProject === 'admin';
+  useEffect(() => {
+    setFilterProjectId(globalProjectFilter);
+  }, [globalProjectFilter]);
 
-  const allTasks = useMemo(() => {
-    return projects.flatMap(p => 
-        p.tasks.map(t => ({...t, projectName: p.name, projectId: p.id}))
+  const enhancedTasks = useMemo(() => {
+    const tasks: EnhancedTask[] = projects.flatMap(p => 
+      p.tasks.map(t => ({...t, projectName: p.name}))
     );
-  }, [projects]);
+    if (filterProjectId === 'all') {
+      return tasks;
+    }
+    return tasks.filter(t => t.project_id === filterProjectId);
+  }, [projects, filterProjectId]);
 
-  const filteredTasks = useMemo(() => {
-    if (filterProject === 'all' || !selectedProject) return allTasks;
-    return allTasks.filter(t => t.projectId === filterProject);
-  }, [allTasks, filterProject, selectedProject]);
-  
-  const tasksByStatus = useMemo(() => {
-    return Object.values(TaskStatus).reduce((acc, status) => {
-        acc[status] = filteredTasks.filter(task => task.status === status);
-        return acc;
-    }, {} as Record<TaskStatus, EnhancedTask[]>);
-  }, [filteredTasks]);
-
-  const handleAddTask = () => {
-    setTaskToEdit(null);
-    setIsTaskFormOpen(true);
-  };
+  const columns: TaskStatus[] = Object.values(TaskStatus);
 
   const handleEditTask = (task: EnhancedTask) => {
     setTaskToEdit(task);
-    setIsTaskFormOpen(true);
+    setIsFormOpen(true);
   };
-
+  
   const handleDeleteTask = async (taskId: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta tarefa?')) {
-      try {
-        await deleteTask(taskId);
-      } catch (error) {
-        console.error("Failed to delete task", error);
-        alert(error instanceof Error ? error.message : "Could not delete task.");
-      }
+      await deleteTask(taskId);
     }
   };
 
-  const handleSaveTask = async (taskData: Omit<Task, 'id'|'assignee'|'comments'|'attachments'|'assignee_id'>) => {
-    try {
-      if (taskToEdit) {
-          await updateTask({...taskData, id: taskToEdit.id });
-      } else {
-          await addTask(taskData);
-      }
-      setIsTaskFormOpen(false);
-    } catch (error) {
-      console.error("Failed to save task", error);
-      alert(error instanceof Error ? error.message : "Could not save task.");
+  const handleSaveTask = async (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments'>) => {
+    if (taskToEdit) {
+        const assignee = projects.flatMap(p => p.tasks).find(t => t.id === taskToEdit.id)?.assignee;
+        const updatedTask = { ...taskToEdit, ...taskData, assignee, assignee_id: taskData.assignee_id };
+        await updateTask(updatedTask);
+    } else {
+        await addTask(taskData);
     }
-  }
+    setIsFormOpen(false);
+    setTaskToEdit(null);
+  };
 
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newProjectId = e.target.value;
+    setFilterProjectId(newProjectId);
+    setGlobalProjectFilter(newProjectId);
+  };
+
+  const isGlobalAdmin = profile?.role === GlobalRole.Admin;
+  const projectRole = getProjectRole(filterProjectId);
+  const canEditProject = isGlobalAdmin || projectRole === 'admin' || projectRole === 'editor';
+  
   return (
     <div className="space-y-6">
-        <div className="flex flex-wrap justify-between items-center gap-4">
-            <div>
-                <h1 className="text-2xl font-bold text-slate-800">Quadro de Tarefas</h1>
-                <p className="mt-1 text-slate-600">Visualize e gerencie todas as tarefas em um só lugar.</p>
-            </div>
-            <div className="flex items-center gap-2 md:gap-4">
-                 <button onClick={() => setIsNotificationModalOpen(true)} className="px-3 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg shadow-sm hover:bg-teal-700">
-                    Enviar Lembrete
-                </button>
-                {canManageTeam && selectedProject && (
-                  <button onClick={() => setIsTeamModalOpen(true)} className="flex-shrink-0 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-slate-700 rounded-lg shadow-sm hover:bg-slate-800">
-                    <UsersIcon className="h-4 w-4" />
-                    <span>Gerenciar Equipe</span>
-                  </button>
-                )}
-                {canEdit && (
-                  <button onClick={handleAddTask} className="flex-shrink-0 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700">
-                      <PlusIcon className="h-4 w-4" />
-                      <span>Adicionar Tarefa</span>
-                  </button>
-                )}
-            </div>
+       <div className="flex flex-wrap justify-between items-center gap-4">
+        <div>
+            <h1 className="text-2xl font-bold text-slate-800">Quadro de Tarefas</h1>
+            <p className="mt-1 text-slate-600">Visualize e gerencie tarefas no formato Kanban.</p>
         </div>
-        
-        <div className="flex items-center gap-4">
-            <label htmlFor="project-filter" className="text-sm font-medium text-slate-700">Filtrar por Projeto:</label>
-            <select
-                id="project-filter"
-                value={filterProject}
-                onChange={(e) => setFilterProject(e.target.value)}
-                className="block border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 bg-white"
-            >
-                <option value="all">Todos os Projetos</option>
-                {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+        <div className="flex gap-2">
+            <button onClick={() => setIsNotificationModalOpen(true)} className="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-100 rounded-lg hover:bg-indigo-200">
+                Lembrete de Tarefas
+            </button>
+            <button onClick={() => { setTaskToEdit(null); setIsFormOpen(true); }} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700">
+              <PlusIcon className="h-5 w-5" />
+              <span>Nova Tarefa</span>
+            </button>
         </div>
+      </div>
+      
+      <div className="flex items-center gap-4">
+        <label htmlFor="project-filter" className="text-sm font-medium text-slate-700">Filtrar por Projeto:</label>
+        <select
+          id="project-filter"
+          value={filterProjectId}
+          onChange={handleFilterChange}
+          className="block w-full max-w-xs border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white text-slate-900"
+        >
+          <option value="all">Todos os Projetos</option>
+          {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
-            {Object.values(TaskStatus).map(status => (
-                <KanbanColumn 
-                    key={status} 
-                    status={status} 
-                    tasks={tasksByStatus[status]} 
-                    onEditTask={handleEditTask}
-                    onDeleteTask={handleDeleteTask} 
-                    canEdit={canEdit} />
-            ))}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {columns.map(status => (
+          <KanbanColumn
+            key={status}
+            status={status}
+            tasks={enhancedTasks.filter(t => t.status === status)}
+            onEditTask={handleEditTask}
+            onDeleteTask={handleDeleteTask}
+            canEdit={canEditProject}
+          />
+        ))}
+      </div>
 
-        <div className="mt-8">
-            <NotificationLogTable />
-        </div>
-
-        <TaskForm
-            isOpen={isTaskFormOpen}
-            onClose={() => setIsTaskFormOpen(false)}
-            onSave={handleSaveTask}
-            taskToEdit={taskToEdit}
-            initialProjectId={filterProject !== 'all' ? filterProject : undefined}
+      <TaskForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSave={handleSaveTask}
+        taskToEdit={taskToEdit}
+        initialProjectId={filterProjectId !== 'all' ? filterProjectId : undefined}
+      />
+      {taskToView && (
+        <TaskDetail
+            task={taskToView}
+            isOpen={!!taskToView}
+            onClose={() => setTaskToView(null)}
         />
-
-        <NotificationSenderModal 
-            isOpen={isNotificationModalOpen}
-            onClose={() => setIsNotificationModalOpen(false)}
-        />
-        
-        {selectedProject && (
-            <TeamManagementModal 
-                isOpen={isTeamModalOpen}
-                onClose={() => setIsTeamModalOpen(false)}
-                project={selectedProject}
-            />
-        )}
+      )}
+       <NotificationSenderModal 
+        isOpen={isNotificationModalOpen}
+        onClose={() => setIsNotificationModalOpen(false)}
+       />
     </div>
   );
 };

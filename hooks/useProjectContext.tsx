@@ -1,282 +1,246 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import { Project, User, Task, Message, Attachment, TeamMember } from '../types';
-import { supabase } from '../services/supabaseClient';
-import { useAuth } from './useAuth';
 
-interface AppState {
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import { useAuth } from './useAuth';
+import { Project, User, Task, Message, TeamMember, Attachment, ProjectStatus, TaskStatus, TaskPriority, ProjectType } from '../types';
+import { PROJECTS, USERS, MESSAGES, HOMOLOGACAO_TASK_NAMES, RENOVACAO_CCT_TASK_NAMES } from '../constants';
+
+// NOTE: This context uses mock data for simplicity. In a real application,
+// all `useCallback` functions would make API calls to a backend to persist changes.
+
+interface ProjectContextType {
   projects: Project[];
   users: User[];
   messages: Message[];
   loading: boolean;
-  error: string | null;
-}
+  error: Error | null;
+  profile: User | null;
+  getProjectRole: (projectId: string) => TeamMember['role'] | undefined;
 
-const initialState: AppState = {
-  projects: [],
-  users: [],
-  messages: [],
-  loading: true,
-  error: null,
-};
-
-interface ProjectContextType extends AppState {
-  fetchAllData: () => Promise<void>;
-  addProject: (project: Omit<Project, 'id' | 'team' | 'tasks' | 'files' | 'actualCost'>) => Promise<void>;
-  updateProject: (project: Omit<Project, 'team' | 'tasks' | 'files'>) => Promise<void>;
-  addTask: (task: Omit<Task, 'id'|'assignee'|'comments'|'attachments'>) => Promise<void>;
-  updateTask: (task: Omit<Task, 'assignee'|'comments'|'attachments'>) => Promise<void>;
+  addProject: (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files' | 'actualCost'>) => Promise<void>;
+  updateProject: (projectData: Project) => Promise<void>;
+  deleteProject: (projectId: string) => Promise<void>;
+  
+  addTask: (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments'>) => Promise<void>;
+  updateTask: (taskData: Task) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
-  addUser: (user: Omit<User, 'id'>) => Promise<void>;
-  updateUser: (user: User) => Promise<void>;
+
+  updateUser: (userData: User) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
+  
   addUserToProject: (projectId: string, userId: string, role: TeamMember['role']) => Promise<void>;
   removeUserFromProject: (projectId: string, userId: string) => Promise<void>;
   updateTeamMemberRole: (projectId: string, userId: string, role: TeamMember['role']) => Promise<void>;
-  getProjectRole: (projectId: string) => TeamMember['role'] | null;
-  addMessage: (message: Omit<Message, 'id' | 'sender' | 'isRead'>) => Promise<void>;
-  markAllMessagesAsRead: () => void;
+
   addFile: (projectId: string, file: File) => Promise<void>;
+  addMessage: (messageData: Omit<Message, 'id' | 'sender' | 'isRead'>) => Promise<void>;
   logNotification: (projectId: string, type: 'email' | 'whatsapp') => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AppState>(initialState);
-  const { session, profile } = useAuth();
+  const { profile } = useAuth();
+  const [projects, setProjects] = useState<Project[]>(PROJECTS);
+  const [users, setUsers] = useState<User[]>(USERS);
+  const [messages, setMessages] = useState<Message[]>(MESSAGES);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  const fetchAllData = useCallback(async () => {
-    setState(s => ({ ...s, loading: true, error: null }));
-    try {
-      const [
-        { data: users, error: usersError },
-        { data: projectsData, error: projectsError },
-        { data: tasksData, error: tasksError },
-        { data: filesData, error: filesError },
-        { data: teamData, error: teamError },
-        { data: messagesData, error: messagesError }
-      ] = await Promise.all([
-        supabase.from('users').select('*'),
-        supabase.from('projects').select('*'),
-        supabase.from('tasks').select('*'),
-        supabase.from('attachments').select('*'),
-        supabase.from('project_team').select('*'),
-        supabase.from('messages').select('*')
-      ]);
+  const getProjectRole = useCallback((projectId: string): TeamMember['role'] | undefined => {
+    if (!profile) return undefined;
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return undefined;
+    const teamMember = project.team.find(tm => tm.user.id === profile.id);
+    return teamMember?.role;
+  }, [projects, profile]);
 
-      if (usersError) throw usersError;
-      if (projectsError) throw projectsError;
-      if (tasksError) throw tasksError;
-      if (filesError) throw filesError;
-      if (teamError) throw teamError;
-      if (messagesError) throw messagesError;
-      
-      const usersMap = new Map(users.map(u => [u.id, u]));
-
-      const projects: Project[] = projectsData.map((p: any) => ({
-        ...p,
-        tasks: tasksData
-          .filter(t => t.project_id === p.id)
-          .map((t: any) => ({
-            ...t,
-            assignee: t.assignee_id ? usersMap.get(t.assignee_id) : null,
-          })),
-        files: filesData.filter(f => f.project_id === p.id),
-        team: teamData
-          .filter(pt => pt.project_id === p.id)
-          .map((pt: any) => ({
-            user: usersMap.get(pt.user_id),
-            role: pt.role,
-          }))
-          .filter(tm => tm.user), // Filter out entries where user might be missing
-      }));
-
-      const messages: Message[] = messagesData.map((m: any) => ({
-        ...m,
-        sender: m.sender_id ? usersMap.get(m.sender_id) : null,
-      }));
-
-      setState({
-        projects,
-        users,
-        messages,
-        loading: false,
-        error: null,
-      });
-
-    } catch (err: any) {
-      console.error("Failed to fetch data", err);
-      let displayError = 'Ocorreu um erro desconhecido ao buscar os dados.';
-      if (err && typeof err === 'object') {
-          if ('message' in err) displayError = err.message as string;
-          if ('details' in err && err.details) displayError += ` (${err.details})`;
-      } else if (typeof err === 'string') {
-          displayError = err;
-      }
-      setState(s => ({ ...s, loading: false, error: `Erro ao carregar dados: ${displayError}` }));
+  const addProject = useCallback(async (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files' | 'actualCost'>) => {
+    const newProject: Project = {
+      ...projectData,
+      id: `proj-${Date.now()}`,
+      tasks: [],
+      team: [],
+      files: [],
+      actualCost: 0,
+    };
+    
+    let taskNames: string[] = [];
+    if (projectData.projectType === ProjectType.Homologacao) {
+      taskNames = HOMOLOGACAO_TASK_NAMES;
+    } else if (projectData.projectType === ProjectType.RenovacaoCCT) {
+      taskNames = RENOVACAO_CCT_TASK_NAMES;
     }
+
+    if (taskNames.length > 0) {
+      const defaultTasks: Task[] = taskNames.map((name, index) => ({
+        id: `task-${Date.now()}-${index}`,
+        name,
+        description: `Descrição para ${name}`,
+        status: TaskStatus.Pending,
+        priority: TaskPriority.Medium,
+        dueDate: new Date().toISOString().split('T')[0],
+        assignee: null,
+        dependencies: [],
+        comments: [],
+        attachments: [],
+        duration: 1,
+        project_id: newProject.id,
+      }));
+      newProject.tasks = defaultTasks;
+    }
+    
+    setProjects(prev => [...prev, newProject]);
   }, []);
 
-  useEffect(() => {
-    if (session) {
-      fetchAllData();
-    } else {
-      setState(initialState);
-    }
-  }, [session, fetchAllData]);
+  const updateProject = useCallback(async (projectData: Project) => {
+    setProjects(prev => prev.map(p => p.id === projectData.id ? { ...p, ...projectData } : p));
+  }, []);
 
-  const addProject = async (project: Omit<Project, 'id' | 'team' | 'tasks' | 'files' | 'actualCost'>) => {
-    const { data, error } = await supabase.from('projects').insert([project]).select();
-    if (error) throw error;
-    if (data && profile) {
-      // Add creator as project admin
-      await addUserToProject(data[0].id, profile.id, 'admin');
-    }
-    await fetchAllData();
-  };
+  const deleteProject = useCallback(async (projectId: string) => {
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+  }, []);
 
-  const updateProject = async (project: Omit<Project, 'team' | 'tasks' | 'files'>) => {
-    const { error } = await supabase.from('projects').update(project).eq('id', project.id);
-    if (error) throw error;
-    await fetchAllData();
-  };
-  
-  const addTask = async (task: Omit<Task, 'id'|'assignee'|'comments'|'attachments'>) => {
-    const { error } = await supabase.from('tasks').insert([task]);
-    if (error) throw error;
-    await fetchAllData();
-  };
-
-  const updateTask = async (task: Omit<Task, 'assignee'|'comments'|'attachments'>) => {
-    const { id, ...updateData } = task;
-    const { error } = await supabase.from('tasks').update(updateData).eq('id', id);
-    if (error) throw error;
-    await fetchAllData();
-  };
-
-  const deleteTask = async (taskId: string) => {
-    const { error } = await supabase.from('tasks').delete().eq('id', taskId);
-    if (error) throw error;
-    await fetchAllData();
-  };
-
-  const addUser = async (user: Omit<User, 'id'>) => {
-    // This is for global admins managing users. Signup is separate.
-    const { error } = await supabase.from('users').insert([user]);
-    if (error) throw error;
-    await fetchAllData();
-  };
-
-  const updateUser = async (user: User) => {
-    const { error } = await supabase.from('users').update(user).eq('id', user.id);
-    if (error) throw error;
-    await fetchAllData();
-  };
-
-  const deleteUser = async (userId: string) => {
-    // This should be an admin function that calls a Supabase Edge Function to delete auth user.
-    // For now, we only delete from public.users table for simplicity.
-    console.warn("Apenas o perfil do usuário foi excluído, não o usuário de autenticação. Implemente uma Edge Function para exclusão completa.");
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if (error) throw error;
-    await fetchAllData();
-  };
-
-  const addUserToProject = async (projectId: string, userId: string, role: TeamMember['role']) => {
-    const { error } = await supabase.from('project_team').insert([{ project_id: projectId, user_id: userId, role }]);
-    if (error) throw error;
-    await fetchAllData();
-  };
-
-  const removeUserFromProject = async (projectId: string, userId: string) => {
-    const { error } = await supabase.from('project_team').delete().match({ project_id: projectId, user_id: userId });
-    if (error) throw error;
-    await fetchAllData();
-  };
-
-  const updateTeamMemberRole = async (projectId: string, userId: string, role: TeamMember['role']) => {
-    const { error } = await supabase.from('project_team').update({ role }).match({ project_id: projectId, user_id: userId });
-    if (error) throw error;
-    await fetchAllData();
-  };
-
-  const getProjectRole = (projectId: string): TeamMember['role'] | null => {
-    if (!profile) return null;
-    const project = state.projects.find(p => p.id === projectId);
-    const teamMember = project?.team.find(tm => tm.user.id === profile.id);
-    return teamMember?.role || null;
-  };
-  
-  const addMessage = async (message: Omit<Message, 'id' | 'sender' | 'isRead'>) => {
-    const { error } = await supabase.from('messages').insert([message]);
-    if (error) throw error;
-    await fetchAllData();
-  };
-
-  const markAllMessagesAsRead = () => {
-    // This is a client-side mock for immediate UI feedback. 
-    // A full implementation would update the backend as well.
-    setState(s => ({
-        ...s,
-        messages: s.messages.map(m => ({ ...m, isRead: true }))
+  const addTask = useCallback(async (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments'>) => {
+    const assignee = users.find(u => u.id === taskData.assignee_id) || null;
+    const newTask: Task = {
+      ...taskData,
+      id: `task-${Date.now()}`,
+      assignee: assignee,
+      comments: [],
+      attachments: [],
+    };
+    setProjects(prev => prev.map(p => {
+      if (p.id === newTask.project_id) {
+        return { ...p, tasks: [...p.tasks, newTask] };
+      }
+      return p;
     }));
-  };
+  }, [users]);
+  
+  const updateTask = useCallback(async (taskData: Task) => {
+    setProjects(prev => prev.map(p => {
+      if (p.id === taskData.project_id) {
+        return { ...p, tasks: p.tasks.map(t => t.id === taskData.id ? taskData : t) };
+      }
+      return p;
+    }));
+  }, []);
 
-  const addFile = async (projectId: string, file: File) => {
-    if (!projectId) throw new Error("O ID do projeto é necessário para o upload do arquivo.");
-    // Bucket name is 'attachments', as per SQL policies.
-    const bucketName = 'attachments'; 
+  const deleteTask = useCallback(async (taskId: string) => {
+    setProjects(prev => prev.map(p => ({
+      ...p,
+      tasks: p.tasks.filter(t => t.id !== taskId),
+    })));
+  }, []);
 
-    const filePath = `${projectId}/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
-    const { error: uploadError } = await supabase.storage.from(bucketName).upload(filePath, file);
-    if (uploadError) throw new Error(`Falha no upload do arquivo: ${uploadError.message}`);
+  const updateUser = useCallback(async (userData: User) => {
+      setUsers(prev => prev.map(u => u.id === userData.id ? { ...u, ...userData } : u));
+      setProjects(prevProjects => prevProjects.map(p => ({
+          ...p,
+          team: p.team.map(tm => tm.user.id === userData.id ? { ...tm, user: userData } : tm),
+          tasks: p.tasks.map(t => t.assignee?.id === userData.id ? { ...t, assignee: userData } : t)
+      })));
+  }, []);
 
-    const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+  const deleteUser = useCallback(async (userId: string) => {
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      setProjects(prevProjects => prevProjects.map(p => ({
+          ...p,
+          team: p.team.filter(tm => tm.user.id !== userId),
+          tasks: p.tasks.map(t => t.assignee?.id === userId ? { ...t, assignee: null, assignee_id: null } : t)
+      })));
+  }, []);
 
-    const attachmentData = {
+  const addUserToProject = useCallback(async (projectId: string, userId: string, role: TeamMember['role']) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) throw new Error("User not found");
+    setProjects(prev => prev.map(p => {
+      if (p.id === projectId && !p.team.some(tm => tm.user.id === userId)) {
+        return { ...p, team: [...p.team, { user, role }] };
+      }
+      return p;
+    }));
+  }, [users]);
+
+  const removeUserFromProject = useCallback(async (projectId: string, userId: string) => {
+    setProjects(prev => prev.map(p => {
+      if (p.id === projectId) {
+        return { ...p, team: p.team.filter(tm => tm.user.id !== userId) };
+      }
+      return p;
+    }));
+  }, []);
+
+  const updateTeamMemberRole = useCallback(async (projectId: string, userId: string, role: TeamMember['role']) => {
+    setProjects(prev => prev.map(p => {
+      if (p.id === projectId) {
+        return { ...p, team: p.team.map(tm => tm.user.id === userId ? { ...tm, role } : tm) };
+      }
+      return p;
+    }));
+  }, []);
+
+  const addFile = useCallback(async (projectId: string, file: File) => {
+    const newFile: Attachment = {
+        id: `file-${Date.now()}`,
         name: file.name,
         type: file.type,
         size: file.size,
-        url: urlData.publicUrl,
+        url: URL.createObjectURL(file), // Temporary URL for preview
         lastModified: new Date().toISOString(),
-        project_id: projectId
     };
+    setProjects(prev => prev.map(p => {
+        if (p.id === projectId) {
+            return { ...p, files: [...p.files, newFile] };
+        }
+        return p;
+    }));
+  }, []);
 
-    const { error: insertError } = await supabase.from('attachments').insert([attachmentData]);
-    if (insertError) throw insertError;
-    
-    await fetchAllData();
-  };
+  const addMessage = useCallback(async (messageData: Omit<Message, 'id' | 'sender' | 'isRead'>) => {
+      const sender = users.find(u => u.id === messageData.sender_id);
+      if (!sender) throw new Error("Sender not found");
+      const newMessage: Message = {
+          ...messageData,
+          id: `msg-${Date.now()}`,
+          sender,
+          isRead: false
+      };
+      setMessages(prev => [...prev, newMessage]);
+  }, [users]);
 
-  const logNotification = async (projectId: string, type: 'email' | 'whatsapp') => {
-    const fieldToUpdate = type === 'email' ? 'lastEmailNotification' : 'lastWhatsappNotification';
-    const { error } = await supabase
-      .from('projects')
-      .update({ [fieldToUpdate]: new Date().toISOString() })
-      .eq('id', projectId);
-    if (error) throw error;
-    await fetchAllData();
-  };
-
+  const logNotification = useCallback(async (projectId: string, type: 'email' | 'whatsapp') => {
+      setProjects(prev => prev.map(p => {
+          if (p.id === projectId) {
+              const now = new Date().toISOString();
+              if (type === 'email') return { ...p, lastEmailNotification: now };
+              if (type === 'whatsapp') return { ...p, lastWhatsappNotification: now };
+          }
+          return p;
+      }));
+  }, []);
 
   const value = {
-    ...state,
-    fetchAllData,
+    projects,
+    users,
+    messages,
+    loading,
+    error,
+    profile,
+    getProjectRole,
     addProject,
     updateProject,
+    deleteProject,
     addTask,
     updateTask,
     deleteTask,
-    addUser,
     updateUser,
     deleteUser,
     addUserToProject,
     removeUserFromProject,
     updateTeamMemberRole,
-    getProjectRole,
-    addMessage,
-    markAllMessagesAsRead,
     addFile,
+    addMessage,
     logNotification,
   };
 
