@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { User, GlobalRole } from '../../types';
 import { XIcon } from '../ui/Icons';
@@ -72,7 +73,7 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
 
     setIsUploading(true);
     try {
-        let finalAvatarUrl = userToEdit?.avatar || avatarUrl;
+        let finalAvatarUrl = avatarUrl;
 
         if (avatarFile) {
           const filePath = `${Date.now()}-${avatarFile.name.replace(/\s/g, '_')}`;
@@ -88,7 +89,7 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
           finalAvatarUrl = data.publicUrl;
         }
 
-        const userData = { 
+        const userData: Partial<User> = { 
           name, 
           email,
           function: userFunction,
@@ -97,7 +98,7 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
         };
         
         if (userToEdit) {
-          await onSave({ ...userData, id: userToEdit.id });
+          await onSave({ ...userToEdit, ...userData });
         } else {
           // A API para adicionar usuários não precisa do 'id', ele é gerado pelo DB.
           await onSave(userData as Omit<User, 'id'>);

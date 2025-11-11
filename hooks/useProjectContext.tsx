@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, ReactNode, useCallback } fr
 import { useAuth } from './useAuth';
 import { Project, User, Task, Message, TeamMember, Attachment, ProjectStatus, TaskStatus, TaskPriority, ProjectType } from '../types';
 import { PROJECTS, USERS, MESSAGES, HOMOLOGACAO_TASK_NAMES, RENOVACAO_CCT_TASK_NAMES } from '../constants';
+import { v4 as uuidv4 } from 'uuid';
 
 // NOTE: This context uses mock data for simplicity. In a real application,
 // all `useCallback` functions would make API calls to a backend to persist changes.
@@ -57,7 +58,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addProject = useCallback(async (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files' | 'actualCost'>) => {
     const newProject: Project = {
       ...projectData,
-      id: `proj-${Date.now()}`,
+      id: uuidv4(),
       tasks: [],
       team: [],
       files: [],
@@ -72,8 +73,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
 
     if (taskNames.length > 0) {
-      const defaultTasks: Task[] = taskNames.map((name, index) => ({
-        id: `task-${Date.now()}-${index}`,
+      const defaultTasks: Task[] = taskNames.map((name) => ({
+        id: uuidv4(),
         name,
         description: `Descrição para ${name}`,
         status: TaskStatus.Pending,
@@ -104,7 +105,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const assignee = users.find(u => u.id === taskData.assignee_id) || null;
     const newTask: Task = {
       ...taskData,
-      id: `task-${Date.now()}`,
+      id: uuidv4(),
       assignee: assignee,
       comments: [],
       attachments: [],
@@ -182,7 +183,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const addFile = useCallback(async (projectId: string, file: File) => {
     const newFile: Attachment = {
-        id: `file-${Date.now()}`,
+        id: uuidv4(),
         name: file.name,
         type: file.type,
         size: file.size,
@@ -202,7 +203,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (!sender) throw new Error("Sender not found");
       const newMessage: Message = {
           ...messageData,
-          id: `msg-${Date.now()}`,
+          id: uuidv4(),
           sender,
           isRead: false
       };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Task, TaskPriority, TaskStatus } from '../../types';
@@ -10,7 +11,7 @@ type EnhancedTask = Task & {
 interface TaskFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments' | 'assignee_id'>) => Promise<void>;
+  onSave: (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments'>) => Promise<void>;
   taskToEdit: EnhancedTask | null;
   initialProjectId?: string;
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Project, ProjectStatus, ProjectType } from '../../types';
 import { XIcon } from '../ui/Icons';
@@ -5,7 +6,7 @@ import { XIcon } from '../ui/Icons';
 interface ProjectFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (projectData: Omit<Project, 'id'> | Project) => Promise<void>;
+  onSave: (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files' | 'actualCost'> | Project) => Promise<void>;
   projectToEdit: Project | null;
 }
 
@@ -68,13 +69,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
             projectType,
             clientName,
             clientEmail,
-            actualCost: projectToEdit?.actualCost || 0,
         };
 
         if (projectToEdit) {
-            await onSave({ ...projectData, id: projectToEdit.id });
+            await onSave({ ...projectToEdit, ...projectData });
         } else {
-            await onSave(projectData as Omit<Project, 'id'>);
+            await onSave(projectData as Omit<Project, 'id' | 'tasks' | 'team' | 'files' | 'actualCost'>);
         }
         onClose();
     } catch(error) {

@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Project, CriticalPathResult, TaskStatus } from '../types';
 
@@ -17,7 +18,7 @@ const withRetry = async <T>(apiCall: () => Promise<T>, retries = 3, delay = 1000
             return await apiCall();
         } catch (error) {
             lastError = error;
-            console.warn(`Tentativa de chamada da API ${i + 1}/${retries} falhou. Tentando novamente em ${delay * (i + 1)}ms...`);
+            console.warn(`Tentativa de chamada da API ${i + 1}/${retries} falhou. Tentando novamente em ${delay * (i + 1)}ms...`, error);
             if (i < retries - 1) {
                 await new Promise(res => setTimeout(res, delay * (i + 1)));
             }

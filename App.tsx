@@ -14,6 +14,7 @@ import FilesView from './components/files/FilesView';
 import CommunicationView from './components/communication/CommunicationView';
 import TeamManagementView from './components/team/TeamManagementView';
 import UserManagementView from './components/admin/UserManagementView';
+import NotificationLogTable from './components/tasks/NotificationLogTable';
 
 const App: React.FC = () => {
   return (
@@ -77,6 +78,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
     reports: 'Relatórios',
     communication: 'Comunicação',
     admin: 'Admin',
+    notifications: 'Histórico de Cobranças',
   };
 
   const renderView = () => {
@@ -90,6 +92,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
       case 'reports': return <ReportsView />;
       case 'communication': return <CommunicationView />;
       case 'admin': return <UserManagementView />;
+      case 'notifications': return <NotificationLogTable />;
       default: return <Dashboard />;
     }
   };
@@ -105,7 +108,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header 
-          title={viewTitles[currentView]} 
+          title={viewTitles[currentView] || 'ProjectHub'} 
           onMenuClick={() => setSidebarOpen(true)} 
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
