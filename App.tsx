@@ -34,11 +34,11 @@ const AppContent: React.FC = () => {
     setIsTeamFormOpen(false);
   };
 
-  const handleSaveUser = (userData: Omit<User, 'id'> | User) => {
+  const handleSaveUser = async (userData: Omit<User, 'id'> | User) => {
     if ('id' in userData) {
-      updateUser(userData);
+      await updateUser(userData);
     } else {
-      addUser(userData);
+      await addUser(userData);
     }
     handleCloseTeamForm();
   };

@@ -44,67 +44,87 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  const fetchProjects = async () => {
-    const { data, error } = await supabase.from('projects').select(`
-        id, name, description, startDate, endDate, status, projectType, budget, actualCost, clientName, clientEmail, lastEmailNotification, lastWhatsappNotification,
-        project_team!project_id(users!user_id(id, name, avatar, function)),
-        tasks!project_id(*, assignee:users!assignee_id(id, name, avatar, function)),
-        files:attachments!project_id(*)
-      `)
-      .order('startDate', { ascending: false })
-      .order('position', { foreignTable: 'tasks', ascending: true, nullsFirst: false }); // Sort tasks by position
-      
-      if (error) {
-        handleError(error, 'fetchProjects');
-        return [];
-      }
-      
-      return data.map((p: any) => {
-        const { project_team, ...rest } = p;
-        
-        const processedTasks = (p.tasks || []).map((task: any) => ({
-            ...task,
-            dependencies: task.dependencies || [],
-            comments: task.comments || [],
-            attachments: task.attachments || [],
-        }));
-
-        return {
-          ...rest,
-          team: project_team ? project_team.map((pt: any) => pt.users).filter(Boolean) : [],
-          tasks: processedTasks,
-          files: p.files || [],
-        };
-      });
-  };
-  
-  const fetchInitialData = async () => {
-    setState(s => ({ ...s, loading: true }));
-    const [projectsData, usersData, messagesData] = await Promise.all([
-      fetchProjects(),
-      supabase.from('users').select('*').order('name'),
-      supabase.from('messages').select('*, sender:users!sender_id(*)').order('timestamp')
+  const fetchAllData = async () => {
+    const [
+        projectsRes, usersRes, messagesRes, 
+        tasksRes, teamRes, attachmentsRes
+    ] = await Promise.all([
+        supabase.from('projects').select('*').order('startDate', { ascending: false }),
+        supabase.from('users').select('*').order('name'),
+        supabase.from('messages').select('*').order('timestamp'),
+        supabase.from('tasks').select('*').order('position', { ascending: true, nullsFirst: false }),
+        supabase.from('project_team').select('*'),
+        supabase.from('attachments').select('*')
     ]);
 
-    if (usersData.error) handleError(usersData.error, 'fetchUsers');
-    if (messagesData.error) handleError(messagesData.error, 'fetchMessages');
+    if (projectsRes.error) handleError(projectsRes.error, 'fetchProjects');
+    if (usersRes.error) handleError(usersRes.error, 'fetchUsers');
+    if (messagesRes.error) handleError(messagesRes.error, 'fetchMessages');
+    if (tasksRes.error) handleError(tasksRes.error, 'fetchTasks');
+    if (teamRes.error) handleError(teamRes.error, 'fetchProjectTeam');
+    if (attachmentsRes.error) handleError(attachmentsRes.error, 'fetchAttachments');
     
+    const projectsData = projectsRes.data || [];
+    const usersData = usersRes.data || [];
+    const messagesData = messagesRes.data || [];
+    const tasksData = tasksRes.data || [];
+    const projectTeamLinks = teamRes.data || [];
+    const attachmentsData = attachmentsRes.data || [];
+    
+    const userMap = new Map(usersData.map(u => [u.id, u as User]));
+
+    const tasksByProjectId = tasksData.reduce((acc, task) => {
+        const projectId = (task as any).project_id;
+        if (!projectId) return acc;
+        if (!acc[projectId]) acc[projectId] = [];
+        acc[projectId].push({
+            ...(task as Task),
+            assignee: (task as any).assignee_id ? userMap.get((task as any).assignee_id) || null : null,
+        });
+        return acc;
+    }, {} as Record<string, Task[]>);
+
+    const teamByProjectId = projectTeamLinks.reduce((acc, link) => {
+        const projectId = (link as any).project_id;
+        if (!projectId) return acc;
+        if (!acc[projectId]) acc[projectId] = [];
+        const user = userMap.get((link as any).user_id);
+        if (user) acc[projectId].push(user);
+        return acc;
+    }, {} as Record<string, User[]>);
+    
+    const attachmentsByProjectId = attachmentsData.reduce((acc, file) => {
+        const projectId = (file as any).project_id;
+        if (!projectId) return acc;
+        if (!acc[projectId]) acc[projectId] = [];
+        acc[projectId].push(file as Attachment);
+        return acc;
+    }, {} as Record<string, Attachment[]>);
+
+    const processedProjects = projectsData.map(p => ({
+        ...(p as Project),
+        team: teamByProjectId[p.id] || [],
+        tasks: tasksByProjectId[p.id] || [],
+        files: attachmentsByProjectId[p.id] || [],
+    }));
+
+    const processedMessages = messagesData.map(m => ({
+        ...(m as Message),
+        sender: (m as any).sender_id ? userMap.get((m as any).sender_id) || null : null,
+    }));
+
     setState({
-        projects: projectsData || [],
-        users: usersData.data || [],
-        messages: (messagesData.data || []).map((m: any) => ({...m, sender: m.sender || null })),
+        projects: processedProjects,
+        users: usersData as User[],
+        messages: processedMessages,
         loading: false
     });
   };
 
   useEffect(() => {
-    fetchInitialData();
+    setState(s => ({ ...s, loading: true }));
+    fetchAllData();
   }, []);
-  
-  const refreshProjects = async () => {
-      const projectsData = await fetchProjects();
-      setState(s => ({ ...s, projects: projectsData }));
-  };
 
   const logNotification = async (projectId: string, type: 'email' | 'whatsapp') => {
     const fieldToUpdate = type === 'email' ? 'lastEmailNotification' : 'lastWhatsappNotification';
@@ -114,7 +134,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       .eq('id', projectId);
     
     if (error) handleError(error, 'logNotification');
-    else await refreshProjects();
+    else await fetchAllData();
   };
 
   const addProject = async (project: Omit<Project, 'id'>) => {
@@ -144,13 +164,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
             duration: 1,
             project_id: newProject.id,
             assignee_id: null,
-            position: (index + 1) * 1000, // Set initial position
+            position: (index + 1) * 1000,
         }));
         const { error: tasksError } = await supabase.from('tasks').insert(defaultTasks);
         if (tasksError) handleError(tasksError, 'addProject tasks');
     }
 
-    await refreshProjects();
+    await fetchAllData();
   };
 
   const updateProject = async (updatedProject: Project) => {
@@ -166,17 +186,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
          const { error: insertTeamError } = await supabase.from('project_team').insert(teamLinks);
          if(insertTeamError) handleError(insertTeamError, 'updateProject insert team');
      }
-     await refreshProjects();
+     await fetchAllData();
   };
 
   const deleteProject = async (projectId: string) => {
     const { error } = await supabase.from('projects').delete().eq('id', projectId);
     if (error) handleError(error, 'deleteProject');
-    else setState(prev => ({ ...prev, projects: prev.projects.filter(p => p.id !== projectId) }));
+    else await fetchAllData();
   };
   
   const addTask = async (projectId: string, task: Omit<Task, 'id'>) => {
-    const { assignee, dependencies, comments, attachments, ...taskData } = task;
+    const { assignee, comments, attachments, ...taskData } = task;
     
     const { data: tasksInColumn } = await supabase.from('tasks').select('position').eq('project_id', projectId).eq('status', task.status).order('position', { ascending: false }).limit(1);
     const maxPosition = tasksInColumn?.[0]?.position || 0;
@@ -184,13 +204,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const { error } = await supabase.from('tasks').insert({ ...taskData, project_id: projectId, assignee_id: assignee?.id || null, position: newPosition });
     if(error) handleError(error, 'addTask');
-    else await refreshProjects();
+    else await fetchAllData();
   };
 
   const updateTask = async (projectId: string, updatedTask: Task) => {
     const originalProjects = state.projects;
 
-    // Optimistic update
     const newProjects = state.projects.map(p => {
         if (p.id === projectId) {
             return {
@@ -202,15 +221,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
     setState(s => ({ ...s, projects: newProjects }));
 
-    const { 
-        assignee, dependencies, comments, attachments, 
-        projectName: _pName, projectId: _pId,
-        ...taskData 
-    } = updatedTask as any;
+    const { assignee, comments, attachments, ...taskData } = updatedTask;
 
     const { error } = await supabase
         .from('tasks')
-        .update({ ...taskData, assignee_id: assignee?.id || null, position: updatedTask.position })
+        .update({ ...taskData, assignee_id: assignee?.id || null })
         .eq('id', updatedTask.id);
 
     if (error) {
@@ -223,40 +238,37 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const deleteTask = async (projectId: string, taskId: string) => {
     const { error } = await supabase.from('tasks').delete().eq('id', taskId);
     if(error) handleError(error, 'deleteTask');
-    else await refreshProjects();
+    else await fetchAllData();
   };
 
   const addUser = async (user: Omit<User, 'id'>) => {
     const { error } = await supabase.from('users').insert(user);
     if(error) handleError(error, 'addUser');
-    else {
-        const {data} = await supabase.from('users').select('*').order('name');
-        setState(s => ({ ...s, users: data || s.users }));
-    }
+    else await fetchAllData();
   };
 
   const updateUser = async (updatedUser: User) => {
     const { error } = await supabase.from('users').update(updatedUser).eq('id', updatedUser.id);
     if(error) handleError(error, 'updateUser');
-    else await fetchInitialData();
+    else await fetchAllData();
   };
 
   const deleteUser = async (userId: string) => {
     const { error } = await supabase.from('users').delete().eq('id', userId);
     if(error) handleError(error, 'deleteUser');
-    else await fetchInitialData();
+    else await fetchAllData();
   };
 
   const addFile = async (projectId: string, file: Omit<Attachment, 'id'>) => {
     const { error } = await supabase.from('attachments').insert({ ...file, project_id: projectId });
     if (error) handleError(error, 'addFile');
-    else await refreshProjects();
+    else await fetchAllData();
   };
 
   const deleteFile = async (projectId: string, fileId: string) => {
     const { error } = await supabase.from('attachments').delete().eq('id', fileId);
     if (error) handleError(error, 'deleteFile');
-    else await refreshProjects();
+    else await fetchAllData();
   };
 
   const addMessage = async (message: Omit<Message, 'id' | 'isRead'>) => {
@@ -264,13 +276,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const { error } = await supabase.from('messages').insert({ ...messageData, sender_id: sender.id, isRead: false });
     if (error) handleError(error, 'addMessage');
     else {
-        const newMessage = { ...message, id: `temp-${Date.now()}`, isRead: true };
+        const newMessage: Message = { ...message, id: `temp-${Date.now()}`, isRead: true, sender };
         setState(s => ({ ...s, messages: [...s.messages, newMessage]}));
     }
   };
 
   const markAllMessagesAsRead = async () => {
-    const unreadIds = state.messages.filter(m => !m.isRead).map(m => m.id);
+    const unreadIds = state.messages.filter(m => !m.isRead && !m.id.startsWith('temp-')).map(m => m.id);
     if (unreadIds.length === 0) return;
     const { error } = await supabase.from('messages').update({ isRead: true }).in('id', unreadIds);
     if(error) handleError(error, 'markAllMessagesAsRead');

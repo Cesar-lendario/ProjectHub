@@ -6,7 +6,7 @@ import { supabase } from '../../services/supabaseClient';
 interface TeamFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (userData: Omit<User, 'id'> | User) => void;
+  onSave: (userData: Omit<User, 'id'> | User) => Promise<void>;
   userToEdit: User | null;
 }
 
@@ -62,37 +62,40 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
     }
 
     setIsUploading(true);
-    let finalAvatarUrl = avatarUrl;
+    try {
+        let finalAvatarUrl = userToEdit?.avatar || avatarUrl;
 
-    if (avatarFile) {
-      const filePath = `public/${Date.now()}-${avatarFile.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, avatarFile);
+        if (avatarFile) {
+          const filePath = `${Date.now()}-${avatarFile.name.replace(/\s/g, '_')}`;
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, avatarFile);
 
-      if (uploadError) {
-        alert("Erro ao fazer upload do avatar. Tente novamente.");
-        console.error(uploadError);
+          if (uploadError) {
+            throw new Error(`Falha no upload do avatar: ${uploadError.message}. Verifique as políticas de storage no Supabase.`);
+          }
+
+          const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+          finalAvatarUrl = data.publicUrl;
+        }
+
+        const userData = { 
+          name, 
+          function: userFunction,
+          avatar: finalAvatarUrl
+        };
+        
+        if (userToEdit) {
+          await onSave({ ...userData, id: userToEdit.id });
+        } else {
+          await onSave(userData);
+        }
+    } catch (error) {
+        console.error("Erro ao salvar membro da equipe:", error);
+        alert(error instanceof Error ? error.message : "Ocorreu um erro desconhecido ao salvar.");
+    } finally {
         setIsUploading(false);
-        return;
-      }
-
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      finalAvatarUrl = data.publicUrl;
     }
-
-    const userData = { 
-      name, 
-      function: userFunction,
-      avatar: finalAvatarUrl
-    };
-
-    if (userToEdit) {
-      onSave({ ...userData, id: userToEdit.id });
-    } else {
-      onSave(userData);
-    }
-    setIsUploading(false);
   };
 
   if (!isOpen) return null;
