@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
-import { ProjectProvider } from './hooks/useProjectContext';
+import { ProjectProvider, useProjectContext } from './hooks/useProjectContext';
 import Dashboard from './components/dashboard/Dashboard';
 import ProjectList from './components/projects/ProjectList';
 import TaskList from './components/tasks/TaskList';
@@ -13,10 +13,26 @@ import CommunicationView from './components/communication/CommunicationView';
 import UserProfileView from './components/team/UserProfileView';
 import { User } from './types';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState('Dashboard');
   const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const { loading } = useProjectContext();
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-100">
+        <div className="text-center">
+          <svg className="mx-auto h-12 w-12 animate-spin text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <h2 className="mt-4 text-xl font-semibold text-slate-700">Carregando ProjectHub...</h2>
+          <p className="mt-2 text-slate-500">Conectando ao banco de dados. Aguarde um momento.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleViewProfile = (user: User) => {
     setViewingUser(user);
@@ -48,21 +64,28 @@ const App: React.FC = () => {
   };
 
   return (
-    <ProjectProvider>
-      <div className="flex h-screen bg-slate-100">
-        <Sidebar 
-          isOpen={isSidebarOpen} 
-          setIsOpen={setIsSidebarOpen}
-          activeView={activeView}
-          setActiveView={setActiveView} 
-        />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <Header title={activeView} onMenuClick={() => setIsSidebarOpen(true)} />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            {renderActiveView()}
-          </main>
-        </div>
+    <div className="flex h-screen bg-slate-100">
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        setIsOpen={setIsSidebarOpen}
+        activeView={activeView}
+        setActiveView={setActiveView} 
+      />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Header title={activeView} onMenuClick={() => setIsSidebarOpen(true)} />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          {renderActiveView()}
+        </main>
       </div>
+    </div>
+  );
+};
+
+
+const App: React.FC = () => {
+  return (
+    <ProjectProvider>
+      <AppContent />
     </ProjectProvider>
   );
 };
