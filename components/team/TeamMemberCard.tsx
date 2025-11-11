@@ -13,6 +13,7 @@ interface TeamMemberCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onView: () => void;
+  isAdmin: boolean;
 }
 
 const StatItem: React.FC<{ icon: React.ElementType, value: number, label: string, colorClass: string }> = ({ icon: Icon, value, label, colorClass }) => (
@@ -27,27 +28,29 @@ const StatItem: React.FC<{ icon: React.ElementType, value: number, label: string
     </div>
 );
 
-const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ user, stats, onEdit, onDelete, onView }) => {
+const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ user, stats, onEdit, onDelete, onView, isAdmin }) => {
   return (
     <Card 
         className="transition-shadow relative border border-slate-200 hover:shadow-xl hover:border-indigo-400"
     >
-      <div className="absolute top-3 right-3 flex gap-2 z-10">
-            <button
-                onClick={onEdit}
-                title="Editar Membro"
-                className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-slate-200 hover:text-indigo-600"
-            >
-                <EditIcon className="h-4 w-4" />
-            </button>
-            <button
-                onClick={onDelete}
-                title="Excluir Membro"
-                className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-red-100 hover:text-red-600"
-            >
-                <TrashIcon className="h-4 w-4" />
-            </button>
-      </div>
+      {isAdmin && (
+        <div className="absolute top-3 right-3 flex gap-2 z-10">
+              <button
+                  onClick={onEdit}
+                  title="Editar Membro"
+                  className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-slate-200 hover:text-indigo-600"
+              >
+                  <EditIcon className="h-4 w-4" />
+              </button>
+              <button
+                  onClick={onDelete}
+                  title="Excluir Membro"
+                  className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-red-100 hover:text-red-600"
+              >
+                  <TrashIcon className="h-4 w-4" />
+              </button>
+        </div>
+      )}
       
       <div onClick={onView} className="flex flex-col items-center p-4 text-center cursor-pointer">
         <img

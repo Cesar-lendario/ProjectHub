@@ -3,6 +3,8 @@ export interface User {
   name: string;
   avatar: string;
   function: string;
+  role: 'admin' | 'member';
+  auth_id?: string;
 }
 
 export interface Comment {

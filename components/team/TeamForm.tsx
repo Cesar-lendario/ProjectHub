@@ -1,6 +1,6 @@
 import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { User } from '../../types';
-import { XIcon, UploadIcon } from '../ui/Icons';
+import { XIcon } from '../ui/Icons';
 import { supabase } from '../../services/supabaseClient';
 
 interface TeamFormProps {
@@ -8,19 +8,24 @@ interface TeamFormProps {
   onClose: () => void;
   onSave: (userData: Omit<User, 'id'> | User) => Promise<void>;
   userToEdit: User | null;
+  currentUserProfile: User | null;
 }
 
-const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit }) => {
+const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit, currentUserProfile }) => {
   const [name, setName] = useState('');
   const [userFunction, setUserFunction] = useState('');
+  const [role, setRole] = useState<'admin' | 'member'>('member');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  const isAdmin = currentUserProfile?.role === 'admin';
+
   const resetForm = () => {
     setName('');
     setUserFunction('');
+    setRole('member');
     const randomSeed = Math.random().toString(36).substring(7);
     const defaultAvatar = `https://i.pravatar.cc/150?u=${randomSeed}`;
     setAvatarUrl(defaultAvatar);
@@ -33,6 +38,7 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
         if (userToEdit) {
             setName(userToEdit.name);
             setUserFunction(userToEdit.function || '');
+            setRole(userToEdit.role || 'member');
             setAvatarUrl(userToEdit.avatar);
             setAvatarPreview(userToEdit.avatar);
             setAvatarFile(null);
@@ -82,13 +88,15 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
         const userData = { 
           name, 
           function: userFunction,
-          avatar: finalAvatarUrl
+          avatar: finalAvatarUrl,
+          role
         };
         
         if (userToEdit) {
           await onSave({ ...userData, id: userToEdit.id });
         } else {
-          await onSave(userData);
+          // A API para adicionar usuários não precisa do 'id', ele é gerado pelo DB.
+          await onSave(userData as Omit<User, 'id'>);
         }
     } catch (error) {
         console.error("Erro ao salvar membro da equipe:", error);
@@ -127,6 +135,24 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
                 placeholder="Ex: Desenvolvedor, Designer"
               />
             </div>
+             {isAdmin && (
+                <div>
+                  <label htmlFor="user-role" className="block text-sm font-medium text-slate-700">Perfil</label>
+                  <select
+                    id="user-role"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as 'admin' | 'member')}
+                    className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    disabled={userToEdit?.id === currentUserProfile?.id}
+                  >
+                    <option value="member">Membro</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                  {userToEdit?.id === currentUserProfile?.id && (
+                    <p className="text-xs text-slate-500 mt-1">Você não pode alterar seu próprio perfil.</p>
+                  )}
+                </div>
+              )}
             <div>
                 <label className="block text-sm font-medium text-slate-700">Avatar</label>
                 <div className="mt-2 flex items-center gap-4">

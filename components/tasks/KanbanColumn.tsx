@@ -10,6 +10,7 @@ interface KanbanColumnProps {
   onViewTask: (task: EnhancedTask) => void;
   onEditTask: (task: EnhancedTask) => void;
   onDeleteTask: (task: EnhancedTask) => void;
+  isAdmin: boolean;
 }
 
 const getStatusColor = (status: TaskStatus) => {
@@ -21,7 +22,7 @@ const getStatusColor = (status: TaskStatus) => {
     }
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onTaskDrop, onViewTask, onEditTask, onDeleteTask }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onTaskDrop, onViewTask, onEditTask, onDeleteTask, isAdmin }) => {
     const [isOver, setIsOver] = React.useState(false);
     const columnRef = useRef<HTMLDivElement>(null);
 
@@ -82,6 +83,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onTaskDrop, 
                     onView={() => onViewTask(task)}
                     onEdit={() => onEditTask(task)}
                     onDelete={() => onDeleteTask(task)}
+                    isAdmin={isAdmin}
                 />
             ))}
         </div>

@@ -16,9 +16,10 @@ export type EnhancedTask = Task & {
 
 interface TaskListProps {
   initialProjectFilter?: string | null;
+  isAdmin: boolean;
 }
 
-const TaskList: React.FC<TaskListProps> = ({ initialProjectFilter }) => {
+const TaskList: React.FC<TaskListProps> = ({ initialProjectFilter, isAdmin }) => {
     const { projects, users, addTask, updateTask, deleteTask } = useProjectContext();
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -183,15 +184,17 @@ const TaskList: React.FC<TaskListProps> = ({ initialProjectFilter }) => {
                             <h2 className="text-2xl font-bold text-slate-800">Quadro Kanban de Tarefas</h2>
                             <p className="mt-1 text-slate-600">Filtre, ordene e mova as tarefas para gerenciar o fluxo de trabalho.</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => setIsNotificationModalOpen(true)} className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-lg shadow-sm hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                <span>E-mail/Whatsapp</span>
-                            </button>
-                            <button onClick={handleAddTaskClick} className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                <PlusIcon className="h-4 w-4" />
-                                <span>Adicionar Tarefa</span>
-                            </button>
-                        </div>
+                        {isAdmin && (
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => setIsNotificationModalOpen(true)} className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-lg shadow-sm hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <span>E-mail/Whatsapp</span>
+                                </button>
+                                <button onClick={handleAddTaskClick} className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <PlusIcon className="h-4 w-4" />
+                                    <span>Adicionar Tarefa</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -245,6 +248,7 @@ const TaskList: React.FC<TaskListProps> = ({ initialProjectFilter }) => {
                             onViewTask={handleViewTaskClick}
                             onEditTask={handleEditTaskClick}
                             onDeleteTask={handleDeleteTaskClick}
+                            isAdmin={isAdmin}
                         />
                     ))}
                 </div>
@@ -257,22 +261,27 @@ const TaskList: React.FC<TaskListProps> = ({ initialProjectFilter }) => {
                     <NotificationLogTable />
                 </div>
             </div>
-            <TaskForm 
-                isOpen={isFormModalOpen}
-                onClose={() => setIsFormModalOpen(false)}
-                onSave={handleSaveTask}
-                taskToEdit={editingTask}
-            />
+            {isAdmin && (
+                <TaskForm 
+                    isOpen={isFormModalOpen}
+                    onClose={() => setIsFormModalOpen(false)}
+                    onSave={handleSaveTask}
+                    taskToEdit={editingTask}
+                />
+            )}
             <TaskDetail
                 isOpen={isDetailModalOpen}
                 onClose={() => setIsDetailModalOpen(false)}
                 onEdit={handleEditFromDetail}
                 task={viewingTask}
+                isAdmin={isAdmin}
             />
-            <NotificationSenderModal 
-                isOpen={isNotificationModalOpen}
-                onClose={() => setIsNotificationModalOpen(false)}
-            />
+            {isAdmin && (
+                <NotificationSenderModal 
+                    isOpen={isNotificationModalOpen}
+                    onClose={() => setIsNotificationModalOpen(false)}
+                />
+            )}
         </>
     );
 };

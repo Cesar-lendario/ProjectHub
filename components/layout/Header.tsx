@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { MenuIcon, ChevronDownIcon } from '../ui/Icons';
-import { useProjectContext } from '../../hooks/useProjectContext';
+import { useAuth } from '../../hooks/useAuth';
 
 interface HeaderProps {
   title: string;
@@ -9,12 +8,10 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
-  const { users } = useProjectContext();
-  const currentUser = users[0]; // Mock current user
+  const { profile, signOut } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -42,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
       </div>
 
       <div className="flex items-center">
-        {currentUser && (
+        {profile && (
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -50,10 +47,10 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
             >
               <img
                 className="h-9 w-9 rounded-full object-cover"
-                src={currentUser.avatar}
-                alt={currentUser.name}
+                src={profile.avatar}
+                alt={profile.name}
               />
-              <span className="hidden text-sm font-medium text-slate-700 sm:block">{currentUser.name}</span>
+              <span className="hidden text-sm font-medium text-slate-700 sm:block">{profile.name}</span>
               <ChevronDownIcon className={`hidden h-5 w-5 text-slate-500 sm:block transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             
@@ -71,9 +68,9 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
                   <a href="#" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" role="menuitem">
                     Configurações
                   </a>
-                  <a href="#" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" role="menuitem">
+                  <button onClick={signOut} className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" role="menuitem">
                     Sair
-                  </a>
+                  </button>
                 </div>
               </div>
             )}

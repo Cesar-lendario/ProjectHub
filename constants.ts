@@ -1,12 +1,12 @@
 import { User, Project, Task, TaskStatus, TaskPriority, ProjectStatus, Attachment, Message, ProjectType } from './types';
 
-// Fix: Added the 'function' property to each user object to match the 'User' type.
+// Fix: Added the required 'role' property to each user object to match the 'User' type.
 export const USERS: User[] = [
-  { id: 'user-1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice', function: 'Gerente de Projetos' },
-  { id: 'user-2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=bob', function: 'Designer UI/UX' },
-  { id: 'user-3', name: 'Charlie', avatar: 'https://i.pravatar.cc/150?u=charlie', function: 'Desenvolvedor Frontend' },
-  { id: 'user-4', name: 'Diana', avatar: 'https://i.pravatar.cc/150?u=diana', function: 'Desenvolvedora Backend' },
-  { id: 'user-5', name: 'Ethan', avatar: 'https://i.pravatar.cc/150?u=ethan', function: 'Engenheiro de QA' },
+  { id: 'user-1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice', function: 'Gerente de Projetos', role: 'admin' },
+  { id: 'user-2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=bob', function: 'Designer UI/UX', role: 'member' },
+  { id: 'user-3', name: 'Charlie', avatar: 'https://i.pravatar.cc/150?u=charlie', function: 'Desenvolvedor Frontend', role: 'member' },
+  { id: 'user-4', name: 'Diana', avatar: 'https://i.pravatar.cc/150?u=diana', function: 'Desenvolvedora Backend', role: 'member' },
+  { id: 'user-5', name: 'Ethan', avatar: 'https://i.pravatar.cc/150?u=ethan', function: 'Engenheiro de QA', role: 'member' },
 ];
 
 const MOCK_FILES: Attachment[] = [

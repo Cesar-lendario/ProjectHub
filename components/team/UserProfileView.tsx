@@ -8,6 +8,7 @@ interface UserProfileViewProps {
   user: User;
   onEdit: (user: User) => void;
   onDelete: (userId: string) => void;
+  isAdmin: boolean;
 }
 
 const getPriorityChip = (priority: TaskPriority) => {
@@ -41,7 +42,7 @@ const StatItem: React.FC<{ icon: React.ElementType; value: number; label: string
     </div>
 );
 
-const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelete }) => {
+const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelete, isAdmin }) => {
   const { projects } = useProjectContext();
 
   const userTasks = useMemo(() => {
@@ -65,22 +66,24 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
   return (
     <div className="space-y-6">
       <Card className="relative p-6">
-        <div className="absolute top-4 right-4 flex gap-2">
-            <button
-                onClick={() => onEdit(user)}
-                title="Editar Membro"
-                className="w-9 h-9 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-slate-200 hover:text-indigo-600"
-            >
-                <EditIcon className="h-5 w-5" />
-            </button>
-            <button
-                onClick={() => onDelete(user.id)}
-                title="Excluir Membro"
-                className="w-9 h-9 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-red-100 hover:text-red-600"
-            >
-                <TrashIcon className="h-5 w-5" />
-            </button>
-        </div>
+        {isAdmin && (
+            <div className="absolute top-4 right-4 flex gap-2">
+                <button
+                    onClick={() => onEdit(user)}
+                    title="Editar Membro"
+                    className="w-9 h-9 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-slate-200 hover:text-indigo-600"
+                >
+                    <EditIcon className="h-5 w-5" />
+                </button>
+                <button
+                    onClick={() => onDelete(user.id)}
+                    title="Excluir Membro"
+                    className="w-9 h-9 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-red-100 hover:text-red-600"
+                >
+                    <TrashIcon className="h-5 w-5" />
+                </button>
+            </div>
+        )}
         
         <div className="flex flex-col items-center text-center">
             <img 

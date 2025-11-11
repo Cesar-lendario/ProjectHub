@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Project, ProjectStatus, TaskStatus } from '../../types';
@@ -11,7 +10,8 @@ const ProjectCard: React.FC<{
     onNavigate: () => void; 
     onEdit: () => void;
     onDelete: () => void;
-}> = ({ project, onNavigate, onEdit, onDelete }) => {
+    isAdmin: boolean;
+}> = ({ project, onNavigate, onEdit, onDelete, isAdmin }) => {
 
     const progress = project.tasks.length > 0 
         ? (project.tasks.filter(t => t.status === TaskStatus.Done).length / project.tasks.length) * 100 
@@ -52,6 +52,7 @@ const ProjectCard: React.FC<{
                         <span className={getStatusChip(project.status)}>{project.status}</span>
                     </div>
                 </div>
+                {isAdmin && (
                  <div className="flex-shrink-0 flex items-center gap-1">
                     <button onClick={handleEditClick} className="p-1.5 rounded-full text-slate-500 hover:bg-slate-200 hover:text-indigo-600 transition-colors" title="Editar Projeto">
                         <EditIcon className="h-4 w-4" />
@@ -60,6 +61,7 @@ const ProjectCard: React.FC<{
                         <TrashIcon className="h-4 w-4" />
                     </button>
                 </div>
+                )}
             </div>
             
             <p className="text-sm text-slate-600 mt-2 line-clamp-2 h-10">{project.description}</p>
@@ -98,10 +100,11 @@ const ProjectCard: React.FC<{
 
 interface ProjectListProps {
   onNavigateToTasks: (projectId: string) => void;
+  isAdmin: boolean;
 }
 
 
-const ProjectList: React.FC<ProjectListProps> = ({ onNavigateToTasks }) => {
+const ProjectList: React.FC<ProjectListProps> = ({ onNavigateToTasks, isAdmin }) => {
     const { projects, addProject, updateProject, deleteProject } = useProjectContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
@@ -139,10 +142,12 @@ const ProjectList: React.FC<ProjectListProps> = ({ onNavigateToTasks }) => {
                         <h2 className="text-2xl font-bold text-slate-800">Projetos</h2>
                         <p className="mt-1 text-slate-600">Clique em um projeto para ver suas tarefas ou adicione um novo.</p>
                     </div>
-                    <button onClick={handleAddProject} className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <PlusIcon className="h-4 w-4" />
-                        <span>Novo Projeto</span>
-                    </button>
+                    {isAdmin && (
+                        <button onClick={handleAddProject} className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <PlusIcon className="h-4 w-4" />
+                            <span>Novo Projeto</span>
+                        </button>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -153,6 +158,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onNavigateToTasks }) => {
                             onNavigate={() => onNavigateToTasks(project.id)}
                             onEdit={() => handleEditProject(project)}
                             onDelete={() => handleDeleteProject(project.id)}
+                            isAdmin={isAdmin}
                         />
                     ))}
                 </div>
@@ -165,12 +171,14 @@ const ProjectList: React.FC<ProjectListProps> = ({ onNavigateToTasks }) => {
                 )}
             </div>
             
-            <ProjectForm 
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSave={handleSaveProject}
-                projectToEdit={projectToEdit}
-            />
+            {isAdmin && (
+                <ProjectForm 
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onSave={handleSaveProject}
+                    projectToEdit={projectToEdit}
+                />
+            )}
         </>
     );
 };

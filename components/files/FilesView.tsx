@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import FileUpload from './FileUpload';
@@ -16,7 +15,7 @@ const formatBytes = (bytes: number, decimals = 2) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
-const ProjectFiles: React.FC<{ project: Project; onDelete: (projectId: string, fileId: string) => void }> = ({ project, onDelete }) => {
+const ProjectFiles: React.FC<{ project: Project; onDelete: (projectId: string, fileId: string) => void, isAdmin: boolean }> = ({ project, onDelete, isAdmin }) => {
     return (
         <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200">
@@ -42,9 +41,11 @@ const ProjectFiles: React.FC<{ project: Project; onDelete: (projectId: string, f
                                 <a href={file.url} download={file.name} className="p-2 rounded-full text-slate-500 hover:bg-slate-200 hover:text-indigo-600 transition-colors inline-block" title="Download">
                                     <DownloadIcon className="h-5 w-5" />
                                 </a>
+                                {isAdmin && (
                                 <button onClick={() => onDelete(project.id, file.id)} className="p-2 rounded-full text-slate-500 hover:bg-slate-200 hover:text-red-600 transition-colors" title="Excluir">
                                     <TrashIcon className="h-5 w-5" />
                                 </button>
+                                )}
                             </td>
                         </tr>
                     ))}
@@ -58,7 +59,7 @@ const ProjectFiles: React.FC<{ project: Project; onDelete: (projectId: string, f
 };
 
 
-const FilesView: React.FC = () => {
+const FilesView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
     const { projects, addFile, deleteFile } = useProjectContext();
     const [isUploadModalOpen, setUploadModalOpen] = useState(false);
     const [openProjectId, setOpenProjectId] = useState<string | null>(projects.length > 0 ? projects[0].id : null);
@@ -93,10 +94,12 @@ const FilesView: React.FC = () => {
                         <h2 className="text-2xl font-bold text-slate-800">Gerenciamento de Arquivos</h2>
                         <p className="mt-1 text-slate-600">Repositório central para todos os documentos do projeto.</p>
                     </div>
-                    <button onClick={() => setUploadModalOpen(true)} className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <PlusIcon className="h-4 w-4" />
-                        <span>Fazer Upload</span>
-                    </button>
+                    {isAdmin && (
+                        <button onClick={() => setUploadModalOpen(true)} className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <PlusIcon className="h-4 w-4" />
+                            <span>Fazer Upload</span>
+                        </button>
+                    )}
                 </div>
                 <div className="space-y-3">
                     {projects.map(project => (
@@ -115,18 +118,20 @@ const FilesView: React.FC = () => {
                             </button>
                             {openProjectId === project.id && (
                                 <div className="border-t border-slate-200">
-                                    <ProjectFiles project={project} onDelete={handleDelete} />
+                                    <ProjectFiles project={project} onDelete={handleDelete} isAdmin={isAdmin} />
                                 </div>
                             )}
                         </Card>
                     ))}
                 </div>
             </div>
-            <FileUpload 
-                isOpen={isUploadModalOpen}
-                onClose={() => setUploadModalOpen(false)}
-                onUpload={handleUpload}
-            />
+            {isAdmin && (
+                <FileUpload 
+                    isOpen={isUploadModalOpen}
+                    onClose={() => setUploadModalOpen(false)}
+                    onUpload={handleUpload}
+                />
+            )}
         </>
     );
 };

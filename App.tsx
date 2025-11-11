@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import { ProjectProvider, useProjectContext } from './hooks/useProjectContext';
+import { AuthProvider, useAuth } from './hooks/useAuth';
 import Dashboard from './components/dashboard/Dashboard';
 import ProjectList from './components/projects/ProjectList';
 import TaskList from './components/tasks/TaskList';
@@ -13,16 +14,20 @@ import CommunicationView from './components/communication/CommunicationView';
 import UserProfileView from './components/team/UserProfileView';
 import TeamForm from './components/team/TeamForm';
 import { User } from './types';
+import LoginPage from './components/auth/LoginPage';
 
 const AppContent: React.FC = () => {
+  const { session, profile, loading: authLoading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState('Dashboard');
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [taskFilterProjectId, setTaskFilterProjectId] = useState<string | null>(null);
-  const { loading, addUser, updateUser, deleteUser } = useProjectContext();
+  const { loading: dataLoading, addUser, updateUser, deleteUser } = useProjectContext();
 
   const [isTeamFormOpen, setIsTeamFormOpen] = useState(false);
   const [editingUserForForm, setEditingUserForForm] = useState<User | null>(null);
+
+  const isAdmin = profile?.role === 'admin';
 
   const handleOpenTeamForm = (user: User | null) => {
     setEditingUserForForm(user);
@@ -57,21 +62,6 @@ const AppContent: React.FC = () => {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-100">
-        <div className="text-center">
-          <svg className="mx-auto h-12 w-12 animate-spin text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <h2 className="mt-4 text-xl font-semibold text-slate-700">Carregando ProjectHub...</h2>
-          <p className="mt-2 text-slate-500">Conectando ao banco de dados. Aguarde um momento.</p>
-        </div>
-      </div>
-    );
-  }
-
   const handleViewProfile = (user: User) => {
     setViewingUser(user);
     setActiveView('Perfil do Usuário');
@@ -92,23 +82,47 @@ const AppContent: React.FC = () => {
     setActiveView(view);
   }
 
+  const renderLoader = (message: string) => (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-100">
+        <div className="text-center">
+          <svg className="mx-auto h-12 w-12 animate-spin text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <h2 className="mt-4 text-xl font-semibold text-slate-700">{message}</h2>
+        </div>
+      </div>
+  );
+
+  if (authLoading) {
+    return renderLoader("Verificando autenticação...");
+  }
+
+  if (!session) {
+    return <LoginPage />;
+  }
+  
+  if (dataLoading) {
+    return renderLoader("Carregando dados do projeto...");
+  }
+
 
   const renderActiveView = () => {
     switch (activeView) {
       case 'Projetos':
-        return <ProjectList onNavigateToTasks={handleNavigateToTasks} />;
+        return <ProjectList onNavigateToTasks={handleNavigateToTasks} isAdmin={isAdmin} />;
       case 'Tarefas':
-        return <TaskList initialProjectFilter={taskFilterProjectId} />;
+        return <TaskList initialProjectFilter={taskFilterProjectId} isAdmin={isAdmin} />;
       case 'Cronograma':
         return <ScheduleView />;
       case 'Equipe':
-        return <TeamView onViewProfile={handleViewProfile} onAddUser={() => handleOpenTeamForm(null)} onEditUser={handleOpenTeamForm} onDeleteUser={handleDeleteUser} />;
+        return <TeamView onViewProfile={handleViewProfile} onAddUser={() => handleOpenTeamForm(null)} onEditUser={handleOpenTeamForm} onDeleteUser={handleDeleteUser} isAdmin={isAdmin} />;
       case 'Perfil do Usuário':
-        return viewingUser ? <UserProfileView user={viewingUser} onEdit={handleOpenTeamForm} onDelete={handleDeleteUserAndNav} /> : <TeamView onViewProfile={handleViewProfile} onAddUser={() => handleOpenTeamForm(null)} onEditUser={handleOpenTeamForm} onDeleteUser={handleDeleteUser} />;
+        return viewingUser ? <UserProfileView user={viewingUser} onEdit={handleOpenTeamForm} onDelete={handleDeleteUserAndNav} isAdmin={isAdmin} /> : <TeamView onViewProfile={handleViewProfile} onAddUser={() => handleOpenTeamForm(null)} onEditUser={handleOpenTeamForm} onDeleteUser={handleDeleteUser} isAdmin={isAdmin} />;
       case 'Relatórios':
         return <ReportsView />;
        case 'Arquivos':
-        return <FilesView />;
+        return <FilesView isAdmin={isAdmin} />;
        case 'Chat':
         return <CommunicationView />;
       case 'Dashboard':
@@ -131,12 +145,15 @@ const AppContent: React.FC = () => {
           {renderActiveView()}
         </main>
       </div>
-       <TeamForm
-        isOpen={isTeamFormOpen}
-        onClose={handleCloseTeamForm}
-        onSave={handleSaveUser}
-        userToEdit={editingUserForForm}
-      />
+       {isAdmin && (
+        <TeamForm
+            isOpen={isTeamFormOpen}
+            onClose={handleCloseTeamForm}
+            onSave={handleSaveUser}
+            userToEdit={editingUserForForm}
+            currentUserProfile={profile}
+        />
+       )}
     </div>
   );
 };
@@ -144,9 +161,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <ProjectProvider>
-      <AppContent />
-    </ProjectProvider>
+    <AuthProvider>
+      <ProjectProvider>
+        <AppContent />
+      </ProjectProvider>
+    </AuthProvider>
   );
 };
 

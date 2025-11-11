@@ -1,6 +1,5 @@
 import React from 'react';
 import { Task, TaskPriority, TaskStatus } from '../../types';
-// Fix: Corrected 'UserIcon' to 'UsersIcon' and removed unused icon imports.
 import { XIcon, EditIcon, UsersIcon } from '../ui/Icons';
 import { EnhancedTask } from './TaskList';
 
@@ -9,6 +8,7 @@ interface TaskDetailProps {
   onClose: () => void;
   onEdit: (task: EnhancedTask) => void;
   task: EnhancedTask | null;
+  isAdmin: boolean;
 }
 
 const getPriorityChip = (priority: TaskPriority) => {
@@ -40,7 +40,7 @@ const DetailRow: React.FC<{ label: string; value: React.ReactNode; }> = ({ label
 );
 
 
-const TaskDetail: React.FC<TaskDetailProps> = ({ isOpen, onClose, onEdit, task }) => {
+const TaskDetail: React.FC<TaskDetailProps> = ({ isOpen, onClose, onEdit, task, isAdmin }) => {
   if (!isOpen || !task) return null;
 
   return (
@@ -92,10 +92,12 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ isOpen, onClose, onEdit, task }
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Fechar
             </button>
-            <button type="button" onClick={() => onEdit(task)} className="ml-3 inline-flex items-center gap-2 justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                <EditIcon className="h-4 w-4" />
-                Editar Tarefa
-            </button>
+            {isAdmin && (
+                <button type="button" onClick={() => onEdit(task)} className="ml-3 inline-flex items-center gap-2 justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <EditIcon className="h-4 w-4" />
+                    Editar Tarefa
+                </button>
+            )}
         </div>
       </div>
     </div>

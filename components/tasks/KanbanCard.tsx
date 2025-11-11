@@ -10,6 +10,7 @@ interface KanbanCardProps {
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  isAdmin: boolean;
 }
 
 const getPriorityChip = (priority: TaskPriority) => {
@@ -22,7 +23,7 @@ const getPriorityChip = (priority: TaskPriority) => {
     }
 }
 
-const KanbanCard: React.FC<KanbanCardProps> = ({ task, onView, onEdit, onDelete }) => {
+const KanbanCard: React.FC<KanbanCardProps> = ({ task, onView, onEdit, onDelete, isAdmin }) => {
     const [isDragging, setIsDragging] = useState(false);
     const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'Concluído';
 
@@ -62,8 +63,12 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, onView, onEdit, onDelete 
             
             <div className="flex items-center gap-1">
                 <button onClick={onView} title="Visualizar" className="p-1 rounded-full text-slate-500 hover:bg-slate-200 hover:text-indigo-600"><EyeIcon className="h-4 w-4"/></button>
-                <button onClick={onEdit} title="Editar" className="p-1 rounded-full text-slate-500 hover:bg-slate-200 hover:text-indigo-600"><EditIcon className="h-4 w-4"/></button>
-                <button onClick={onDelete} title="Excluir" className="p-1 rounded-full text-slate-500 hover:bg-slate-200 hover:text-red-600"><TrashIcon className="h-4 w-4"/></button>
+                {isAdmin && (
+                    <>
+                        <button onClick={onEdit} title="Editar" className="p-1 rounded-full text-slate-500 hover:bg-slate-200 hover:text-indigo-600"><EditIcon className="h-4 w-4"/></button>
+                        <button onClick={onDelete} title="Excluir" className="p-1 rounded-full text-slate-500 hover:bg-slate-200 hover:text-red-600"><TrashIcon className="h-4 w-4"/></button>
+                    </>
+                )}
             </div>
         </div>
     </Card>
