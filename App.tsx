@@ -32,10 +32,10 @@ const AppContent: React.FC = () => {
   
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors">
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400 mx-auto mb-4"></div>
-          <p className="text-slate-700 dark:text-slate-300">Carregando...</p>
+          <p className="text-slate-700 dark:text-slate-200">Carregando...</p>
         </div>
       </div>
     );
@@ -121,7 +121,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
   };
 
   return (
-    <div className="flex h-screen bg-slate-100 dark:bg-slate-950 transition-colors">
+    <div className="flex h-screen bg-slate-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors">
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
@@ -136,8 +136,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
           onGoToProfile={handleGoToProfile}
           onGoToSettings={handleGoToSettings}
         />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-slate-950 transition-colors">
-          <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-400">Carregando...</div>}>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-transparent transition-colors">
+          <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-300">Carregando...</div>}>
             {renderView()}
           </Suspense>
         </main>

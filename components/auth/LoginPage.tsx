@@ -38,32 +38,32 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950 p-4 transition-colors">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 transition-colors">
       <div className="w-full max-w-md">
-        <h1 className="text-center text-3xl font-bold text-slate-800 dark:text-white mb-2">ProjectHub</h1>
-        <p className="text-center text-slate-600 dark:text-slate-400 mb-6">Gerenciamento Profissional de Projetos</p>
+        <h1 className="text-center text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">ProjectHub</h1>
+        <p className="text-center text-slate-600 dark:text-slate-300 mb-6">Gerenciamento Profissional de Projetos</p>
         <Card>
-          <h2 className="text-xl font-bold text-center text-slate-800 dark:text-white mb-6">
+          <h2 className="text-xl font-bold text-center text-slate-900 dark:text-slate-50 mb-6">
             {isLogin ? 'Acessar sua conta' : 'Criar uma nova conta'}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <>
                 <div>
-                  <label htmlFor="fullName" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Nome Completo</label>
+                  <label htmlFor="fullName" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Nome Completo</label>
                   <input
                     type="text" id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)}
-                    className="mt-1 block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-400 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all"
                     required={!isLogin}
                   />
                 </div>
                 <div>
-                  <label htmlFor="roleSelect" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Perfil</label>
+                  <label htmlFor="roleSelect" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Perfil</label>
                   <select
                     id="roleSelect"
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value as GlobalRole)}
-                    className="mt-1 block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-50 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all"
                     required={!isLogin}
                   >
                     {Object.values(GlobalRole).map(role => (
@@ -74,27 +74,27 @@ const LoginPage: React.FC = () => {
               </>
             )}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Email</label>
               <input
                 type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="mt-1 block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-400 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all"
                 required
               />
             </div>
             <div>
-              <label htmlFor="password"className="block text-sm font-medium text-slate-700 dark:text-slate-300">Senha</label>
+              <label htmlFor="password"className="block text-sm font-medium text-slate-700 dark:text-slate-200">Senha</label>
               <input
                 type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="mt-1 block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-400 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all"
                 required
               />
             </div>
-            {error && <p className="text-sm text-red-600 dark:text-red-400 text-center">{error}</p>}
+            {error && <p className="text-sm text-red-600 dark:text-red-400 text-center font-medium">{error}</p>}
             <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:ring-offset-slate-800 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Cadastrar')}
               </button>
@@ -106,7 +106,7 @@ const LoginPage: React.FC = () => {
                 setIsLogin(!isLogin);
                 setError(null);
               }}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
             >
               {isLogin ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre'}
             </button>

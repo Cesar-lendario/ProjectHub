@@ -30,18 +30,18 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick, onGoToProfile, onGo
   }, []);
 
   return (
-    <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 sm:px-6 lg:px-8 transition-colors">
+    <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 transition-colors shadow-sm dark:shadow-black/20">
       <div className="flex items-center">
         <button
           onClick={onMenuClick}
-          className="mr-4 text-slate-600 dark:text-slate-300 lg:hidden"
+          className="mr-4 text-slate-600 dark:text-slate-200 lg:hidden hover:text-slate-900 dark:hover:text-white transition-colors"
           aria-label="Abrir menu"
         >
           <MenuIcon className="h-6 w-6" />
         </button>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50">{title}</h1>
         {profile?.role === 'admin' && (
-          <span className="ml-3 px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200">
+          <span className="ml-3 px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300 dark:ring-1 dark:ring-red-500/30">
             👑 ADMIN
           </span>
         )}
@@ -51,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick, onGoToProfile, onGo
         {/* Botão de toggle tema */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="p-2 rounded-lg text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white transition-all"
           title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
           aria-label="Toggle theme"
         >
@@ -69,15 +69,15 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick, onGoToProfile, onGo
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center space-x-2 rounded-full p-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="flex items-center space-x-2 rounded-full p-1 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
             >
               <img
-                className="h-9 w-9 rounded-full object-cover"
+                className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200 dark:ring-slate-600"
                 src={profile.avatar}
                 alt={profile.name}
               />
-              <span className="hidden text-sm font-medium text-slate-700 dark:text-slate-200 sm:block">{profile.name}</span>
-              <ChevronDownIcon className={`hidden h-5 w-5 text-slate-500 dark:text-slate-400 sm:block transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              <span className="hidden text-sm font-medium text-slate-700 dark:text-slate-100 sm:block">{profile.name}</span>
+              <ChevronDownIcon className={`hidden h-5 w-5 text-slate-500 dark:text-slate-300 sm:block transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             
             {isDropdownOpen && (
