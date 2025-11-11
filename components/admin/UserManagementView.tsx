@@ -73,18 +73,18 @@ const UserManagementView: React.FC = () => {
         <>
             <Card>
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-slate-800">Gerenciamento de Usuários</h1>
-                    <p className="mt-1 text-slate-600">Gerencie os perfis e permissões de todos os usuários do sistema.</p>
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Gerenciamento de Usuários</h1>
+                    <p className="mt-1 text-slate-600 dark:text-slate-300">Gerencie os perfis e permissões de todos os usuários do sistema.</p>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-200">
-                        <thead className="bg-slate-50">
+                        <thead className="bg-slate-50 dark:bg-slate-700/30">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Usuário</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Função</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Perfil</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Ações</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Usuário</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Função</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Perfil</th>
+                                <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ações</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
@@ -94,13 +94,13 @@ const UserManagementView: React.FC = () => {
                                         <div className="flex items-center">
                                             <img className="h-10 w-10 rounded-full" src={user.avatar} alt={user.name} />
                                             <div className="ml-4">
-                                                <div className="text-sm font-medium text-slate-900">{user.name}</div>
+                                                <div className="text-sm font-medium text-slate-900 dark:text-slate-50">{user.name}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.email}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.function}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800 font-semibold">{user.role}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{user.email}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{user.function}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800 dark:text-slate-50 font-semibold">{user.role}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                         <button 
                                             onClick={() => handleEditUser(user)}
@@ -111,7 +111,7 @@ const UserManagementView: React.FC = () => {
                                         </button>
                                         <button
                                             onClick={() => handleDeleteUser(user)}
-                                            className="text-slate-500 hover:text-red-700 p-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            className="text-slate-500 dark:text-slate-400 hover:text-red-700 p-2 disabled:opacity-30 disabled:cursor-not-allowed"
                                             title="Excluir"
                                             disabled={profile?.id === user.id || user.role === GlobalRole.Admin}
                                         >

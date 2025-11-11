@@ -21,7 +21,7 @@ const ProjectIcon: React.FC<{ projectId: string }> = ({ projectId }) => {
 
   return (
     <div className={`w-7 h-7 rounded-full flex items-center justify-center bg-slate-200`} title="Ícone do Projeto">
-      <IconComponent className="h-4 w-4 text-slate-500" />
+      <IconComponent className="h-4 w-4 text-slate-500 dark:text-slate-400" />
     </div>
   );
 };

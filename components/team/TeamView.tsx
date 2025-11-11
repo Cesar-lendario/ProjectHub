@@ -21,8 +21,8 @@ const TeamView: React.FC<TeamViewProps> = ({ onViewProfile, onEditUser, onDelete
             <Card>
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h2 className="text-2xl font-bold text-slate-800">Visão Geral da Equipe</h2>
-                        <p className="mt-1 text-slate-600">Acompanhe a carga de trabalho e o desempenho de cada membro da equipe.</p>
+                        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Visão Geral da Equipe</h2>
+                        <p className="mt-1 text-slate-600 dark:text-slate-300">Acompanhe a carga de trabalho e o desempenho de cada membro da equipe.</p>
                     </div>
                     {isAdmin && (
                         <button

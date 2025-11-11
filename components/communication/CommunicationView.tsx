@@ -32,7 +32,7 @@ const CommunicationView: React.FC = () => {
     if (!profile) {
         return (
             <Card className="h-[calc(100vh-10rem)] flex items-center justify-center">
-                <p className="text-slate-500">Carregando perfil do usuário...</p>
+                <p className="text-slate-500 dark:text-slate-400">Carregando perfil do usuário...</p>
             </Card>
         );
     }
@@ -41,13 +41,13 @@ const CommunicationView: React.FC = () => {
         <Card className="p-0 h-[calc(100vh-10rem)] flex flex-col">
             <div className="flex justify-between items-center mb-0 p-4 border-b">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-800">Comunicação da Equipe</h2>
-                    <p className="mt-1 text-slate-600">Converse em canais gerais ou específicos de projetos.</p>
+                    <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Comunicação da Equipe</h2>
+                    <p className="mt-1 text-slate-600 dark:text-slate-300">Converse em canais gerais ou específicos de projetos.</p>
                 </div>
             </div>
             <div className="flex flex-1 overflow-hidden">
-                <div className="w-1/4 border-r border-slate-200 bg-slate-50 overflow-y-auto p-4">
-                    <h3 className="font-bold text-slate-700 mb-3">Canais</h3>
+                <div className="w-1/4 border-r border-slate-200 bg-slate-50 dark:bg-slate-700/30 overflow-y-auto p-4">
+                    <h3 className="font-bold text-slate-700 dark:text-slate-200 mb-3">Canais</h3>
                     <ul className="space-y-2">
                         {channels.map(channel => (
                             <li key={channel.id}>
@@ -72,7 +72,7 @@ const CommunicationView: React.FC = () => {
                                 <ChatMessage key={msg.id} message={msg} currentUser={profile} />
                             ))
                         ) : (
-                            <div className="text-center text-slate-500 pt-10">
+                            <div className="text-center text-slate-500 dark:text-slate-400 pt-10">
                                 <p>Nenhuma mensagem neste canal ainda.</p>
                                 <p>Seja o primeiro a enviar uma mensagem!</p>
                             </div>

@@ -30,10 +30,10 @@ const UpcomingTaskItem: React.FC<UpcomingTaskItemProps> = ({ task }) => {
     }
 
     return (
-        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/30 rounded-lg hover:bg-slate-100 dark:bg-slate-700/50 transition-colors">
             <div>
-                <p className="font-semibold text-slate-800 text-sm">{task.name}</p>
-                <p className="text-xs text-slate-500">{task.projectName}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-50 text-sm">{task.name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{task.projectName}</p>
             </div>
             <div className="flex items-center">
                 {task.assignee && (
@@ -59,7 +59,7 @@ const UpcomingTasks: React.FC = () => {
   return (
     <Card>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-slate-800">Próximas Tarefas</h3>
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-50">Próximas Tarefas</h3>
         <button className="text-sm font-medium text-indigo-600 hover:text-indigo-800">
           Ver todas
         </button>
@@ -69,7 +69,7 @@ const UpcomingTasks: React.FC = () => {
             <UpcomingTaskItem key={task.id} task={task} />
         ))}
       </div>
-      {upcomingTasks.length === 0 && <p className="text-center py-8 text-slate-500">Nenhuma tarefa pendente ou em andamento.</p>}
+      {upcomingTasks.length === 0 && <p className="text-center py-8 text-slate-500 dark:text-slate-400">Nenhuma tarefa pendente ou em andamento.</p>}
     </Card>
   );
 };

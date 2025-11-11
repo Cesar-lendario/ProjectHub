@@ -17,17 +17,17 @@ const NotificationLogTable: React.FC = () => {
 
   return (
     <Card>
-      <h3 className="text-lg font-semibold text-slate-800 mb-4 px-1">Histórico de Cobranças</h3>
+      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-50 mb-4 px-1">Histórico de Cobranças</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full">
-          <thead className="bg-slate-50">
+          <thead className="bg-slate-50 dark:bg-slate-700/30">
             <tr>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Empresa</th>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Contato</th>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tipo Projeto</th>
-              <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Tarefas Ativas</th>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data E-mail</th>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data WhatsApp</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Empresa</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contato</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tipo Projeto</th>
+              <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tarefas Ativas</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Data E-mail</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Data WhatsApp</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
@@ -39,20 +39,20 @@ const NotificationLogTable: React.FC = () => {
               ).length;
 
               return (
-                <tr key={project.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">{project.name || 'N/A'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{project.clientName || 'N/A'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{project.projectType}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 text-center font-semibold">{activeTasksCount}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{formatDate(project.lastEmailNotification)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{formatDate(project.lastWhatsappNotification)}</td>
+                <tr key={project.id} className="hover:bg-slate-50 dark:bg-slate-700/30">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800 dark:text-slate-50">{project.name || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{project.clientName || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{project.projectType}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300 text-center font-semibold">{activeTasksCount}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{formatDate(project.lastEmailNotification)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{formatDate(project.lastWhatsappNotification)}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
         {projects.length === 0 && (
-          <p className="text-center py-8 text-slate-500">Nenhum projeto para exibir.</p>
+          <p className="text-center py-8 text-slate-500 dark:text-slate-400">Nenhum projeto para exibir.</p>
         )}
       </div>
     </Card>

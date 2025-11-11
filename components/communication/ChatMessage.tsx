@@ -30,7 +30,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, currentUser }) => {
                     </p>
                     <p className="text-sm">{message.content}</p>
                 </div>
-                <span className="text-xs text-slate-500 mt-1">
+                <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     {formatTime(message.timestamp)}
                 </span>
             </div>

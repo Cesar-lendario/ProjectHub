@@ -22,8 +22,8 @@ const StatItem: React.FC<{ icon: React.ElementType, value: number, label: string
             <Icon className="h-5 w-5 text-white" />
         </div>
         <div>
-            <p className="font-bold text-slate-900 text-xl">{value}</p>
-            <p className="text-sm text-slate-500">{label}</p>
+            <p className="font-bold text-slate-900 dark:text-slate-50 text-xl">{value}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
         </div>
     </div>
 );
@@ -38,14 +38,14 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ user, stats, onEdit, on
               <button
                   onClick={onEdit}
                   title="Editar Membro"
-                  className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-slate-200 hover:text-indigo-600"
+                  className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-700/50 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:bg-slate-200 hover:text-indigo-600"
               >
                   <EditIcon className="h-4 w-4" />
               </button>
               <button
                   onClick={onDelete}
                   title="Excluir Membro"
-                  className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-red-100 hover:text-red-600"
+                  className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-700/50 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:bg-red-100 hover:text-red-600"
               >
                   <TrashIcon className="h-4 w-4" />
               </button>
@@ -58,7 +58,7 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ user, stats, onEdit, on
           alt={user.name}
           className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-md mt-8"
         />
-        <h3 className="mt-4 font-bold text-xl text-slate-800">{user.name}</h3>
+        <h3 className="mt-4 font-bold text-xl text-slate-800 dark:text-slate-50">{user.name}</h3>
         <span className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
           {user.role}
         </span>

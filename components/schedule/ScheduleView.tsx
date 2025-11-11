@@ -124,20 +124,20 @@ const ScheduleView: React.FC = () => {
   return (
     <Card>
         <div className="mb-6">
-            <h2 className="text-2xl font-bold text-slate-800">Cronograma do Projeto (Gantt)</h2>
-            <p className="mt-1 text-slate-600">Visualize as tarefas e seus prazos em uma linha do tempo semanal.</p>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Cronograma do Projeto (Gantt)</h2>
+            <p className="mt-1 text-slate-600 dark:text-slate-300">Visualize as tarefas e seus prazos em uma linha do tempo semanal.</p>
         </div>
         <div className="overflow-x-auto relative border border-slate-200 rounded-lg">
             <div style={{ minWidth: `${weeklyHeaders.length * WEEK_CELL_WIDTH}px` }}>
                 {/* Timeline Header */}
-                <div className="flex bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
+                <div className="flex bg-slate-50 dark:bg-slate-700/30 sticky top-0 z-10 border-b border-slate-200">
                     {weeklyHeaders.map((week, index) => (
                         <div 
                             key={index} 
                             style={{ width: `${WEEK_CELL_WIDTH}px` }} 
                             className="flex-shrink-0 text-center border-r border-slate-200 py-3"
                         >
-                           <div className="text-sm font-medium text-slate-700">{week.label}</div>
+                           <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{week.label}</div>
                         </div>
                     ))}
                 </div>
@@ -184,7 +184,7 @@ const ScheduleView: React.FC = () => {
                  </div>
             </div>
         </div>
-         {projects.flatMap(p => p.tasks).length === 0 && <p className="text-center py-8 text-slate-500">Nenhuma tarefa para exibir no cronograma. Adicione tarefas aos seus projetos.</p>}
+         {projects.flatMap(p => p.tasks).length === 0 && <p className="text-center py-8 text-slate-500 dark:text-slate-400">Nenhuma tarefa para exibir no cronograma. Adicione tarefas aos seus projetos.</p>}
     </Card>
   );
 };

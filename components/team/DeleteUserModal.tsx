@@ -106,13 +106,13 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
               <AlertCircleIcon className="h-6 w-6 text-red-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Excluir Membro da Equipe</h2>
-              <p className="text-sm text-slate-600 mt-1">Esta ação não pode ser desfeita</p>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">Excluir Membro da Equipe</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">Esta ação não pode ser desfeita</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full text-slate-500 hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-700/50 transition-colors"
             disabled={isDeleting}
           >
             <XIcon className="h-6 w-6" />
@@ -122,16 +122,16 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
         {/* Body - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Informações do Usuário */}
-          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200">
             <img
               src={user.avatar}
               alt={user.name}
               className="w-16 h-16 rounded-full object-cover ring-2 ring-white shadow-md"
             />
             <div className="flex-1">
-              <h3 className="font-semibold text-lg text-slate-800">{user.name}</h3>
-              <p className="text-sm text-slate-600">{user.email}</p>
-              <p className="text-sm text-slate-500 mt-1">{user.function || 'Sem função definida'}</p>
+              <h3 className="font-semibold text-lg text-slate-800 dark:text-slate-50">{user.name}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">{user.email}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{user.function || 'Sem função definida'}</p>
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 mt-2">
                 {user.role}
               </span>
@@ -193,12 +193,12 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
               {/* Detalhes das Tarefas */}
               {impactAnalysis.taskCount > 0 && (
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-slate-800 text-sm">Tarefas que serão afetadas:</h4>
-                  <div className="max-h-40 overflow-y-auto space-y-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <h4 className="font-semibold text-slate-800 dark:text-slate-50 text-sm">Tarefas que serão afetadas:</h4>
+                  <div className="max-h-40 overflow-y-auto space-y-2 p-3 bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200">
                     {impactAnalysis.assignedTasks.map(({ task, project }) => (
                       <div key={task.id} className="text-sm">
-                        <span className="font-medium text-slate-700">{task.name}</span>
-                        <span className="text-slate-500"> — {project.name}</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">{task.name}</span>
+                        <span className="text-slate-500 dark:text-slate-400"> — {project.name}</span>
                       </div>
                     ))}
                   </div>
@@ -210,7 +210,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
           {/* Reatribuição de Tarefas */}
           {impactAnalysis.taskCount > 0 && availableUsers.length > 0 && (
             <div className="space-y-3">
-              <label htmlFor="reassign-user" className="block font-semibold text-slate-800">
+              <label htmlFor="reassign-user" className="block font-semibold text-slate-800 dark:text-slate-50">
                 Reatribuir tarefas para (opcional):
               </label>
               <select
@@ -227,7 +227,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Se não selecionar ninguém, as tarefas ficarão sem responsável e poderão ser reatribuídas depois.
               </p>
             </div>
@@ -235,7 +235,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
 
           {/* Confirmação com Nome */}
           <div className="space-y-3">
-            <label htmlFor="confirm-name" className="block font-semibold text-slate-800">
+            <label htmlFor="confirm-name" className="block font-semibold text-slate-800 dark:text-slate-50">
               Digite <span className="text-red-600">{user.name}</span> para confirmar:
             </label>
             <input
@@ -260,11 +260,11 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end items-center gap-3 p-6 border-t border-slate-200 bg-slate-50">
+        <div className="flex justify-end items-center gap-3 p-6 border-t border-slate-200 bg-slate-50 dark:bg-slate-700/30">
           <button
             onClick={onClose}
             disabled={isDeleting}
-            className="px-5 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-700/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Cancelar
           </button>

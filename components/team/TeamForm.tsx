@@ -122,15 +122,15 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
     <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center" aria-modal="true" role="dialog">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md m-4">
         <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-xl font-bold text-slate-800">{userToEdit ? 'Editar Membro' : 'Adicionar Novo Membro'}</h2>
-          <button onClick={onClose} className="p-1 rounded-full text-slate-500 hover:bg-slate-100">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">{userToEdit ? 'Editar Membro' : 'Adicionar Novo Membro'}</h2>
+          <button onClick={onClose} className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-700/50">
             <XIcon className="h-6 w-6" />
           </button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="p-6 space-y-4">
             <div>
-              <label htmlFor="user-name" className="block text-sm font-medium text-slate-700">Nome Completo</label>
+              <label htmlFor="user-name" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Nome Completo</label>
               <input
                 type="text" id="user-name" value={name} onChange={(e) => setName(e.target.value)}
                 className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -139,29 +139,29 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
             </div>
             {!isEditing && (
               <div>
-                <label htmlFor="user-email" className="block text-sm font-medium text-slate-700">Email</label>
+                <label htmlFor="user-email" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Email</label>
                 <input
                   type="email"
                   id="user-email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 sm:text-sm bg-white text-slate-900"
+                  className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 sm:text-sm bg-white text-slate-900 dark:text-slate-50"
                   required
                 />
-                <p className="text-xs text-slate-500 mt-1">O e-mail será utilizado para autenticação futura.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">O e-mail será utilizado para autenticação futura.</p>
               </div>
             )}
             {isEditing && (
               <div>
-                <label htmlFor="user-email-display" className="block text-sm font-medium text-slate-700">Email</label>
-                <div className="mt-1 block w-full border border-slate-200 rounded-md shadow-sm py-2 px-3 sm:text-sm bg-slate-50 text-slate-700">
+                <label htmlFor="user-email-display" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Email</label>
+                <div className="mt-1 block w-full border border-slate-200 rounded-md shadow-sm py-2 px-3 sm:text-sm bg-slate-50 dark:bg-slate-700/30 text-slate-700 dark:text-slate-200">
                   {email}
                 </div>
-                <p className="text-xs text-slate-500 mt-1">O e-mail está vinculado à conta de login e não pode ser alterado.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">O e-mail está vinculado à conta de login e não pode ser alterado.</p>
               </div>
             )}
             <div>
-              <label htmlFor="user-function" className="block text-sm font-medium text-slate-700">Função</label>
+              <label htmlFor="user-function" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Função</label>
               <input
                 type="text" id="user-function" value={userFunction} onChange={(e) => setUserFunction(e.target.value)}
                 className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -170,7 +170,7 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
             </div>
              {isAdmin && (
                 <div>
-                  <label htmlFor="user-role" className="block text-sm font-medium text-slate-700">Perfil</label>
+                  <label htmlFor="user-role" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Perfil</label>
                   <select
                     id="user-role"
                     value={role}
@@ -181,23 +181,23 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
                     {Object.values(GlobalRole).map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                   {userToEdit?.id === currentUserProfile?.id && (
-                    <p className="text-xs text-slate-500 mt-1">Você não pode alterar seu próprio perfil.</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Você não pode alterar seu próprio perfil.</p>
                   )}
                 </div>
               )}
             <div>
-                <label className="block text-sm font-medium text-slate-700">Avatar</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">Avatar</label>
                 <div className="mt-2 flex items-center gap-4">
                     {avatarPreview && <img src={avatarPreview} alt="Preview" className="w-20 h-20 rounded-full object-cover" />}
-                    <label htmlFor="avatar-upload" className="relative cursor-pointer bg-white py-2 px-3 border border-slate-300 rounded-md shadow-sm text-sm leading-4 font-medium text-slate-700 hover:bg-slate-50 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                    <label htmlFor="avatar-upload" className="relative cursor-pointer bg-white py-2 px-3 border border-slate-300 rounded-md shadow-sm text-sm leading-4 font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:bg-slate-700/30 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
                         <span>Carregar imagem</span>
                         <input id="avatar-upload" name="avatar-upload" type="file" className="sr-only" accept="image/png, image/jpeg, image/gif" onChange={handleAvatarChange} />
                     </label>
                 </div>
             </div>
           </div>
-          <div className="flex justify-end items-center p-4 border-t bg-slate-50 rounded-b-lg">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50">
+          <div className="flex justify-end items-center p-4 border-t bg-slate-50 dark:bg-slate-700/30 rounded-b-lg">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 dark:bg-slate-700/30">
               Cancelar
             </button>
             <button type="submit" className="ml-3 inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md shadow-sm hover:bg-indigo-700 disabled:bg-indigo-400" disabled={isUploading}>

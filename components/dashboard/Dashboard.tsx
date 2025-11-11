@@ -24,8 +24,8 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-        <p className="mt-1 text-slate-600">Visão geral do progresso dos seus projetos.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Dashboard</h1>
+        <p className="mt-1 text-slate-600 dark:text-slate-300">Visão geral do progresso dos seus projetos.</p>
       </div>
 
       {/* KPI Cards */}

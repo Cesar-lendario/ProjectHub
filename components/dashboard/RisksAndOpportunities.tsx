@@ -37,14 +37,14 @@ const RisksAndOpportunities: React.FC = () => {
 
   const renderContent = () => {
     if (isLoading) {
-      return <p className="text-slate-500 italic">{KPI_MESSAGES.loading}</p>;
+      return <p className="text-slate-500 dark:text-slate-400 italic">{KPI_MESSAGES.loading}</p>;
     }
     if (error) {
       return <p className="text-red-500">{error}</p>;
     }
     return (
         <div 
-          className="prose prose-sm max-w-none text-slate-600"
+          className="prose prose-sm max-w-none text-slate-600 dark:text-slate-300"
           dangerouslySetInnerHTML={{ __html: analysis }}
         />
     );
@@ -54,7 +54,7 @@ const RisksAndOpportunities: React.FC = () => {
     <Card className="h-full">
       <div className="flex items-center mb-4">
         <LightbulbIcon className="h-6 w-6 text-yellow-500 mr-2" />
-        <h3 className="text-lg font-semibold text-slate-800">Insights com IA</h3>
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-50">Insights com IA</h3>
       </div>
       {renderContent()}
     </Card>

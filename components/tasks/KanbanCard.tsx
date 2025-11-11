@@ -48,7 +48,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, onEdit, onDelete, onView,
                             event.stopPropagation();
                             onEdit();
                         }}
-                        className="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-slate-200 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         aria-label="Editar tarefa"
                     >
                         <EditIcon className="h-4 w-4" />
@@ -58,7 +58,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, onEdit, onDelete, onView,
                             event.stopPropagation();
                             onDelete();
                         }}
-                        className="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
                         aria-label="Excluir tarefa"
                     >
                         <TrashIcon className="h-4 w-4" />
@@ -66,9 +66,9 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, onEdit, onDelete, onView,
                 </div>
             )}
             <div className="space-y-2">
-                <p className="font-semibold text-slate-800 text-base pr-6">{task.name}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-50 text-base pr-6">{task.name}</p>
                 <p className="text-sm text-indigo-600 font-medium">{task.projectName}</p>
-                <p className="text-xs text-slate-500 line-clamp-2">{task.description}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{task.description}</p>
             </div>
             <div className="flex items-center justify-between mt-4">
                 <div className="flex items-center">

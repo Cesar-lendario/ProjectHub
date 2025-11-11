@@ -68,19 +68,19 @@ const NotificationSenderModal: React.FC<NotificationSenderModalProps> = ({ isOpe
       <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center" aria-modal="true" role="dialog">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl m-4 max-h-[90vh] flex flex-col">
           <div className="flex justify-between items-center p-4 border-b">
-            <h2 className="text-xl font-bold text-slate-800">Enviar Lembrete de Tarefas</h2>
-            <button onClick={onClose} className="p-1 rounded-full text-slate-500 hover:bg-slate-100">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">Enviar Lembrete de Tarefas</h2>
+            <button onClick={onClose} className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-700/50">
               <XIcon className="h-6 w-6" />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div>
-              <label htmlFor="project-select" className="block text-sm font-medium text-slate-700 mb-1">Selecione um Projeto</label>
+              <label htmlFor="project-select" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Selecione um Projeto</label>
               <select
                 id="project-select"
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 bg-white"
+                className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 dark:text-slate-50 bg-white"
               >
                 {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
@@ -89,18 +89,18 @@ const NotificationSenderModal: React.FC<NotificationSenderModalProps> = ({ isOpe
             {selectedProject && (
               <>
                 <div className="p-4 bg-white rounded-lg border border-slate-200">
-                  <h3 className="font-semibold text-slate-800 text-base">Destinatário</h3>
-                  <p className="text-sm text-slate-600 mt-2">Contato: <span className="font-medium text-slate-900">{selectedProject.clientName || 'Não informado'}</span></p>
-                  <p className="text-sm text-slate-600 mt-1">Email: <span className="font-medium text-slate-900">{selectedProject.clientEmail || 'Não informado'}</span></p>
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-50 text-base">Destinatário</h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">Contato: <span className="font-medium text-slate-900 dark:text-slate-50">{selectedProject.clientName || 'Não informado'}</span></p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">Email: <span className="font-medium text-slate-900 dark:text-slate-50">{selectedProject.clientEmail || 'Não informado'}</span></p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-slate-800 text-base">Tarefas a serem enviadas ({pendingTasks.length})</h3>
-                  <div className="mt-2 text-sm text-slate-800 max-h-40 overflow-y-auto border border-slate-200 rounded-md p-3 bg-white space-y-2">
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-50 text-base">Tarefas a serem enviadas ({pendingTasks.length})</h3>
+                  <div className="mt-2 text-sm text-slate-800 dark:text-slate-50 max-h-40 overflow-y-auto border border-slate-200 rounded-md p-3 bg-white space-y-2">
                     {pendingTasks.length > 0 ? (
                       pendingTasks.map(task => <div key={task.id}>{task.name}</div>)
                     ) : (
-                      <div className="text-slate-500">Nenhuma tarefa pendente ou em andamento para este projeto.</div>
+                      <div className="text-slate-500 dark:text-slate-400">Nenhuma tarefa pendente ou em andamento para este projeto.</div>
                     )}
                   </div>
                 </div>
@@ -108,8 +108,8 @@ const NotificationSenderModal: React.FC<NotificationSenderModalProps> = ({ isOpe
             )}
           </div>
 
-          <div className="flex justify-end items-center p-4 border-t bg-slate-50 rounded-b-lg gap-3">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          <div className="flex justify-end items-center p-4 border-t bg-slate-50 dark:bg-slate-700/30 rounded-b-lg gap-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 dark:bg-slate-700/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
               Cancelar
             </button>
             <a

@@ -21,7 +21,7 @@ const FileIcon: React.FC<FileIconProps> = ({ mimeType }) => {
   if (mimeType.includes('document') || mimeType.includes('text') || mimeType.startsWith('application/msword')) {
     return <DocumentTextIcon className="h-6 w-6 text-blue-500 flex-shrink-0" />;
   }
-  return <GenericFileIcon className="h-6 w-6 text-slate-500 flex-shrink-0" />;
+  return <GenericFileIcon className="h-6 w-6 text-slate-500 dark:text-slate-400 flex-shrink-0" />;
 };
 
 export default FileIcon;

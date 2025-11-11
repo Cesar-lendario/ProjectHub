@@ -37,8 +37,8 @@ const StatItem: React.FC<{ icon: React.ElementType; value: number; label: string
             <Icon className={`h-5 w-5 ${iconClasses.split(' ')[1]}`} />
         </div>
         <div>
-            <span className="text-xl font-bold text-slate-800 mr-2">{value}</span>
-            <span className="text-slate-500">{label}</span>
+            <span className="text-xl font-bold text-slate-800 dark:text-slate-50 mr-2">{value}</span>
+            <span className="text-slate-500 dark:text-slate-400">{label}</span>
         </div>
     </div>
 );
@@ -188,7 +188,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
       <div className="flex items-center justify-between">
         <button
           onClick={() => window.history.back()}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-slate-50"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -199,7 +199,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
           <div className="flex gap-2">
             <button
               onClick={() => onEdit(user)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 dark:bg-slate-700/30"
             >
               <EditIcon className="h-4 w-4" />
               Editar
@@ -231,10 +231,10 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
                   <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full"></div>
                   <label 
                     htmlFor="avatar-upload" 
-                    className="relative z-10 cursor-pointer p-3 bg-white rounded-full shadow-lg hover:bg-slate-50 transition-colors"
+                    className="relative z-10 cursor-pointer p-3 bg-white rounded-full shadow-lg hover:bg-slate-50 dark:bg-slate-700/30 transition-colors"
                     title="Alterar foto"
                   >
-                    <svg className="h-6 w-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-6 w-6 text-slate-700 dark:text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
@@ -262,9 +262,9 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
             </div>
             <div className="mt-6 sm:flex-1 sm:min-w-0 sm:flex sm:items-center sm:justify-end sm:space-x-6 sm:pb-1">
               <div className="flex-1 min-w-0">
-                <h1 className="text-3xl font-bold text-slate-900 truncate">{user.name}</h1>
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 truncate">{user.name}</h1>
                 <div className="mt-2 flex flex-col sm:flex-row sm:flex-wrap sm:space-x-3">
-                  <div className="flex items-center text-sm text-slate-500 mt-2 sm:mt-0">
+                  <div className="flex items-center text-sm text-slate-500 dark:text-slate-400 mt-2 sm:mt-0">
                     <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
@@ -286,7 +286,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
         </div>
 
         {/* Estatísticas */}
-        <div className="border-t border-slate-200 bg-slate-50 grid grid-cols-1 divide-y divide-slate-200 sm:grid-cols-3 sm:divide-y-0 sm:divide-x">
+        <div className="border-t border-slate-200 bg-slate-50 dark:bg-slate-700/30 grid grid-cols-1 divide-y divide-slate-200 sm:grid-cols-3 sm:divide-y-0 sm:divide-x">
           <div className="px-6 py-5 text-center">
             <div className="flex items-center justify-center">
               <div className="flex-shrink-0">
@@ -294,8 +294,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
               </div>
             </div>
             <div className="mt-2">
-              <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
-              <p className="mt-1 text-sm font-medium text-slate-600">Tarefas Atribuídas</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">{stats.total}</p>
+              <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">Tarefas Atribuídas</p>
             </div>
           </div>
           <div className="px-6 py-5 text-center">
@@ -305,8 +305,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
               </div>
             </div>
             <div className="mt-2">
-              <p className="text-3xl font-bold text-slate-900">{stats.completed}</p>
-              <p className="mt-1 text-sm font-medium text-slate-600">Tarefas Concluídas</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">{stats.completed}</p>
+              <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">Tarefas Concluídas</p>
             </div>
           </div>
           <div className="px-6 py-5 text-center">
@@ -316,8 +316,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
               </div>
             </div>
             <div className="mt-2">
-              <p className="text-3xl font-bold text-slate-900">{stats.overdue}</p>
-              <p className="mt-1 text-sm font-medium text-slate-600">Tarefas Atrasadas</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">{stats.overdue}</p>
+              <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">Tarefas Atrasadas</p>
             </div>
           </div>
         </div>
@@ -328,7 +328,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
           {/* Card de Informações do Perfil */}
           <Card>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-800">Informações do Perfil</h2>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">Informações do Perfil</h2>
               <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
                 <svg className="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -340,17 +340,17 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
               {/* Informações Pessoais */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">Nome Completo</label>
-                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Nome Completo</label>
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200">
                     <svg className="h-5 w-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="text-slate-900 font-medium">{user.name}</span>
+                    <span className="text-slate-900 dark:text-slate-50 font-medium">{user.name}</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Email</label>
                   {isEditingEmail ? (
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-3 p-2.5 bg-white rounded-lg border-2 border-indigo-500 flex-1">
@@ -361,13 +361,13 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
                           type="email"
                           value={editedEmail}
                           onChange={(e) => handleEmailChange(e.target.value)}
-                          className="flex-1 text-slate-900 font-medium bg-transparent border-none outline-none focus:ring-0 p-0"
+                          className="flex-1 text-slate-900 dark:text-slate-50 font-medium bg-transparent border-none outline-none focus:ring-0 p-0"
                           autoFocus
                         />
                       </div>
                       <button
                         onClick={() => setIsEditingEmail(false)}
-                        className="p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+                        className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-slate-700/50 rounded-lg"
                         title="Cancelar edição"
                       >
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -377,15 +377,15 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 flex-1">
+                      <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200 flex-1">
                         <svg className="h-5 w-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
-                        <span className="text-slate-900 font-medium">{editedEmail}</span>
+                        <span className="text-slate-900 dark:text-slate-50 font-medium">{editedEmail}</span>
                       </div>
                       <button
                         onClick={() => setIsEditingEmail(true)}
-                        className="p-2.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                         title="Editar email"
                       >
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -401,7 +401,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
               {/* Perfil/Função */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-2">Perfil (Função)</label>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Perfil (Função)</label>
                   <div className="space-y-2">
                     {Object.values(GlobalRole).map(role => (
                       <label
@@ -482,8 +482,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
           <Card>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">Segurança da Conta</h2>
-                <p className="text-sm text-slate-600 mt-1">Altere sua senha para manter sua conta segura</p>
+                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">Segurança da Conta</h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">Altere sua senha para manter sua conta segura</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
                 <svg className="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -495,7 +495,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="new-password" className="block text-sm font-medium text-slate-700 mb-2">Nova Senha</label>
+                  <label htmlFor="new-password" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Nova Senha</label>
                   <input
                     type="password"
                     id="new-password"
@@ -506,7 +506,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
                   />
                 </div>
                 <div>
-                  <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-700 mb-2">Confirmar Nova Senha</label>
+                  <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Confirmar Nova Senha</label>
                   <input
                     type="password"
                     id="confirm-password"

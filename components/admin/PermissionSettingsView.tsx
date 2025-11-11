@@ -40,22 +40,22 @@ const PermissionSettingsView: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Configuração de Permissões</h1>
-        <p className="mt-1 text-slate-600">
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Configuração de Permissões</h1>
+        <p className="mt-1 text-slate-600 dark:text-slate-300">
           Defina quais módulos cada perfil pode visualizar ou editar. Marcando &ldquo;Editar&rdquo; o sistema atribui automaticamente a permissão de visualização.
         </p>
       </div>
 
       <Card>
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-slate-800">Permissões por Perfil</h2>
-          <p className="text-sm text-slate-600 mt-1">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-50">Permissões por Perfil</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
             Selecione qual perfil deseja configurar e ajuste as permissões de cada módulo.
           </p>
         </div>
 
         <div className="mb-4 flex items-center gap-3">
-          <label htmlFor="role-permissions-select" className="text-sm font-medium text-slate-700">
+          <label htmlFor="role-permissions-select" className="text-sm font-medium text-slate-700 dark:text-slate-200">
             Configurar permissões para:
           </label>
           <select
@@ -80,13 +80,13 @@ const PermissionSettingsView: React.FC = () => {
             Marcar tudo
           </button>
           <button
-            className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200"
+            className="px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 rounded-md hover:bg-slate-200"
             onClick={() => setBulkPermissions(selectedRole, 'visualizar')}
           >
             Apenas visualizar
           </button>
           <button
-            className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200"
+            className="px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 rounded-md hover:bg-slate-200"
             onClick={() => setBulkPermissions(selectedRole, 'nenhum')}
           >
             Limpar tudo
@@ -96,10 +96,10 @@ const PermissionSettingsView: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead>
-              <tr className="bg-slate-50">
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Módulo</th>
+              <tr className="bg-slate-50 dark:bg-slate-700/30">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-200">Módulo</th>
                 {ACTIONS.map(action => (
-                  <th key={action} className="px-4 py-3 text-center text-sm font-semibold text-slate-700 capitalize">
+                  <th key={action} className="px-4 py-3 text-center text-sm font-semibold text-slate-700 dark:text-slate-200 capitalize">
                     {action}
                   </th>
                 ))}
@@ -107,8 +107,8 @@ const PermissionSettingsView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {PERMISSION_MODULES.map(module => (
-                <tr key={module.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-sm text-slate-700 font-medium">{module.label}</td>
+                <tr key={module.id} className="hover:bg-slate-50 dark:bg-slate-700/30">
+                  <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200 font-medium">{module.label}</td>
                   {ACTIONS.map(action => (
                     <td key={action} className="px-4 py-3 text-center">
                       <input

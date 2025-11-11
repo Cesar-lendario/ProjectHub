@@ -42,9 +42,9 @@ const BudgetChart: React.FC = () => {
 
   return (
     <Card>
-        <h3 className="text-lg font-semibold text-slate-800 mb-4">Orçamento vs. Custo Real</h3>
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-50 mb-4">Orçamento vs. Custo Real</h3>
         {!recharts && !error && (
-          <div className="flex h-48 items-center justify-center text-sm text-slate-500">
+          <div className="flex h-48 items-center justify-center text-sm text-slate-500 dark:text-slate-400">
             Carregando gráfico...
           </div>
         )}

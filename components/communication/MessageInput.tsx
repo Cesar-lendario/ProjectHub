@@ -36,7 +36,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ activeChannel, currentUser 
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={`Mensagem em ${activeChannel.startsWith('#') ? activeChannel : 'projeto'}`}
-                className="flex-1 border border-slate-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 bg-white"
+                className="flex-1 border border-slate-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-50 bg-white"
             />
             <button
                 type="submit"

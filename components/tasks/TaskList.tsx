@@ -90,8 +90,8 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
     <div className="space-y-6">
        <div className="flex flex-wrap justify-between items-center gap-4">
         <div>
-            <h1 className="text-2xl font-bold text-slate-800">Quadro de Tarefas</h1>
-            <p className="mt-1 text-slate-600">Visualize e gerencie tarefas no formato Kanban.</p>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Quadro de Tarefas</h1>
+            <p className="mt-1 text-slate-600 dark:text-slate-300">Visualize e gerencie tarefas no formato Kanban.</p>
         </div>
         <div className="flex gap-2">
             <button onClick={() => setIsNotificationModalOpen(true)} className="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-100 rounded-lg hover:bg-indigo-200">
@@ -105,12 +105,12 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
       </div>
       
       <div className="flex items-center gap-4">
-        <label htmlFor="project-filter" className="text-sm font-medium text-slate-700">Filtrar por Projeto:</label>
+        <label htmlFor="project-filter" className="text-sm font-medium text-slate-700 dark:text-slate-200">Filtrar por Projeto:</label>
         <select
           id="project-filter"
           value={filterProjectId}
           onChange={handleFilterChange}
-          className="block w-full max-w-xs border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white text-slate-900"
+          className="block w-full max-w-xs border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white text-slate-900 dark:text-slate-50"
         >
           <option value="all">Todos os Projetos</option>
           {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}

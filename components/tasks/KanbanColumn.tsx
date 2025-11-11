@@ -45,7 +45,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onEditTask, 
                         canEdit={canEditTask(task)} />
                 ))}
                 {tasks.length === 0 && (
-                    <div className="text-center py-8 text-slate-500 text-sm">
+                    <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
                         Nenhuma tarefa aqui.
                     </div>
                 )}
