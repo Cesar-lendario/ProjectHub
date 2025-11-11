@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Task, TaskPriority, TaskStatus } from '../../types';
 import { PlusIcon } from '../ui/Icons';
@@ -26,6 +26,9 @@ const TaskList: React.FC = () => {
     const [filterProject, setFilterProject] = useState<string>('all');
     const [filterPriority, setFilterPriority] = useState<string>('all');
     const [sortBy, setSortBy] = useState<string>('default');
+    
+    // State to track overdue task notifications
+    const [notifiedOverdueTasks, setNotifiedOverdueTasks] = useState<Set<string>>(new Set());
 
     const allTasks = useMemo((): EnhancedTask[] => {
         return projects.flatMap(p => 
@@ -36,6 +39,23 @@ const TaskList: React.FC = () => {
             }))
         );
     }, [projects]);
+    
+    // Effect to check for overdue tasks
+    useEffect(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Compare dates only, ignoring time
+
+        allTasks.forEach(task => {
+            const dueDate = new Date(task.dueDate);
+            const isOverdue = dueDate < today && task.status !== TaskStatus.Done;
+
+            if (isOverdue && !notifiedOverdueTasks.has(task.id)) {
+                alert(`Atenção: A tarefa "${task.name}" do projeto "${task.projectName}" está atrasada!`);
+                setNotifiedOverdueTasks(prev => new Set(prev).add(task.id));
+            }
+        });
+    }, [allTasks, notifiedOverdueTasks]);
+
 
     const filteredAndSortedTasks = useMemo(() => {
         let filtered = allTasks;
@@ -127,6 +147,9 @@ const TaskList: React.FC = () => {
         const taskToMove = allTasks.find(t => t.id === taskId);
 
         if (taskToMove && taskToMove.status !== newStatus) {
+            if (newStatus === TaskStatus.Done) {
+                alert(`Tarefa "${taskToMove.name}" do projeto "${taskToMove.projectName}" foi concluída com sucesso!`);
+            }
             updateTask(projectId, { ...taskToMove, status: newStatus });
         }
     };

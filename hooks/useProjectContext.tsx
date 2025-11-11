@@ -110,7 +110,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const addProject = async (project: Omit<Project, 'id'>) => {
-    const { team, ...projectData } = project;
+    const { team, tasks, files, ...projectData } = project;
     const { data: newProject, error } = await supabase.from('projects').insert(projectData).select().single();
     if (error || !newProject) return handleError(error, 'addProject insert');
 
@@ -128,8 +128,14 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
     if (taskNames.length > 0) {
         const defaultTasks = taskNames.map(name => ({
-            name, status: TaskStatus.ToDo, priority: TaskPriority.Medium, dueDate: newProject.endDate, duration: 1, project_id: newProject.id,
-            description: '', assignee_id: null, dependencies: [], comments: [], attachments: [],
+            name,
+            description: '',
+            status: TaskStatus.ToDo,
+            priority: TaskPriority.Medium,
+            dueDate: newProject.endDate,
+            duration: 1,
+            project_id: newProject.id,
+            assignee_id: null,
         }));
         const { error: tasksError } = await supabase.from('tasks').insert(defaultTasks);
         if (tasksError) handleError(tasksError, 'addProject tasks');
@@ -162,17 +168,41 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
   
   const addTask = async (projectId: string, task: Omit<Task, 'id'>) => {
-    const { assignee, ...taskData } = task;
+    // Fix: Destructure to remove properties not in the DB table
+    const { assignee, dependencies, comments, attachments, ...taskData } = task;
     const { error } = await supabase.from('tasks').insert({ ...taskData, project_id: projectId, assignee_id: assignee?.id || null });
     if(error) handleError(error, 'addTask');
     else await refreshProjects();
   };
 
   const updateTask = async (projectId: string, updatedTask: Task) => {
-    const { assignee, ...taskData } = updatedTask;
-    const { error } = await supabase.from('tasks').update({ ...taskData, assignee_id: assignee?.id || null }).eq('id', updatedTask.id);
-    if(error) handleError(error, 'updateTask');
-    else await refreshProjects();
+    // Optimistic update: update the UI immediately for a better user experience.
+    const originalProjects = state.projects;
+
+    const newProjects = state.projects.map(p => {
+        if (p.id === projectId) {
+            return {
+                ...p,
+                tasks: p.tasks.map(t => t.id === updatedTask.id ? updatedTask : t)
+            };
+        }
+        return p;
+    });
+    setState(s => ({ ...s, projects: newProjects }));
+
+    // Send the update to the backend.
+    const { assignee, dependencies, comments, attachments, ...taskData } = updatedTask;
+    const { error } = await supabase
+        .from('tasks')
+        .update({ ...taskData, assignee_id: assignee?.id || null })
+        .eq('id', updatedTask.id);
+
+    // If the update fails, revert the state and notify the user.
+    if (error) {
+        handleError(error, 'updateTask');
+        setState(s => ({ ...s, projects: originalProjects }));
+        alert('Falha ao atualizar o status da tarefa. A alteração foi desfeita.');
+    }
   };
 
   const deleteTask = async (projectId: string, taskId: string) => {

@@ -60,7 +60,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
       return;
     }
     
-    // Fix: Added the 'files' property to ensure the object conforms to the Project type.
     const projectData = {
         name,
         description,

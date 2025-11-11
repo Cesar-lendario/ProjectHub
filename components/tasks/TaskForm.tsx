@@ -56,7 +56,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
         return;
     }
     
-    // Fix: Corrected typo from `taskToedit` to `taskToEdit`
     onSave({
       name,
       description,
