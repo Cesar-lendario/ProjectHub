@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { Project, User, Task, Message, TeamMember, Attachment, ProjectStatus, TaskStatus, TaskPriority, ProjectType } from '../types';
@@ -119,13 +118,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [users]);
   
   const updateTask = useCallback(async (taskData: Task) => {
+    // Fix: Ensure assignee object is updated when assignee_id changes.
+    const assignee = users.find(u => u.id === taskData.assignee_id) || null;
+    const consistentTaskData = { ...taskData, assignee };
+
     setProjects(prev => prev.map(p => {
-      if (p.id === taskData.project_id) {
-        return { ...p, tasks: p.tasks.map(t => t.id === taskData.id ? taskData : t) };
+      if (p.id === consistentTaskData.project_id) {
+        return { ...p, tasks: p.tasks.map(t => t.id === consistentTaskData.id ? consistentTaskData : t) };
       }
       return p;
     }));
-  }, []);
+  }, [users]);
 
   const deleteTask = useCallback(async (taskId: string) => {
     setProjects(prev => prev.map(p => ({
