@@ -5,33 +5,34 @@ import { XIcon } from '../ui/Icons';
 
 type EnhancedTask = Task & {
   projectName: string;
-  projectId: string;
 };
 
 interface TaskFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (taskData: Omit<Task, 'id' | 'assignee'> & { assignee: string | null, projectId: string }) => void;
+  onSave: (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments' | 'assignee_id'>) => Promise<void>;
   taskToEdit: EnhancedTask | null;
+  initialProjectId?: string;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit, initialProjectId }) => {
   const { projects, users } = useProjectContext();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [projectId, setProjectId] = useState('');
-  const [assignee, setAssignee] = useState<string | null>(null);
+  const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.Medium);
   const [status, setStatus] = useState<TaskStatus>(TaskStatus.Pending);
   const [duration, setDuration] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (taskToEdit) {
       setName(taskToEdit.name);
       setDescription(taskToEdit.description);
-      setProjectId(taskToEdit.projectId);
-      setAssignee(taskToEdit.assignee?.id || null);
+      setProjectId(taskToEdit.project_id);
+      setAssigneeId(taskToEdit.assignee?.id || null);
       setDueDate(taskToEdit.dueDate);
       setPriority(taskToEdit.priority);
       setStatus(taskToEdit.status);
@@ -40,35 +41,41 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
       // Reset form
       setName('');
       setDescription('');
-      setProjectId(projects.length > 0 ? projects[0].id : '');
-      setAssignee(null);
+      setProjectId(initialProjectId || (projects.length > 0 ? projects[0].id : ''));
+      setAssigneeId(null);
       setDueDate(new Date().toISOString().split('T')[0]);
       setPriority(TaskPriority.Medium);
       setStatus(TaskStatus.Pending);
       setDuration(1);
     }
-  }, [taskToEdit, isOpen, projects]);
+  }, [taskToEdit, isOpen, projects, initialProjectId]);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name || !projectId || !dueDate) {
         alert("Por favor, preencha os campos obrigatórios: Nome da Tarefa, Projeto e Data de Vencimento.");
         return;
     }
     
-    onSave({
-      name,
-      description,
-      projectId,
-      assignee,
-      dueDate,
-      priority,
-      status,
-      duration,
-      dependencies: taskToEdit?.dependencies || [],
-      comments: taskToEdit?.comments || [],
-      attachments: taskToEdit?.attachments || [],
-    });
+    setIsLoading(true);
+    try {
+        await onSave({
+          name,
+          description,
+          project_id: projectId,
+          assignee_id: assigneeId,
+          dueDate,
+          priority,
+          status,
+          duration,
+          dependencies: taskToEdit?.dependencies || [],
+        });
+    } catch(error) {
+        console.error(error);
+        alert(error instanceof Error ? error.message : "Could not save task.");
+    } finally {
+        setIsLoading(false);
+    }
   };
   
   if (!isOpen) return null;
@@ -122,8 +129,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
                 <label htmlFor="assignee-id" className="block text-sm font-medium text-slate-700">Responsável</label>
                 <select 
                     id="assignee-id"
-                    value={assignee || ''}
-                    onChange={(e) => setAssignee(e.target.value || null)}
+                    value={assigneeId || ''}
+                    onChange={(e) => setAssigneeId(e.target.value || null)}
                     className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 bg-white"
                 >
                     <option value="">Não atribuído</option>
@@ -184,8 +191,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Cancelar
             </button>
-            <button type="submit" onClick={handleSubmit} className="ml-3 inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Salvar Tarefa
+            <button type="submit" onClick={handleSubmit} disabled={isLoading} className="ml-3 inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400">
+                {isLoading ? 'Salvando...' : 'Salvar Tarefa'}
             </button>
         </div>
       </div>

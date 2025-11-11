@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
-import { User } from '../../types';
+import { User, GlobalRole } from '../../types';
 import { XIcon } from '../ui/Icons';
 import { supabase } from '../../services/supabaseClient';
 
@@ -13,19 +13,21 @@ interface TeamFormProps {
 
 const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit, currentUserProfile }) => {
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [userFunction, setUserFunction] = useState('');
-  const [role, setRole] = useState<'admin' | 'member'>('member');
+  const [role, setRole] = useState<GlobalRole>(GlobalRole.Engineer);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const isAdmin = currentUserProfile?.role === 'admin';
+  const isAdmin = currentUserProfile?.role === GlobalRole.Admin;
 
   const resetForm = () => {
     setName('');
+    setEmail('');
     setUserFunction('');
-    setRole('member');
+    setRole(GlobalRole.Engineer);
     const randomSeed = Math.random().toString(36).substring(7);
     const defaultAvatar = `https://i.pravatar.cc/150?u=${randomSeed}`;
     setAvatarUrl(defaultAvatar);
@@ -37,8 +39,9 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
     if (isOpen) {
         if (userToEdit) {
             setName(userToEdit.name);
+            setEmail(userToEdit.email);
             setUserFunction(userToEdit.function || '');
-            setRole(userToEdit.role || 'member');
+            setRole(userToEdit.role || GlobalRole.Engineer);
             setAvatarUrl(userToEdit.avatar);
             setAvatarPreview(userToEdit.avatar);
             setAvatarFile(null);
@@ -87,6 +90,7 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
 
         const userData = { 
           name, 
+          email,
           function: userFunction,
           avatar: finalAvatarUrl,
           role
@@ -128,6 +132,16 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
               />
             </div>
             <div>
+              <label htmlFor="user-email" className="block text-sm font-medium text-slate-700">Email</label>
+              <input
+                type="email" id="user-email" value={email}
+                className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 bg-slate-100 sm:text-sm"
+                readOnly
+                disabled
+              />
+               <p className="text-xs text-slate-500 mt-1">O email está vinculado à conta de login e não pode ser alterado.</p>
+            </div>
+            <div>
               <label htmlFor="user-function" className="block text-sm font-medium text-slate-700">Função</label>
               <input
                 type="text" id="user-function" value={userFunction} onChange={(e) => setUserFunction(e.target.value)}
@@ -141,12 +155,11 @@ const TeamForm: React.FC<TeamFormProps> = ({ isOpen, onClose, onSave, userToEdit
                   <select
                     id="user-role"
                     value={role}
-                    onChange={(e) => setRole(e.target.value as 'admin' | 'member')}
+                    onChange={(e) => setRole(e.target.value as GlobalRole)}
                     className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     disabled={userToEdit?.id === currentUserProfile?.id}
                   >
-                    <option value="member">Membro</option>
-                    <option value="admin">Administrador</option>
+                    {Object.values(GlobalRole).map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                   {userToEdit?.id === currentUserProfile?.id && (
                     <p className="text-xs text-slate-500 mt-1">Você não pode alterar seu próprio perfil.</p>

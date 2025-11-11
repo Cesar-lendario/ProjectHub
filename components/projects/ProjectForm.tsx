@@ -1,17 +1,15 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { useProjectContext } from '../../hooks/useProjectContext';
-import { Project, ProjectStatus, User, ProjectType } from '../../types';
+import { Project, ProjectStatus, ProjectType } from '../../types';
 import { XIcon } from '../ui/Icons';
 
 interface ProjectFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (projectData: Omit<Project, 'id'> | Project) => void;
+  onSave: (projectData: Omit<Project, 'id'> | Project) => Promise<void>;
   projectToEdit: Project | null;
 }
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, projectToEdit }) => {
-  const { users } = useProjectContext();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -21,7 +19,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
   const [projectType, setProjectType] = useState<ProjectType>(ProjectType.Outros);
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
-  const [team, setTeam] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (projectToEdit) {
@@ -34,7 +32,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
       setProjectType(projectToEdit.projectType || ProjectType.Outros);
       setClientName(projectToEdit.clientName || '');
       setClientEmail(projectToEdit.clientEmail || '');
-      setTeam(projectToEdit.team);
     } else {
       const today = new Date().toISOString().split('T')[0];
       const nextMonth = new Date();
@@ -49,51 +46,43 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
       setProjectType(ProjectType.Outros);
       setClientName('');
       setClientEmail('');
-      setTeam([]);
     }
   }, [projectToEdit, isOpen]);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name || !startDate || !endDate) {
       alert("Por favor, preencha os campos obrigatórios: Nome, Data de Início e Data de Fim.");
       return;
     }
     
-    const projectData = {
-        name,
-        description,
-        startDate,
-        endDate,
-        budget,
-        status,
-        projectType,
-        clientName,
-        clientEmail,
-        team,
-        actualCost: projectToEdit?.actualCost || 0,
-        tasks: projectToEdit?.tasks || [],
-        files: projectToEdit?.files || [],
-    };
+    setIsLoading(true);
+    try {
+        const projectData = {
+            name,
+            description,
+            startDate,
+            endDate,
+            budget,
+            status,
+            projectType,
+            clientName,
+            clientEmail,
+            actualCost: projectToEdit?.actualCost || 0,
+        };
 
-    if (projectToEdit) {
-        onSave({ ...projectData, id: projectToEdit.id });
-    } else {
-        onSave(projectData);
-    }
-  };
-
-  const handleTeamChange = (userId: string) => {
-    setTeam(prevTeam => {
-        const user = users.find(u => u.id === userId);
-        if(!user) return prevTeam;
-
-        if (prevTeam.some(member => member.id === userId)) {
-            return prevTeam.filter(member => member.id !== userId);
+        if (projectToEdit) {
+            await onSave({ ...projectData, id: projectToEdit.id });
         } else {
-            return [...prevTeam, user];
+            await onSave(projectData as Omit<Project, 'id'>);
         }
-    });
+        onClose();
+    } catch(error) {
+        console.error("Failed to save project", error);
+        alert(error instanceof Error ? error.message : "Could not save project");
+    } finally {
+        setIsLoading(false);
+    }
   };
   
   if (!isOpen) return null;
@@ -181,28 +170,13 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
               </select>
             </div>
           </div>
-           <div>
-              <label className="block text-sm font-medium text-slate-700">Equipe</label>
-              <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 border border-slate-200 p-3 rounded-md">
-                {users.map(user => (
-                    <div key={user.id} className="flex items-center">
-                        <input type="checkbox" id={`user-${user.id}`} value={user.id}
-                            checked={team.some(member => member.id === user.id)}
-                            onChange={() => handleTeamChange(user.id)}
-                            className="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                        />
-                        <label htmlFor={`user-${user.id}`} className="ml-2 text-sm text-slate-600 truncate">{user.name}</label>
-                    </div>
-                ))}
-              </div>
-            </div>
         </form>
         <div className="flex justify-end items-center p-4 border-t bg-slate-50 rounded-b-lg">
           <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             Cancelar
           </button>
-          <button type="submit" onClick={handleSubmit} className="ml-3 inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            Salvar Projeto
+          <button type="submit" onClick={handleSubmit} className="ml-3 inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" disabled={isLoading}>
+            {isLoading ? 'Salvando...' : 'Salvar Projeto'}
           </button>
         </div>
       </div>

@@ -1,17 +1,25 @@
+// Fix: Created the types.ts file to define all the data structures used throughout the application.
+
+// New enum for global user roles
+export enum GlobalRole {
+  Admin = 'Administrador',
+  Supervisor = 'Supervisor',
+  Engineer = 'Engenheiro',
+}
+
 export interface User {
   id: string;
   name: string;
+  email: string;
   avatar: string;
   function: string;
-  role: 'admin' | 'member';
+  role: GlobalRole; // Updated to use the enum
   auth_id?: string;
 }
 
-export interface Comment {
-  id: string;
-  author: User;
-  text: string;
-  timestamp: string;
+export interface TeamMember {
+  user: User;
+  role: 'admin' | 'editor' | 'viewer';
 }
 
 export interface Attachment {
@@ -23,6 +31,13 @@ export interface Attachment {
   lastModified: string;
 }
 
+export interface Comment {
+  id: string;
+  author: User;
+  content: string;
+  timestamp: string;
+}
+
 export enum TaskStatus {
   Pending = 'Pendente',
   ToDo = 'A Fazer',
@@ -31,9 +46,9 @@ export enum TaskStatus {
 }
 
 export enum TaskPriority {
-  Low = 'Baixa',
-  Medium = 'Média',
   High = 'Alta',
+  Medium = 'Média',
+  Low = 'Baixa',
 }
 
 export interface Task {
@@ -44,22 +59,23 @@ export interface Task {
   priority: TaskPriority;
   dueDate: string;
   assignee: User | null;
-  dependencies: string[]; // array of task IDs
+  assignee_id?: string | null;
+  dependencies: string[];
   comments: Comment[];
   attachments: Attachment[];
-  duration: number; // in days
-  position?: number;
+  duration: number;
+  project_id: string;
 }
 
 export enum ProjectStatus {
   InProgress = 'Em Andamento',
-  Completed = 'Concluído',
   OnHold = 'Em Espera',
+  Completed = 'Concluído',
+  Canceled = 'Cancelado',
 }
 
 export enum ProjectType {
-    HomologacaoMMV = 'Homologação MMV',
-    HomologacaoCE = 'Homologação CE',
+    Homologacao = 'Homologação',
     RenovacaoCCT = 'Renovação CCT',
     Outros = 'Outros',
 }
@@ -76,23 +92,24 @@ export interface Project {
   actualCost: number;
   clientName: string;
   clientEmail: string;
-  team: User[];
+  team: TeamMember[];
   tasks: Task[];
   files: Attachment[];
   lastEmailNotification?: string;
   lastWhatsappNotification?: string;
 }
 
-export interface CriticalPathResult {
-  path: string[];
-  duration: number;
-}
-
 export interface Message {
   id: string;
-  sender: User;
-  channel: string; // e.g., '#geral' or a project ID
+  sender: User | null;
+  sender_id: string | null;
+  channel: string;
   content: string;
   timestamp: string;
   isRead: boolean;
+}
+
+export interface CriticalPathResult {
+  path: string[];
+  duration: number;
 }

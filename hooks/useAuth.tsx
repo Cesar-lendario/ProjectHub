@@ -23,18 +23,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        setSession(session);
-        if (session?.user) {
-          const { data: userProfile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('auth_id', session.user.id)
-            .single();
-          setProfile(userProfile as User | null);
-        } else {
-          setProfile(null);
+        try {
+          setSession(session);
+          if (session?.user) {
+            const { data: userProfile, error } = await supabase
+              .from('users')
+              .select('*')
+              .eq('auth_id', session.user.id)
+              .single();
+
+            if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found, which is a valid state during signup
+              throw error;
+            }
+            
+            setProfile(userProfile as User | null);
+          } else {
+            setProfile(null);
+          }
+        } catch (error) {
+            console.error("Error fetching user profile:", error);
+            setProfile(null);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
       }
     );
 

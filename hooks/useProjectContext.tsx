@@ -1,130 +1,252 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { Project, User, Task, Attachment, Message, ProjectType, TaskStatus, TaskPriority } from '../types';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
+import { Project, User, Task, Message, Attachment, TeamMember } from '../types';
 import { supabase } from '../services/supabaseClient';
-import { HOMOLOGACAO_TASK_NAMES, RENOVACAO_CCT_TASK_NAMES } from '../constants';
+import { useAuth } from './useAuth';
 
 interface AppState {
   projects: Project[];
   users: User[];
   messages: Message[];
   loading: boolean;
+  error: string | null;
 }
 
+const initialState: AppState = {
+  projects: [],
+  users: [],
+  messages: [],
+  loading: true,
+  error: null,
+};
+
 interface ProjectContextType extends AppState {
-  addProject: (project: Omit<Project, 'id'>) => Promise<void>;
-  updateProject: (project: Project) => Promise<void>;
-  deleteProject: (projectId: string) => Promise<void>;
-  addTask: (projectId: string, task: Omit<Task, 'id'>) => Promise<void>;
-  updateTask: (projectId: string, task: Task) => Promise<void>;
-  deleteTask: (projectId: string, taskId: string) => Promise<void>;
+  fetchAllData: () => Promise<void>;
+  addProject: (project: Omit<Project, 'id' | 'team' | 'tasks' | 'files' | 'actualCost'>) => Promise<void>;
+  updateProject: (project: Omit<Project, 'team' | 'tasks' | 'files'>) => Promise<void>;
+  addTask: (task: Omit<Task, 'id'|'assignee'|'comments'|'attachments'>) => Promise<void>;
+  updateTask: (task: Omit<Task, 'assignee'|'comments'|'attachments'>) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
   addUser: (user: Omit<User, 'id'>) => Promise<void>;
   updateUser: (user: User) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
-  addFile: (projectId: string, file: Omit<Attachment, 'id'>) => Promise<void>;
-  deleteFile: (projectId: string, fileId: string) => Promise<void>;
-  addMessage: (message: Omit<Message, 'id' | 'isRead'>) => Promise<void>;
-  markAllMessagesAsRead: () => Promise<void>;
+  addUserToProject: (projectId: string, userId: string, role: TeamMember['role']) => Promise<void>;
+  removeUserFromProject: (projectId: string, userId: string) => Promise<void>;
+  updateTeamMemberRole: (projectId: string, userId: string, role: TeamMember['role']) => Promise<void>;
+  getProjectRole: (projectId: string) => TeamMember['role'] | null;
+  addMessage: (message: Omit<Message, 'id' | 'sender' | 'isRead'>) => Promise<void>;
+  markAllMessagesAsRead: () => void;
+  addFile: (projectId: string, file: File) => Promise<void>;
   logNotification: (projectId: string, type: 'email' | 'whatsapp') => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AppState>({
-    projects: [],
-    users: [],
-    messages: [],
-    loading: true,
-  });
+  const [state, setState] = useState<AppState>(initialState);
+  const { session, profile } = useAuth();
 
-  const handleError = (error: any, context: string) => {
-    console.error(`Error in ${context}:`, error);
-    if (typeof error === 'object' && error !== null) {
-      console.error(`[Detailed Error in ${context}]: Message: ${error.message}, Details: ${error.details}, Hint: ${error.hint}`);
-    }
-  };
-
-  const fetchAllData = async () => {
-    const [
-        projectsRes, usersRes, messagesRes, 
-        tasksRes, teamRes, attachmentsRes
-    ] = await Promise.all([
-        supabase.from('projects').select('*').order('startDate', { ascending: false }),
-        supabase.from('users').select('*').order('name'),
-        supabase.from('messages').select('*').order('timestamp'),
-        supabase.from('tasks').select('*').order('position', { ascending: true, nullsFirst: false }),
+  const fetchAllData = useCallback(async () => {
+    setState(s => ({ ...s, loading: true, error: null }));
+    try {
+      const [
+        { data: users, error: usersError },
+        { data: projectsData, error: projectsError },
+        { data: tasksData, error: tasksError },
+        { data: filesData, error: filesError },
+        { data: teamData, error: teamError },
+        { data: messagesData, error: messagesError }
+      ] = await Promise.all([
+        supabase.from('users').select('*'),
+        supabase.from('projects').select('*'),
+        supabase.from('tasks').select('*'),
+        supabase.from('attachments').select('*'),
         supabase.from('project_team').select('*'),
-        supabase.from('attachments').select('*')
-    ]);
+        supabase.from('messages').select('*')
+      ]);
 
-    if (projectsRes.error) handleError(projectsRes.error, 'fetchProjects');
-    if (usersRes.error) handleError(usersRes.error, 'fetchUsers');
-    if (messagesRes.error) handleError(messagesRes.error, 'fetchMessages');
-    if (tasksRes.error) handleError(tasksRes.error, 'fetchTasks');
-    if (teamRes.error) handleError(teamRes.error, 'fetchProjectTeam');
-    if (attachmentsRes.error) handleError(attachmentsRes.error, 'fetchAttachments');
-    
-    const projectsData = projectsRes.data || [];
-    const usersData = usersRes.data || [];
-    const messagesData = messagesRes.data || [];
-    const tasksData = tasksRes.data || [];
-    const projectTeamLinks = teamRes.data || [];
-    const attachmentsData = attachmentsRes.data || [];
-    
-    const userMap = new Map(usersData.map(u => [u.id, u as User]));
+      if (usersError) throw usersError;
+      if (projectsError) throw projectsError;
+      if (tasksError) throw tasksError;
+      if (filesError) throw filesError;
+      if (teamError) throw teamError;
+      if (messagesError) throw messagesError;
+      
+      const usersMap = new Map(users.map(u => [u.id, u]));
 
-    const tasksByProjectId = tasksData.reduce((acc, task) => {
-        const projectId = (task as any).project_id;
-        if (!projectId) return acc;
-        if (!acc[projectId]) acc[projectId] = [];
-        acc[projectId].push({
-            ...(task as Task),
-            assignee: (task as any).assignee_id ? userMap.get((task as any).assignee_id) || null : null,
-        });
-        return acc;
-    }, {} as Record<string, Task[]>);
+      const projects: Project[] = projectsData.map((p: any) => ({
+        ...p,
+        tasks: tasksData
+          .filter(t => t.project_id === p.id)
+          .map((t: any) => ({
+            ...t,
+            assignee: t.assignee_id ? usersMap.get(t.assignee_id) : null,
+          })),
+        files: filesData.filter(f => f.project_id === p.id),
+        team: teamData
+          .filter(pt => pt.project_id === p.id)
+          .map((pt: any) => ({
+            user: usersMap.get(pt.user_id),
+            role: pt.role,
+          }))
+          .filter(tm => tm.user), // Filter out entries where user might be missing
+      }));
 
-    const teamByProjectId = projectTeamLinks.reduce((acc, link) => {
-        const projectId = (link as any).project_id;
-        if (!projectId) return acc;
-        if (!acc[projectId]) acc[projectId] = [];
-        const user = userMap.get((link as any).user_id);
-        if (user) acc[projectId].push(user);
-        return acc;
-    }, {} as Record<string, User[]>);
-    
-    const attachmentsByProjectId = attachmentsData.reduce((acc, file) => {
-        const projectId = (file as any).project_id;
-        if (!projectId) return acc;
-        if (!acc[projectId]) acc[projectId] = [];
-        acc[projectId].push(file as Attachment);
-        return acc;
-    }, {} as Record<string, Attachment[]>);
+      const messages: Message[] = messagesData.map((m: any) => ({
+        ...m,
+        sender: m.sender_id ? usersMap.get(m.sender_id) : null,
+      }));
 
-    const processedProjects = projectsData.map(p => ({
-        ...(p as Project),
-        team: teamByProjectId[p.id] || [],
-        tasks: tasksByProjectId[p.id] || [],
-        files: attachmentsByProjectId[p.id] || [],
-    }));
+      setState({
+        projects,
+        users,
+        messages,
+        loading: false,
+        error: null,
+      });
 
-    const processedMessages = messagesData.map(m => ({
-        ...(m as Message),
-        sender: (m as any).sender_id ? userMap.get((m as any).sender_id) || null : null,
-    }));
-
-    setState({
-        projects: processedProjects,
-        users: usersData as User[],
-        messages: processedMessages,
-        loading: false
-    });
-  };
+    } catch (err: any) {
+      console.error("Failed to fetch data", err);
+      let displayError = 'Ocorreu um erro desconhecido ao buscar os dados.';
+      if (err && typeof err === 'object') {
+          if ('message' in err) displayError = err.message as string;
+          if ('details' in err && err.details) displayError += ` (${err.details})`;
+      } else if (typeof err === 'string') {
+          displayError = err;
+      }
+      setState(s => ({ ...s, loading: false, error: `Erro ao carregar dados: ${displayError}` }));
+    }
+  }, []);
 
   useEffect(() => {
-    setState(s => ({ ...s, loading: true }));
-    fetchAllData();
-  }, []);
+    if (session) {
+      fetchAllData();
+    } else {
+      setState(initialState);
+    }
+  }, [session, fetchAllData]);
+
+  const addProject = async (project: Omit<Project, 'id' | 'team' | 'tasks' | 'files' | 'actualCost'>) => {
+    const { data, error } = await supabase.from('projects').insert([project]).select();
+    if (error) throw error;
+    if (data && profile) {
+      // Add creator as project admin
+      await addUserToProject(data[0].id, profile.id, 'admin');
+    }
+    await fetchAllData();
+  };
+
+  const updateProject = async (project: Omit<Project, 'team' | 'tasks' | 'files'>) => {
+    const { error } = await supabase.from('projects').update(project).eq('id', project.id);
+    if (error) throw error;
+    await fetchAllData();
+  };
+  
+  const addTask = async (task: Omit<Task, 'id'|'assignee'|'comments'|'attachments'>) => {
+    const { error } = await supabase.from('tasks').insert([task]);
+    if (error) throw error;
+    await fetchAllData();
+  };
+
+  const updateTask = async (task: Omit<Task, 'assignee'|'comments'|'attachments'>) => {
+    const { id, ...updateData } = task;
+    const { error } = await supabase.from('tasks').update(updateData).eq('id', id);
+    if (error) throw error;
+    await fetchAllData();
+  };
+
+  const deleteTask = async (taskId: string) => {
+    const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+    if (error) throw error;
+    await fetchAllData();
+  };
+
+  const addUser = async (user: Omit<User, 'id'>) => {
+    // This is for global admins managing users. Signup is separate.
+    const { error } = await supabase.from('users').insert([user]);
+    if (error) throw error;
+    await fetchAllData();
+  };
+
+  const updateUser = async (user: User) => {
+    const { error } = await supabase.from('users').update(user).eq('id', user.id);
+    if (error) throw error;
+    await fetchAllData();
+  };
+
+  const deleteUser = async (userId: string) => {
+    // This should be an admin function that calls a Supabase Edge Function to delete auth user.
+    // For now, we only delete from public.users table for simplicity.
+    console.warn("Apenas o perfil do usuário foi excluído, não o usuário de autenticação. Implemente uma Edge Function para exclusão completa.");
+    const { error } = await supabase.from('users').delete().eq('id', userId);
+    if (error) throw error;
+    await fetchAllData();
+  };
+
+  const addUserToProject = async (projectId: string, userId: string, role: TeamMember['role']) => {
+    const { error } = await supabase.from('project_team').insert([{ project_id: projectId, user_id: userId, role }]);
+    if (error) throw error;
+    await fetchAllData();
+  };
+
+  const removeUserFromProject = async (projectId: string, userId: string) => {
+    const { error } = await supabase.from('project_team').delete().match({ project_id: projectId, user_id: userId });
+    if (error) throw error;
+    await fetchAllData();
+  };
+
+  const updateTeamMemberRole = async (projectId: string, userId: string, role: TeamMember['role']) => {
+    const { error } = await supabase.from('project_team').update({ role }).match({ project_id: projectId, user_id: userId });
+    if (error) throw error;
+    await fetchAllData();
+  };
+
+  const getProjectRole = (projectId: string): TeamMember['role'] | null => {
+    if (!profile) return null;
+    const project = state.projects.find(p => p.id === projectId);
+    const teamMember = project?.team.find(tm => tm.user.id === profile.id);
+    return teamMember?.role || null;
+  };
+  
+  const addMessage = async (message: Omit<Message, 'id' | 'sender' | 'isRead'>) => {
+    const { error } = await supabase.from('messages').insert([message]);
+    if (error) throw error;
+    await fetchAllData();
+  };
+
+  const markAllMessagesAsRead = () => {
+    // This is a client-side mock for immediate UI feedback. 
+    // A full implementation would update the backend as well.
+    setState(s => ({
+        ...s,
+        messages: s.messages.map(m => ({ ...m, isRead: true }))
+    }));
+  };
+
+  const addFile = async (projectId: string, file: File) => {
+    if (!projectId) throw new Error("O ID do projeto é necessário para o upload do arquivo.");
+    // Bucket name is 'attachments', as per SQL policies.
+    const bucketName = 'attachments'; 
+
+    const filePath = `${projectId}/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+    const { error: uploadError } = await supabase.storage.from(bucketName).upload(filePath, file);
+    if (uploadError) throw new Error(`Falha no upload do arquivo: ${uploadError.message}`);
+
+    const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+
+    const attachmentData = {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        url: urlData.publicUrl,
+        lastModified: new Date().toISOString(),
+        project_id: projectId
+    };
+
+    const { error: insertError } = await supabase.from('attachments').insert([attachmentData]);
+    if (insertError) throw insertError;
+    
+    await fetchAllData();
+  };
 
   const logNotification = async (projectId: string, type: 'email' | 'whatsapp') => {
     const fieldToUpdate = type === 'email' ? 'lastEmailNotification' : 'lastWhatsappNotification';
@@ -132,178 +254,33 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       .from('projects')
       .update({ [fieldToUpdate]: new Date().toISOString() })
       .eq('id', projectId);
-    
-    if (error) handleError(error, 'logNotification');
-    else await fetchAllData();
-  };
-
-  const addProject = async (project: Omit<Project, 'id'>) => {
-    const { team, tasks, files, ...projectData } = project;
-    const { data: newProject, error } = await supabase.from('projects').insert(projectData).select().single();
-    if (error || !newProject) return handleError(error, 'addProject insert');
-
-    if(team.length > 0) {
-        const teamLinks = team.map(user => ({ project_id: newProject.id, user_id: user.id }));
-        const { error: teamError } = await supabase.from('project_team').insert(teamLinks);
-        if (teamError) handleError(teamError, 'addProject team');
-    }
-    
-    let taskNames: string[] = [];
-    if (project.projectType === ProjectType.HomologacaoMMV || project.projectType === ProjectType.HomologacaoCE) {
-        taskNames = HOMOLOGACAO_TASK_NAMES;
-    } else if (project.projectType === ProjectType.RenovacaoCCT) {
-        taskNames = RENOVACAO_CCT_TASK_NAMES;
-    }
-    if (taskNames.length > 0) {
-        const defaultTasks = taskNames.map((name, index) => ({
-            name,
-            description: '',
-            status: TaskStatus.ToDo,
-            priority: TaskPriority.Medium,
-            dueDate: newProject.endDate,
-            duration: 1,
-            project_id: newProject.id,
-            assignee_id: null,
-            position: (index + 1) * 1000,
-        }));
-        const { error: tasksError } = await supabase.from('tasks').insert(defaultTasks);
-        if (tasksError) handleError(tasksError, 'addProject tasks');
-    }
-
+    if (error) throw error;
     await fetchAllData();
   };
 
-  const updateProject = async (updatedProject: Project) => {
-     const { team, tasks, files, ...projectData } = updatedProject;
-     const { error } = await supabase.from('projects').update(projectData).eq('id', updatedProject.id);
-     if (error) return handleError(error, 'updateProject');
-
-     const { error: deleteTeamError } = await supabase.from('project_team').delete().eq('project_id', updatedProject.id);
-     if(deleteTeamError) return handleError(deleteTeamError, 'updateProject delete team');
-
-     if (team.length > 0) {
-         const teamLinks = team.map(user => ({ project_id: updatedProject.id, user_id: user.id }));
-         const { error: insertTeamError } = await supabase.from('project_team').insert(teamLinks);
-         if(insertTeamError) handleError(insertTeamError, 'updateProject insert team');
-     }
-     await fetchAllData();
-  };
-
-  const deleteProject = async (projectId: string) => {
-    const { error } = await supabase.from('projects').delete().eq('id', projectId);
-    if (error) handleError(error, 'deleteProject');
-    else await fetchAllData();
-  };
-  
-  const addTask = async (projectId: string, task: Omit<Task, 'id'>) => {
-    const { assignee, comments, attachments, ...taskData } = task;
-    
-    const { data: tasksInColumn } = await supabase.from('tasks').select('position').eq('project_id', projectId).eq('status', task.status).order('position', { ascending: false }).limit(1);
-    const maxPosition = tasksInColumn?.[0]?.position || 0;
-    const newPosition = maxPosition + 1000;
-
-    const { error } = await supabase.from('tasks').insert({ ...taskData, project_id: projectId, assignee_id: assignee?.id || null, position: newPosition });
-    if(error) handleError(error, 'addTask');
-    else await fetchAllData();
-  };
-
-  const updateTask = async (projectId: string, updatedTask: Task) => {
-    const originalProjects = state.projects;
-
-    const newProjects = state.projects.map(p => {
-        if (p.id === projectId) {
-            return {
-                ...p,
-                tasks: p.tasks.map(t => t.id === updatedTask.id ? updatedTask : t)
-            };
-        }
-        return p;
-    });
-    setState(s => ({ ...s, projects: newProjects }));
-
-    const { assignee, comments, attachments, ...taskData } = updatedTask;
-
-    const { error } = await supabase
-        .from('tasks')
-        .update({ ...taskData, assignee_id: assignee?.id || null })
-        .eq('id', updatedTask.id);
-
-    if (error) {
-        handleError(error, 'updateTask');
-        setState(s => ({ ...s, projects: originalProjects }));
-        alert('Falha ao atualizar a tarefa. A alteração foi desfeita.');
-    }
-  };
-
-  const deleteTask = async (projectId: string, taskId: string) => {
-    const { error } = await supabase.from('tasks').delete().eq('id', taskId);
-    if(error) handleError(error, 'deleteTask');
-    else await fetchAllData();
-  };
-
-  const addUser = async (user: Omit<User, 'id'>) => {
-    const { error } = await supabase.from('users').insert(user);
-    if(error) handleError(error, 'addUser');
-    else await fetchAllData();
-  };
-
-  const updateUser = async (updatedUser: User) => {
-    const { error } = await supabase.from('users').update(updatedUser).eq('id', updatedUser.id);
-    if(error) handleError(error, 'updateUser');
-    else await fetchAllData();
-  };
-
-  const deleteUser = async (userId: string) => {
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if(error) handleError(error, 'deleteUser');
-    else await fetchAllData();
-  };
-
-  const addFile = async (projectId: string, file: Omit<Attachment, 'id'>) => {
-    const { error } = await supabase.from('attachments').insert({ ...file, project_id: projectId });
-    if (error) handleError(error, 'addFile');
-    else await fetchAllData();
-  };
-
-  const deleteFile = async (projectId: string, fileId: string) => {
-    const { error } = await supabase.from('attachments').delete().eq('id', fileId);
-    if (error) handleError(error, 'deleteFile');
-    else await fetchAllData();
-  };
-
-  const addMessage = async (message: Omit<Message, 'id' | 'isRead'>) => {
-    const { sender, ...messageData } = message;
-    const { error } = await supabase.from('messages').insert({ ...messageData, sender_id: sender.id, isRead: false });
-    if (error) handleError(error, 'addMessage');
-    else {
-        const newMessage: Message = { ...message, id: `temp-${Date.now()}`, isRead: true, sender };
-        setState(s => ({ ...s, messages: [...s.messages, newMessage]}));
-    }
-  };
-
-  const markAllMessagesAsRead = async () => {
-    const unreadIds = state.messages.filter(m => !m.isRead && !m.id.startsWith('temp-')).map(m => m.id);
-    if (unreadIds.length === 0) return;
-    const { error } = await supabase.from('messages').update({ isRead: true }).in('id', unreadIds);
-    if(error) handleError(error, 'markAllMessagesAsRead');
-    else setState(prev => ({ ...prev, messages: prev.messages.map(m => ({ ...m, isRead: true })) }));
-  };
 
   const value = {
     ...state,
-    addProject, updateProject, deleteProject, 
-    addTask, updateTask, deleteTask, 
-    addUser, updateUser, deleteUser, 
-    addFile, deleteFile, addMessage,
+    fetchAllData,
+    addProject,
+    updateProject,
+    addTask,
+    updateTask,
+    deleteTask,
+    addUser,
+    updateUser,
+    deleteUser,
+    addUserToProject,
+    removeUserFromProject,
+    updateTeamMemberRole,
+    getProjectRole,
+    addMessage,
     markAllMessagesAsRead,
-    logNotification
+    addFile,
+    logNotification,
   };
 
-  return (
-    <ProjectContext.Provider value={value}>
-      {children}
-    </ProjectContext.Provider>
-  );
+  return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;
 };
 
 export const useProjectContext = () => {

@@ -16,7 +16,8 @@ export const calculateCriticalPath = (tasks: Task[]): CriticalPathResult => {
   });
 
   tasks.forEach(task => {
-    task.dependencies.forEach(depId => {
+    // Fix: Safely handle cases where dependencies might be null or undefined.
+    (task.dependencies || []).forEach(depId => {
       if (taskMap.has(depId)) {
         adj[depId].push(task.id);
         inDegree[task.id]++;
@@ -46,7 +47,8 @@ export const calculateCriticalPath = (tasks: Task[]): CriticalPathResult => {
     parent[task.id] = null;
   });
 
-  tasks.filter(t => t.dependencies.length === 0).forEach(t => {
+  // Fix: Safely handle cases where dependencies might be null or undefined.
+  tasks.filter(t => !t.dependencies || t.dependencies.length === 0).forEach(t => {
       dist[t.id] = t.duration;
   });
 

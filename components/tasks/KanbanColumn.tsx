@@ -1,94 +1,55 @@
-import React, { useRef } from 'react';
-import { TaskStatus } from '../../types';
+// Fix: Implemented the KanbanColumn component.
+import React from 'react';
+import { Task, TaskStatus } from '../../types';
 import KanbanCard from './KanbanCard';
-import { EnhancedTask } from './TaskList';
+
+type EnhancedTask = Task & {
+  projectName: string;
+};
 
 interface KanbanColumnProps {
   status: TaskStatus;
   tasks: EnhancedTask[];
-  onTaskDrop: (taskId: string, projectId: string, status: TaskStatus, index: number) => void;
-  onViewTask: (task: EnhancedTask) => void;
   onEditTask: (task: EnhancedTask) => void;
-  onDeleteTask: (task: EnhancedTask) => void;
-  isAdmin: boolean;
+  onDeleteTask: (taskId: string) => void;
+  canEdit: boolean;
 }
 
-const getStatusColor = (status: TaskStatus) => {
+const getStatusAppearance = (status: TaskStatus) => {
     switch (status) {
-        case TaskStatus.Pending: return 'border-t-purple-400';
-        case TaskStatus.ToDo: return 'border-t-slate-400';
-        case TaskStatus.InProgress: return 'border-t-yellow-400';
-        case TaskStatus.Done: return 'border-t-green-500';
+        case TaskStatus.Pending: return { bg: 'bg-purple-200', text: 'text-purple-800', border: 'border-purple-400' };
+        case TaskStatus.ToDo: return { bg: 'bg-slate-200', text: 'text-slate-800', border: 'border-slate-400' };
+        case TaskStatus.InProgress: return { bg: 'bg-yellow-200', text: 'text-yellow-800', border: 'border-yellow-400' };
+        case TaskStatus.Done: return { bg: 'bg-green-200', text: 'text-green-800', border: 'border-green-400' };
     }
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onTaskDrop, onViewTask, onEditTask, onDeleteTask, isAdmin }) => {
-    const [isOver, setIsOver] = React.useState(false);
-    const columnRef = useRef<HTMLDivElement>(null);
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onEditTask, onDeleteTask, canEdit }) => {
+    const { bg, text, border } = getStatusAppearance(status);
 
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsOver(true);
-    };
-    
-    const handleDragLeave = (e: React.DragEvent) => {
-        if (e.currentTarget.contains(e.relatedTarget as Node)) {
-            return;
-        }
-        setIsOver(false);
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        const taskId = e.dataTransfer.getData('taskId');
-        const projectId = e.dataTransfer.getData('projectId');
-
-        const cards = Array.from(columnRef.current?.querySelectorAll('[data-task-id]') || []);
-        let newIndex = cards.length;
-
-        for (let i = 0; i < cards.length; i++) {
-            const card = cards[i] as HTMLElement;
-            const rect = card.getBoundingClientRect();
-            if (e.clientY < rect.top + rect.height / 2) {
-                newIndex = i;
-                break;
-            }
-        }
-        
-        onTaskDrop(taskId, projectId, status, newIndex);
-        setIsOver(false);
-    };
-
-  return (
-    <div 
-        ref={columnRef}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`bg-slate-100 rounded-lg flex flex-col transition-all duration-300 ${isOver ? 'bg-indigo-50 ring-2 ring-indigo-400' : ''}`}
-    >
-        <div className={`p-4 border-t-4 ${getStatusColor(status)} rounded-t-lg`}>
-            <h3 className="font-bold text-slate-700 flex items-center">
-                {status} 
-                <span className="ml-2 text-sm font-medium bg-slate-200 text-slate-600 rounded-full px-2 py-0.5">
-                    {tasks.length}
-                </span>
-            </h3>
+    return (
+        <div className={`bg-slate-50 rounded-xl p-4 border-t-4 ${border}`}>
+            <div className="flex items-center justify-between mb-4">
+                <h3 className={`font-bold text-lg ${text}`}>{status}</h3>
+                <span className={`text-sm font-semibold px-2.5 py-1 rounded-full ${bg} ${text}`}>{tasks.length}</span>
+            </div>
+            <div className="space-y-4">
+                {tasks.map(task => (
+                    <KanbanCard 
+                        key={task.id} 
+                        task={task} 
+                        onEdit={() => onEditTask(task)} 
+                        onDelete={() => onDeleteTask(task.id)}
+                        canEdit={canEdit} />
+                ))}
+                {tasks.length === 0 && (
+                    <div className="text-center py-8 text-slate-500 text-sm">
+                        Nenhuma tarefa aqui.
+                    </div>
+                )}
+            </div>
         </div>
-        <div className="p-2 flex-1 overflow-y-auto space-y-3">
-            {tasks.map(task => (
-                <KanbanCard 
-                    key={task.id}
-                    task={task}
-                    onView={() => onViewTask(task)}
-                    onEdit={() => onEditTask(task)}
-                    onDelete={() => onDeleteTask(task)}
-                    isAdmin={isAdmin}
-                />
-            ))}
-        </div>
-    </div>
-  );
+    );
 };
 
 export default KanbanColumn;

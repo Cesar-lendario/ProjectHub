@@ -11,16 +11,21 @@ const MessageInput: React.FC<MessageInputProps> = ({ activeChannel, currentUser 
     const { addMessage } = useProjectContext();
     const [content, setContent] = useState('');
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (content.trim()) {
-            addMessage({
-                sender: currentUser,
-                channel: activeChannel,
-                content: content.trim(),
-                timestamp: new Date().toISOString()
-            });
-            setContent('');
+            try {
+                await addMessage({
+                    sender_id: currentUser.id,
+                    channel: activeChannel,
+                    content: content.trim(),
+                    timestamp: new Date().toISOString(),
+                });
+                setContent('');
+            } catch (error) {
+                console.error("Failed to send message:", error);
+                alert("Não foi possível enviar a mensagem.");
+            }
         }
     };
 

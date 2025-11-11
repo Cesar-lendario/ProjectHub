@@ -1,6 +1,8 @@
 import React from 'react';
 import { FolderIcon, CheckSquareIcon, UsersIcon, CalendarDaysIcon, ChartBarIcon, DocumentTextIcon, XIcon, ChatBubbleIcon } from '../ui/Icons';
 import { useProjectContext } from '../../hooks/useProjectContext';
+import { useAuth } from '../../hooks/useAuth';
+import { GlobalRole } from '../../types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -24,6 +26,8 @@ const NavItem: React.FC<{ icon: React.ElementType; label: string; isActive: bool
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, activeView, setActiveView }) => {
   const { messages, markAllMessagesAsRead } = useProjectContext();
+  const { profile } = useAuth();
+  const isGlobalAdmin = profile?.role === GlobalRole.Admin;
 
   const hasUnreadMessages = messages.some(m => !m.isRead);
 
@@ -37,6 +41,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, activeView, setAct
     { label: 'Relatórios', icon: DocumentTextIcon },
     { label: 'Arquivos', icon: FolderIcon }
   ];
+
+  if (isGlobalAdmin) {
+    const teamIndex = navItems.findIndex(item => item.label === 'Equipe');
+    if (teamIndex !== -1) {
+      navItems.splice(teamIndex + 1, 0, { label: 'Usuários', icon: UsersIcon });
+    }
+  }
+
 
   return (
     <>
