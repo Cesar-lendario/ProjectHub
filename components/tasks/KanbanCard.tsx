@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { EnhancedTask } from './TaskList';
 import { TaskPriority } from '../../types';
 import Card from '../ui/Card';
-import { EyeIcon, EditIcon, TrashIcon, UsersIcon } from '../ui/Icons';
+import { EyeIcon, EditIcon, TrashIcon } from '../ui/Icons';
+import ProjectIcon from '../projects/ProjectIcon';
 
 interface KanbanCardProps {
   task: EnhancedTask;
@@ -42,6 +43,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, onView, onEdit, onDelete 
         draggable
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        data-task-id={task.id}
     >
         <div className="flex justify-between items-start">
             <h4 className="font-semibold text-slate-800 text-sm mb-2 pr-2">{task.name}</h4>
@@ -52,13 +54,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, onView, onEdit, onDelete 
         
         <div className="flex justify-between items-center">
             <div className="flex items-center">
-                {task.assignee ? (
-                    <img src={task.assignee.avatar} alt={task.assignee.name} title={task.assignee.name} className="w-7 h-7 rounded-full ring-2 ring-white" />
-                ) : (
-                    <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center" title="Não atribuído">
-                        <UsersIcon className="h-4 w-4 text-slate-500" />
-                    </div>
-                )}
+                <ProjectIcon projectId={task.projectId} />
                 <span className={`text-xs font-medium ml-2 px-2 py-0.5 rounded-full ${isOverdue ? 'text-red-700 bg-red-100' : 'text-slate-600'}`}>
                     {new Date(task.dueDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                 </span>

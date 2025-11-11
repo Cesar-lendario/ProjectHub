@@ -17,6 +17,7 @@ const AppContent: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState('Dashboard');
   const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [taskFilterProjectId, setTaskFilterProjectId] = useState<string | null>(null);
   const { loading } = useProjectContext();
 
   if (loading) {
@@ -39,12 +40,25 @@ const AppContent: React.FC = () => {
     setActiveView('Perfil do Usuário');
   };
 
+  const handleNavigateToTasks = (projectId: string) => {
+    setTaskFilterProjectId(projectId);
+    setActiveView('Tarefas');
+  };
+  
+  const handleViewChange = (view: string) => {
+    if (view !== 'Tarefas') {
+      setTaskFilterProjectId(null);
+    }
+    setActiveView(view);
+  }
+
+
   const renderActiveView = () => {
     switch (activeView) {
       case 'Projetos':
-        return <ProjectList />;
+        return <ProjectList onNavigateToTasks={handleNavigateToTasks} />;
       case 'Tarefas':
-        return <TaskList />;
+        return <TaskList initialProjectFilter={taskFilterProjectId} />;
       case 'Cronograma':
         return <ScheduleView />;
       case 'Equipe':
@@ -69,7 +83,7 @@ const AppContent: React.FC = () => {
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen}
         activeView={activeView}
-        setActiveView={setActiveView} 
+        setActiveView={handleViewChange} 
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header title={activeView} onMenuClick={() => setIsSidebarOpen(true)} />

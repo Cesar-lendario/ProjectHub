@@ -11,9 +11,14 @@ import NotificationLogTable from './NotificationLogTable';
 export type EnhancedTask = Task & {
   projectName: string;
   projectId: string;
+  position?: number;
 };
 
-const TaskList: React.FC = () => {
+interface TaskListProps {
+  initialProjectFilter?: string | null;
+}
+
+const TaskList: React.FC<TaskListProps> = ({ initialProjectFilter }) => {
     const { projects, users, addTask, updateTask, deleteTask } = useProjectContext();
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -21,13 +26,11 @@ const TaskList: React.FC = () => {
     const [editingTask, setEditingTask] = useState<EnhancedTask | null>(null);
     const [viewingTask, setViewingTask] = useState<EnhancedTask | null>(null);
     
-    // State for filters and sorting
     const [filterAssignee, setFilterAssignee] = useState<string>('all');
     const [filterProject, setFilterProject] = useState<string>('all');
     const [filterPriority, setFilterPriority] = useState<string>('all');
     const [sortBy, setSortBy] = useState<string>('default');
     
-    // State to track overdue task notifications
     const [notifiedOverdueTasks, setNotifiedOverdueTasks] = useState<Set<string>>(new Set());
 
     const allTasks = useMemo((): EnhancedTask[] => {
@@ -40,10 +43,9 @@ const TaskList: React.FC = () => {
         );
     }, [projects]);
     
-    // Effect to check for overdue tasks
     useEffect(() => {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Compare dates only, ignoring time
+        today.setHours(0, 0, 0, 0);
 
         allTasks.forEach(task => {
             const dueDate = new Date(task.dueDate);
@@ -56,6 +58,11 @@ const TaskList: React.FC = () => {
         });
     }, [allTasks, notifiedOverdueTasks]);
 
+    useEffect(() => {
+        if (initialProjectFilter) {
+            setFilterProject(initialProjectFilter);
+        }
+    }, [initialProjectFilter]);
 
     const filteredAndSortedTasks = useMemo(() => {
         let filtered = allTasks;
@@ -69,10 +76,6 @@ const TaskList: React.FC = () => {
         if (filterPriority !== 'all') {
             filtered = filtered.filter(task => task.priority === filterPriority);
         }
-
-        if (sortBy === 'default') {
-            return filtered;
-        }
         
         const sorted = [...filtered];
 
@@ -81,6 +84,8 @@ const TaskList: React.FC = () => {
         } else if (sortBy === 'priority') {
             const priorityOrder = { [TaskPriority.High]: 0, [TaskPriority.Medium]: 1, [TaskPriority.Low]: 2 };
             sorted.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+        } else { // Default sort by position
+            sorted.sort((a, b) => (a.position || 0) - (b.position || 0));
         }
 
         return sorted;
@@ -132,26 +137,39 @@ const TaskList: React.FC = () => {
         };
         
         if (editingTask) {
-            updateTask(projectId, { ...finalTaskData, id: editingTask.id });
+            updateTask(projectId, { ...finalTaskData, id: editingTask.id, position: editingTask.position });
         } else {
             addTask(projectId, finalTaskData);
         }
         setIsFormModalOpen(false);
     };
 
-    const handleDrop = (e: React.DragEvent, newStatus: TaskStatus) => {
-        e.preventDefault();
-        const taskId = e.dataTransfer.getData('taskId');
-        const projectId = e.dataTransfer.getData('projectId');
-        
+    const handleTaskDrop = (taskId: string, projectId: string, newStatus: TaskStatus, newIndex: number) => {
         const taskToMove = allTasks.find(t => t.id === taskId);
+        if (!taskToMove) return;
 
-        if (taskToMove && taskToMove.status !== newStatus) {
-            if (newStatus === TaskStatus.Done) {
-                alert(`Tarefa "${taskToMove.name}" do projeto "${taskToMove.projectName}" foi concluída com sucesso!`);
-            }
-            updateTask(projectId, { ...taskToMove, status: newStatus });
+        const destTasks = filteredAndSortedTasks.filter(t => t.status === newStatus && t.id !== taskId);
+        
+        const taskBefore = destTasks[newIndex - 1];
+        const taskAfter = destTasks[newIndex];
+
+        const posBefore = taskBefore ? (taskBefore.position || 0) : 0;
+        let posAfter;
+
+        if (taskAfter) {
+            posAfter = taskAfter.position || 0;
+        } else {
+            const lastTaskInColumn = destTasks[destTasks.length - 1];
+            posAfter = (lastTaskInColumn ? (lastTaskInColumn.position || 0) : 0) + 2000;
         }
+
+        const newPosition = (posBefore + posAfter) / 2;
+
+        if (taskToMove.status !== newStatus && newStatus === TaskStatus.Done) {
+            alert(`Tarefa "${taskToMove.name}" do projeto "${taskToMove.projectName}" foi concluída com sucesso!`);
+        }
+        
+        updateTask(projectId, { ...taskToMove, status: newStatus, position: newPosition });
     };
 
     const columns: TaskStatus[] = [TaskStatus.Pending, TaskStatus.ToDo, TaskStatus.InProgress, TaskStatus.Done];
@@ -205,7 +223,7 @@ const TaskList: React.FC = () => {
                          <div>
                             <label htmlFor="sort-by" className="block text-xs font-medium text-slate-600">Ordenar por</label>
                             <select id="sort-by" value={sortBy} onChange={e => setSortBy(e.target.value)} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-2 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 bg-white">
-                                <option value="default">Padrão</option>
+                                <option value="default">Personalizado</option>
                                 <option value="dueDate">Data de Vencimento</option>
                                 <option value="priority">Prioridade</option>
                             </select>
@@ -223,7 +241,7 @@ const TaskList: React.FC = () => {
                             key={status}
                             status={status}
                             tasks={filteredAndSortedTasks.filter(task => task.status === status)}
-                            onDrop={handleDrop}
+                            onTaskDrop={handleTaskDrop}
                             onViewTask={handleViewTaskClick}
                             onEditTask={handleEditTaskClick}
                             onDeleteTask={handleDeleteTaskClick}

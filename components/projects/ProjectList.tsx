@@ -5,15 +5,13 @@ import { Project, ProjectStatus, TaskStatus } from '../../types';
 import Card from '../ui/Card';
 import { PlusIcon, EditIcon, TrashIcon, AlertCircleIcon } from '../ui/Icons';
 import ProjectForm from './ProjectForm';
-import ProjectDetail from './ProjectDetail';
 
 const ProjectCard: React.FC<{ 
     project: Project; 
-    onSelect: () => void; 
+    onNavigate: () => void; 
     onEdit: () => void;
     onDelete: () => void;
-    isSelected: boolean;
-}> = ({ project, onSelect, onEdit, onDelete, isSelected }) => {
+}> = ({ project, onNavigate, onEdit, onDelete }) => {
 
     const progress = project.tasks.length > 0 
         ? (project.tasks.filter(t => t.status === TaskStatus.Done).length / project.tasks.length) * 100 
@@ -44,8 +42,8 @@ const ProjectCard: React.FC<{
 
     return (
         <Card 
-            onClick={onSelect} 
-            className={`cursor-pointer border-2 ${isSelected ? 'border-indigo-500 shadow-lg' : 'border-transparent hover:border-slate-300'}`}
+            onClick={onNavigate} 
+            className="cursor-pointer border-2 border-transparent hover:border-indigo-500 hover:shadow-lg"
         >
             <div className="flex justify-between items-start">
                 <div>
@@ -98,11 +96,15 @@ const ProjectCard: React.FC<{
     );
 };
 
-const ProjectList: React.FC = () => {
+interface ProjectListProps {
+  onNavigateToTasks: (projectId: string) => void;
+}
+
+
+const ProjectList: React.FC<ProjectListProps> = ({ onNavigateToTasks }) => {
     const { projects, addProject, updateProject, deleteProject } = useProjectContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
-    const [selectedProject, setSelectedProject] = useState<Project | null>(projects.length > 0 ? projects[0] : null);
 
     const handleAddProject = () => {
         setProjectToEdit(null);
@@ -117,19 +119,12 @@ const ProjectList: React.FC = () => {
     const handleDeleteProject = (projectId: string) => {
         if (window.confirm('Tem certeza de que deseja excluir este projeto? Todas as tarefas associadas também serão removidas.')) {
             deleteProject(projectId);
-            if(selectedProject?.id === projectId) {
-                const remainingProjects = projects.filter(p => p.id !== projectId);
-                setSelectedProject(remainingProjects.length > 0 ? remainingProjects[0] : null);
-            }
         }
     };
     
     const handleSaveProject = (projectData: Omit<Project, 'id'> | Project) => {
         if ('id' in projectData) {
             updateProject(projectData);
-            if (selectedProject?.id === projectData.id) {
-                setSelectedProject(projectData);
-            }
         } else {
             addProject(projectData);
         }
@@ -142,7 +137,7 @@ const ProjectList: React.FC = () => {
                 <div className="flex justify-between items-center px-1">
                     <div>
                         <h2 className="text-2xl font-bold text-slate-800">Projetos</h2>
-                        <p className="mt-1 text-slate-600">Selecione um projeto para ver seus detalhes ou adicione um novo.</p>
+                        <p className="mt-1 text-slate-600">Clique em um projeto para ver suas tarefas ou adicione um novo.</p>
                     </div>
                     <button onClick={handleAddProject} className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <PlusIcon className="h-4 w-4" />
@@ -155,24 +150,14 @@ const ProjectList: React.FC = () => {
                         <ProjectCard 
                             key={project.id}
                             project={project}
-                            onSelect={() => setSelectedProject(project)}
+                            onNavigate={() => onNavigateToTasks(project.id)}
                             onEdit={() => handleEditProject(project)}
                             onDelete={() => handleDeleteProject(project.id)}
-                            isSelected={selectedProject?.id === project.id}
                         />
                     ))}
                 </div>
                 
-                {projects.length > 0 ? (
-                    selectedProject ? (
-                        <ProjectDetail project={selectedProject} />
-                    ) : (
-                         <div className="text-center py-12 bg-white rounded-lg shadow">
-                            <h3 className="text-lg font-medium text-slate-800">Nenhum projeto selecionado</h3>
-                            <p className="mt-2 text-slate-500">Selecione um projeto acima para ver os detalhes.</p>
-                        </div>
-                    )
-                ) : (
+                {projects.length === 0 && (
                     <div className="text-center py-12 bg-white rounded-lg shadow">
                         <h3 className="text-lg font-medium text-slate-800">Nenhum projeto encontrado</h3>
                         <p className="mt-2 text-slate-500">Comece adicionando um novo projeto.</p>

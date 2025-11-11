@@ -45,26 +45,34 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const fetchProjects = async () => {
-    // Queries are made explicit to tell Supabase exactly how tables are related, avoiding ambiguity.
     const { data, error } = await supabase.from('projects').select(`
         id, name, description, startDate, endDate, status, projectType, budget, actualCost, clientName, clientEmail, lastEmailNotification, lastWhatsappNotification,
         project_team!project_id(users!user_id(id, name, avatar)),
         tasks!project_id(*, assignee:users!assignee_id(id, name, avatar)),
         files:attachments!project_id(*)
-      `).order('startDate', { ascending: false });
+      `)
+      .order('startDate', { ascending: false })
+      .order('position', { foreignTable: 'tasks', ascending: true, nullsFirst: false }); // Sort tasks by position
       
       if (error) {
         handleError(error, 'fetchProjects');
         return [];
       }
       
-      // Mapping is made more robust to handle cases where related data might be null.
       return data.map((p: any) => {
         const { project_team, ...rest } = p;
+        
+        const processedTasks = (p.tasks || []).map((task: any) => ({
+            ...task,
+            dependencies: task.dependencies || [],
+            comments: task.comments || [],
+            attachments: task.attachments || [],
+        }));
+
         return {
           ...rest,
           team: project_team ? project_team.map((pt: any) => pt.users).filter(Boolean) : [],
-          tasks: p.tasks || [],
+          tasks: processedTasks,
           files: p.files || [],
         };
       });
@@ -127,7 +135,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         taskNames = RENOVACAO_CCT_TASK_NAMES;
     }
     if (taskNames.length > 0) {
-        const defaultTasks = taskNames.map(name => ({
+        const defaultTasks = taskNames.map((name, index) => ({
             name,
             description: '',
             status: TaskStatus.ToDo,
@@ -136,6 +144,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
             duration: 1,
             project_id: newProject.id,
             assignee_id: null,
+            position: (index + 1) * 1000, // Set initial position
         }));
         const { error: tasksError } = await supabase.from('tasks').insert(defaultTasks);
         if (tasksError) handleError(tasksError, 'addProject tasks');
@@ -161,24 +170,27 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const deleteProject = async (projectId: string) => {
-    // Supabase cascade delete should handle related items (tasks, team, files)
     const { error } = await supabase.from('projects').delete().eq('id', projectId);
     if (error) handleError(error, 'deleteProject');
     else setState(prev => ({ ...prev, projects: prev.projects.filter(p => p.id !== projectId) }));
   };
   
   const addTask = async (projectId: string, task: Omit<Task, 'id'>) => {
-    // Fix: Destructure to remove properties not in the DB table
     const { assignee, dependencies, comments, attachments, ...taskData } = task;
-    const { error } = await supabase.from('tasks').insert({ ...taskData, project_id: projectId, assignee_id: assignee?.id || null });
+    
+    const { data: tasksInColumn } = await supabase.from('tasks').select('position').eq('project_id', projectId).eq('status', task.status).order('position', { ascending: false }).limit(1);
+    const maxPosition = tasksInColumn?.[0]?.position || 0;
+    const newPosition = maxPosition + 1000;
+
+    const { error } = await supabase.from('tasks').insert({ ...taskData, project_id: projectId, assignee_id: assignee?.id || null, position: newPosition });
     if(error) handleError(error, 'addTask');
     else await refreshProjects();
   };
 
   const updateTask = async (projectId: string, updatedTask: Task) => {
-    // Optimistic update: update the UI immediately for a better user experience.
     const originalProjects = state.projects;
 
+    // Optimistic update
     const newProjects = state.projects.map(p => {
         if (p.id === projectId) {
             return {
@@ -190,18 +202,21 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
     setState(s => ({ ...s, projects: newProjects }));
 
-    // Send the update to the backend.
-    const { assignee, dependencies, comments, attachments, ...taskData } = updatedTask;
+    const { 
+        assignee, dependencies, comments, attachments, 
+        projectName: _pName, projectId: _pId,
+        ...taskData 
+    } = updatedTask as any;
+
     const { error } = await supabase
         .from('tasks')
-        .update({ ...taskData, assignee_id: assignee?.id || null })
+        .update({ ...taskData, assignee_id: assignee?.id || null, position: updatedTask.position })
         .eq('id', updatedTask.id);
 
-    // If the update fails, revert the state and notify the user.
     if (error) {
         handleError(error, 'updateTask');
         setState(s => ({ ...s, projects: originalProjects }));
-        alert('Falha ao atualizar o status da tarefa. A alteração foi desfeita.');
+        alert('Falha ao atualizar a tarefa. A alteração foi desfeita.');
     }
   };
 
@@ -223,7 +238,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateUser = async (updatedUser: User) => {
     const { error } = await supabase.from('users').update(updatedUser).eq('id', updatedUser.id);
     if(error) handleError(error, 'updateUser');
-    else await fetchInitialData(); // refetch all to update relations
+    else await fetchInitialData();
   };
 
   const deleteUser = async (userId: string) => {
@@ -233,8 +248,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const addFile = async (projectId: string, file: Omit<Attachment, 'id'>) => {
-    // In a real app, this would upload to Supabase Storage and save the URL.
-    // For now, we just save the metadata.
     const { error } = await supabase.from('attachments').insert({ ...file, project_id: projectId });
     if (error) handleError(error, 'addFile');
     else await refreshProjects();
@@ -251,10 +264,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const { error } = await supabase.from('messages').insert({ ...messageData, sender_id: sender.id, isRead: false });
     if (error) handleError(error, 'addMessage');
     else {
-        // Optimistic update for better UX
         const newMessage = { ...message, id: `temp-${Date.now()}`, isRead: true };
         setState(s => ({ ...s, messages: [...s.messages, newMessage]}));
-        // Could refetch messages here for consistency if needed
     }
   };
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { TaskStatus } from '../../types';
 import KanbanCard from './KanbanCard';
 import { EnhancedTask } from './TaskList';
@@ -6,7 +6,7 @@ import { EnhancedTask } from './TaskList';
 interface KanbanColumnProps {
   status: TaskStatus;
   tasks: EnhancedTask[];
-  onDrop: (e: React.DragEvent, status: TaskStatus) => void;
+  onTaskDrop: (taskId: string, projectId: string, status: TaskStatus, index: number) => void;
   onViewTask: (task: EnhancedTask) => void;
   onEditTask: (task: EnhancedTask) => void;
   onDeleteTask: (task: EnhancedTask) => void;
@@ -21,8 +21,9 @@ const getStatusColor = (status: TaskStatus) => {
     }
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onDrop, onViewTask, onEditTask, onDeleteTask }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onTaskDrop, onViewTask, onEditTask, onDeleteTask }) => {
     const [isOver, setIsOver] = React.useState(false);
+    const columnRef = useRef<HTMLDivElement>(null);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -30,7 +31,6 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onDrop, onVi
     };
     
     const handleDragLeave = (e: React.DragEvent) => {
-        // Impede a cintilação quando o mouse se move sobre elementos filhos
         if (e.currentTarget.contains(e.relatedTarget as Node)) {
             return;
         }
@@ -38,12 +38,29 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onDrop, onVi
     };
 
     const handleDrop = (e: React.DragEvent) => {
-        onDrop(e, status);
+        e.preventDefault();
+        const taskId = e.dataTransfer.getData('taskId');
+        const projectId = e.dataTransfer.getData('projectId');
+
+        const cards = Array.from(columnRef.current?.querySelectorAll('[data-task-id]') || []);
+        let newIndex = cards.length;
+
+        for (let i = 0; i < cards.length; i++) {
+            const card = cards[i] as HTMLElement;
+            const rect = card.getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height / 2) {
+                newIndex = i;
+                break;
+            }
+        }
+        
+        onTaskDrop(taskId, projectId, status, newIndex);
         setIsOver(false);
     };
 
   return (
     <div 
+        ref={columnRef}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}

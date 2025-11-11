@@ -45,6 +45,7 @@ export interface Task {
   comments: Comment[];
   attachments: Attachment[];
   duration: number; // in days
+  position?: number;
 }
 
 export enum ProjectStatus {
