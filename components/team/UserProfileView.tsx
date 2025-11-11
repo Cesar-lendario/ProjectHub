@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
-import { User, Task, TaskStatus, TaskPriority } from '../../types';
+import { User, TaskStatus, TaskPriority } from '../../types';
 import Card from '../ui/Card';
-import KpiCard from '../dashboard/KpiCard';
-import { TasksIcon, CheckSquareIcon, AlertCircleIcon } from '../ui/Icons';
+import { TasksIcon, CheckSquareIcon, AlertCircleIcon, EditIcon, TrashIcon } from '../ui/Icons';
 
 interface UserProfileViewProps {
   user: User;
+  onEdit: (user: User) => void;
+  onDelete: (userId: string) => void;
 }
 
 const getPriorityChip = (priority: TaskPriority) => {
@@ -28,7 +29,19 @@ const getStatusChip = (status: TaskStatus) => {
     }
 }
 
-const UserProfileView: React.FC<UserProfileViewProps> = ({ user }) => {
+const StatItem: React.FC<{ icon: React.ElementType; value: number; label: string; iconClasses: string }> = ({ icon: Icon, value, label, iconClasses }) => (
+    <div className="flex items-center gap-4">
+        <div className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full ${iconClasses.split(' ')[0]}`}>
+            <Icon className={`h-5 w-5 ${iconClasses.split(' ')[1]}`} />
+        </div>
+        <div>
+            <span className="text-xl font-bold text-slate-800 mr-2">{value}</span>
+            <span className="text-slate-500">{label}</span>
+        </div>
+    </div>
+);
+
+const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelete }) => {
   const { projects } = useProjectContext();
 
   const userTasks = useMemo(() => {
@@ -51,26 +64,41 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user }) => {
   
   return (
     <div className="space-y-6">
-      <Card>
-        <div className="flex items-center space-x-6">
-          <img 
-            src={user.avatar} 
-            alt={user.name} 
-            className="h-24 w-24 rounded-full object-cover ring-4 ring-indigo-200"
-          />
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">{user.name}</h1>
-            <p className="text-indigo-600 font-semibold mt-1">{user.function || 'Membro da Equipe'}</p>
-          </div>
+      <Card className="relative p-6">
+        <div className="absolute top-4 right-4 flex gap-2">
+            <button
+                onClick={() => onEdit(user)}
+                title="Editar Membro"
+                className="w-9 h-9 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-slate-200 hover:text-indigo-600"
+            >
+                <EditIcon className="h-5 w-5" />
+            </button>
+            <button
+                onClick={() => onDelete(user.id)}
+                title="Excluir Membro"
+                className="w-9 h-9 flex items-center justify-center bg-slate-100 rounded-full transition-colors text-slate-500 hover:bg-red-100 hover:text-red-600"
+            >
+                <TrashIcon className="h-5 w-5" />
+            </button>
+        </div>
+        
+        <div className="flex flex-col items-center text-center">
+            <img 
+              src={user.avatar} 
+              alt={user.name} 
+              className="h-28 w-28 rounded-full object-cover ring-4 ring-white shadow-lg"
+            />
+            <h1 className="text-3xl font-bold text-slate-900 mt-4">{user.name}</h1>
+            <p className="text-indigo-600 font-semibold">{user.function || 'Membro da Equipe'}</p>
+        </div>
+        
+        <div className="mt-8 space-y-5 max-w-xs mx-auto">
+            <StatItem icon={TasksIcon} value={stats.total} label="Tarefas Atribuídas" iconClasses="bg-blue-100 text-blue-600" />
+            <StatItem icon={CheckSquareIcon} value={stats.completed} label="Tarefas Concluídas" iconClasses="bg-green-500 text-white" />
+            <StatItem icon={AlertCircleIcon} value={stats.overdue} label="Tarefas Atrasadas" iconClasses="bg-red-500 text-white" />
         </div>
       </Card>
       
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-        <KpiCard title="Total de Tarefas" value={stats.total} icon={TasksIcon} iconColorClass="text-blue-500" />
-        <KpiCard title="Tarefas Concluídas" value={stats.completed} icon={CheckSquareIcon} iconColorClass="text-green-500" />
-        <KpiCard title="Tarefas Atrasadas" value={stats.overdue} icon={AlertCircleIcon} iconColorClass="text-red-500" />
-      </div>
-
       <Card>
         <h2 className="text-xl font-bold text-slate-800 mb-4">Tarefas Atribuídas</h2>
         <div className="overflow-x-auto">

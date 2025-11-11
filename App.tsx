@@ -11,6 +11,7 @@ import ReportsView from './components/reports/ReportsView';
 import FilesView from './components/files/FilesView';
 import CommunicationView from './components/communication/CommunicationView';
 import UserProfileView from './components/team/UserProfileView';
+import TeamForm from './components/team/TeamForm';
 import { User } from './types';
 
 const AppContent: React.FC = () => {
@@ -18,7 +19,43 @@ const AppContent: React.FC = () => {
   const [activeView, setActiveView] = useState('Dashboard');
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [taskFilterProjectId, setTaskFilterProjectId] = useState<string | null>(null);
-  const { loading } = useProjectContext();
+  const { loading, addUser, updateUser, deleteUser } = useProjectContext();
+
+  const [isTeamFormOpen, setIsTeamFormOpen] = useState(false);
+  const [editingUserForForm, setEditingUserForForm] = useState<User | null>(null);
+
+  const handleOpenTeamForm = (user: User | null) => {
+    setEditingUserForForm(user);
+    setIsTeamFormOpen(true);
+  };
+
+  const handleCloseTeamForm = () => {
+    setEditingUserForForm(null);
+    setIsTeamFormOpen(false);
+  };
+
+  const handleSaveUser = (userData: Omit<User, 'id'> | User) => {
+    if ('id' in userData) {
+      updateUser(userData);
+    } else {
+      addUser(userData);
+    }
+    handleCloseTeamForm();
+  };
+  
+  const handleDeleteUser = (userId: string) => {
+    if (window.confirm('Tem certeza de que deseja excluir este membro da equipe? Ele será removido de todos os projetos e tarefas.')) {
+        deleteUser(userId);
+    }
+  }
+  
+  const handleDeleteUserAndNav = (userId: string) => {
+    if (window.confirm('Tem certeza de que deseja excluir este membro da equipe? Ele será removido de todos os projetos e tarefas.')) {
+        deleteUser(userId);
+        setActiveView('Equipe');
+        setViewingUser(null);
+    }
+  }
 
   if (loading) {
     return (
@@ -49,6 +86,9 @@ const AppContent: React.FC = () => {
     if (view !== 'Tarefas') {
       setTaskFilterProjectId(null);
     }
+    if (view !== 'Perfil do Usuário') {
+      setViewingUser(null);
+    }
     setActiveView(view);
   }
 
@@ -62,9 +102,9 @@ const AppContent: React.FC = () => {
       case 'Cronograma':
         return <ScheduleView />;
       case 'Equipe':
-        return <TeamView onViewProfile={handleViewProfile} />;
+        return <TeamView onViewProfile={handleViewProfile} onAddUser={() => handleOpenTeamForm(null)} onEditUser={handleOpenTeamForm} onDeleteUser={handleDeleteUser} />;
       case 'Perfil do Usuário':
-        return viewingUser ? <UserProfileView user={viewingUser} /> : <TeamView onViewProfile={handleViewProfile} />;
+        return viewingUser ? <UserProfileView user={viewingUser} onEdit={handleOpenTeamForm} onDelete={handleDeleteUserAndNav} /> : <TeamView onViewProfile={handleViewProfile} onAddUser={() => handleOpenTeamForm(null)} onEditUser={handleOpenTeamForm} onDeleteUser={handleDeleteUser} />;
       case 'Relatórios':
         return <ReportsView />;
        case 'Arquivos':
@@ -91,6 +131,12 @@ const AppContent: React.FC = () => {
           {renderActiveView()}
         </main>
       </div>
+       <TeamForm
+        isOpen={isTeamFormOpen}
+        onClose={handleCloseTeamForm}
+        onSave={handleSaveUser}
+        userToEdit={editingUserForForm}
+      />
     </div>
   );
 };
