@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ProjectHub: Gerenciamento Profissional de Projetos</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Configuração do Tailwind CDN para suportar dark mode
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
   <script type="importmap">
 {
   "imports": {
@@ -21,7 +27,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-100 text-slate-800">
+  <body>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>
