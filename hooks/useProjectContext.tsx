@@ -47,8 +47,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const fetchProjects = async () => {
     const { data, error } = await supabase.from('projects').select(`
         id, name, description, startDate, endDate, status, projectType, budget, actualCost, clientName, clientEmail, lastEmailNotification, lastWhatsappNotification,
-        project_team!project_id(users!user_id(id, name, avatar)),
-        tasks!project_id(*, assignee:users!assignee_id(id, name, avatar)),
+        project_team!project_id(users!user_id(id, name, avatar, function)),
+        tasks!project_id(*, assignee:users!assignee_id(id, name, avatar, function)),
         files:attachments!project_id(*)
       `)
       .order('startDate', { ascending: false })

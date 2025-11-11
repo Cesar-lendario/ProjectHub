@@ -56,7 +56,7 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ user, stats, onEdit, on
           className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-md mt-8"
         />
         <h3 className="mt-4 font-bold text-xl text-slate-800">{user.name}</h3>
-        <p className="text-sm text-slate-500">Membro da Equipe</p>
+        <p className="text-sm text-indigo-600 font-medium">{user.function || 'Membro da Equipe'}</p>
 
         <div className="mt-6 w-full space-y-4">
           <StatItem icon={TasksIcon} value={stats.total} label="Tarefas Atribuídas" colorClass="bg-blue-500" />

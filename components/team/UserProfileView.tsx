@@ -60,7 +60,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user }) => {
           />
           <div>
             <h1 className="text-3xl font-bold text-slate-900">{user.name}</h1>
-            <p className="text-slate-600 mt-1">Membro da Equipe</p>
+            <p className="text-indigo-600 font-semibold mt-1">{user.function || 'Membro da Equipe'}</p>
           </div>
         </div>
       </Card>
