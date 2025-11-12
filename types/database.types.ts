@@ -217,29 +217,29 @@ export interface Database {
       users: {
         Row: {
           id: string;
-          email: string;
           name: string;
           avatar: string | null;
           function: string | null;
           role: 'admin' | 'supervisor' | 'engineer';
+          auth_id: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
-          email: string;
           name: string;
           avatar?: string | null;
           function?: string | null;
           role?: 'admin' | 'supervisor' | 'engineer';
+          auth_id?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
-          email?: string;
           name?: string;
           avatar?: string | null;
           function?: string | null;
           role?: 'admin' | 'supervisor' | 'engineer';
+          auth_id?: string | null;
           created_at?: string;
         };
       };

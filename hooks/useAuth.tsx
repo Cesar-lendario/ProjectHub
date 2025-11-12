@@ -12,6 +12,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string, role: GlobalRole) => Promise<{ error: AuthError | { message: string } | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: AuthError | null }>;
+  updateProfile: (updatedUser: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,7 +40,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
             
             // Usar mapUser para garantir que o role seja convertido corretamente
-            setProfile(userProfile ? mapUser(userProfile) : null);
+            // e sobrescrever o e-mail com o do Auth (fonte da verdade)
+            if (userProfile) {
+              const mapped = mapUser(userProfile);
+              const authEmail = session.user.email ?? mapped.email;
+              setProfile({ ...mapped, email: authEmail });
+            } else {
+              setProfile(null);
+            }
           } else {
             setProfile(null);
           }
@@ -91,6 +99,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { error };
   };
 
+  const updateProfile = (updatedUser: User) => {
+    setProfile(updatedUser);
+  };
+
   const value: AuthContextType = {
     session,
     profile,
@@ -99,6 +111,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signUp,
     signOut,
     updatePassword,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

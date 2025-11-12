@@ -36,7 +36,9 @@ const TeamManagementView: React.FC = () => {
     };
 
     const handleEditUser = (user: User) => {
-        setUserToEdit(user);
+        // Se for o próprio usuário logado, usar o profile atualizado (com email do Auth)
+        const userToSet = user.id === profile?.id ? profile : user;
+        setUserToEdit(userToSet);
         setIsFormOpen(true);
     };
 
@@ -74,18 +76,20 @@ const TeamManagementView: React.FC = () => {
             }
 
             if ('id' in userData) {
-                // Rule: Only one admin allowed
                 await updateUser(userData);
+                
+                // Atualizar o selectedUser se estiver visualizando o perfil
+                if (view === 'profile' && selectedUser && selectedUser.id === userData.id) {
+                    // Se for o próprio usuário logado, usar o profile atualizado do Auth
+                    const updatedUser = userData.id === profile?.id ? { ...userData } : userData;
+                    setSelectedUser(updatedUser);
+                }
             } else {
                 await addUser({ ...userData, role: desiredRole });
             }
+            
             setIsFormOpen(false);
             setUserToEdit(null);
-            if (view === 'profile' && selectedUser && 'id' in userData && selectedUser.id === userData.id) {
-                // After saving, we need to refresh the selected user data
-                // The fetchAllData in updateUser will handle this, but we can update local state for snappier UI
-                setSelectedUser(userData);
-            }
         } catch (error) {
             console.error(error);
             alert(error instanceof Error ? error.message : 'Não foi possível salvar o usuário.');
@@ -94,7 +98,11 @@ const TeamManagementView: React.FC = () => {
 
     useEffect(() => {
         if (focusedUserId) {
-            const user = users.find(u => u.id === focusedUserId);
+            // Se for o próprio usuário logado, usar o profile do Auth (tem email correto)
+            // Caso contrário, buscar da lista de usuários
+            const user = focusedUserId === profile?.id 
+                ? profile 
+                : users.find(u => u.id === focusedUserId);
             if (user) {
                 setSelectedUser(user);
                 setUserToEdit(user);
@@ -102,16 +110,18 @@ const TeamManagementView: React.FC = () => {
             }
             setFocusedUserId(null);
         }
-    }, [focusedUserId, users, setFocusedUserId]);
+    }, [focusedUserId, users, profile, setFocusedUserId]);
 
     if (view === 'profile' && selectedUser) {
+        // Sempre usar o profile do Auth se for o próprio usuário (garante email atualizado)
+        const displayUser = selectedUser.id === profile?.id ? profile : selectedUser;
         return (
             <div>
                 <button onClick={handleBackToList} className="mb-4 text-sm font-medium text-indigo-600 hover:text-indigo-800">
                     &larr; Voltar para a equipe
                 </button>
                 <UserProfileView 
-                    user={selectedUser} 
+                    user={displayUser} 
                     onEdit={handleEditUser}
                     onDelete={handleDeleteUser}
                     isAdmin={isGlobalAdmin}
@@ -120,7 +130,7 @@ const TeamManagementView: React.FC = () => {
                     isOpen={isFormOpen}
                     onClose={() => setIsFormOpen(false)}
                     onSave={handleSaveUser}
-                    userToEdit={userToEdit}
+                    userToEdit={displayUser}
                     currentUserProfile={profile}
                 />
             </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import Card from '../ui/Card';
 import { useProjectContext } from '../../hooks/useProjectContext';
+import { useAuth } from '../../hooks/useAuth';
 import { TaskStatus, User } from '../../types';
 import TeamMemberCard from './TeamMemberCard';
 
@@ -14,6 +15,7 @@ interface TeamViewProps {
 
 const TeamView: React.FC<TeamViewProps> = ({ onViewProfile, onEditUser, onDeleteUser, onAddUser, isAdmin }) => {
     const { users, projects } = useProjectContext();
+    const { profile } = useAuth();
     const allTasks = projects.flatMap(p => p.tasks);
 
     return (
@@ -39,18 +41,21 @@ const TeamView: React.FC<TeamViewProps> = ({ onViewProfile, onEditUser, onDelete
                         const completedTasks = assignedTasks.filter(task => task.status === TaskStatus.Done).length;
                         const overdueTasks = assignedTasks.filter(task => new Date(task.dueDate) < new Date() && task.status !== TaskStatus.Done).length;
 
+                        // Se for o próprio usuário logado, usar o profile do Auth (tem email correto)
+                        const displayUser = user.id === profile?.id ? profile : user;
+
                         return (
                             <TeamMemberCard 
                                 key={user.id}
-                                user={user}
+                                user={displayUser}
                                 stats={{
                                     total: assignedTasks.length,
                                     completed: completedTasks,
                                     overdue: overdueTasks,
                                 }}
-                                onEdit={() => onEditUser(user)}
+                                onEdit={() => onEditUser(displayUser)}
                                 onDelete={() => onDeleteUser(user.id)}
-                                onView={() => onViewProfile(user)}
+                                onView={() => onViewProfile(displayUser)}
                                 isAdmin={isAdmin}
                             />
                         );

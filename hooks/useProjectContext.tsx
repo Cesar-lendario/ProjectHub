@@ -49,7 +49,7 @@ interface ProjectContextType {
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { profile } = useAuth();
+  const { profile, updateProfile } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -110,13 +110,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     refreshData();
   }, [refreshData]);
 
-  // Adicionar perfil do usuário logado aos usuários
+  // Sincronizar/mesclar perfil do usuário logado na lista de usuários
   useEffect(() => {
     if (profile) {
       setUsers(prev => {
-        const exists = prev.some(u => u.id === profile.id);
-        if (exists) return prev;
-        return [...prev, profile];
+        const index = prev.findIndex(u => u.id === profile.id);
+        if (index === -1) {
+          return [...prev, profile];
+        }
+        const updated = [...prev];
+        updated[index] = { ...updated[index], ...profile };
+        return updated;
       });
     }
   }, [profile]);
@@ -320,16 +324,20 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       setLoading(true);
       
+      // IMPORTANTE: A tabela 'users' não tem coluna 'email'
+      // O email será gerenciado pelo Supabase Auth quando o usuário fizer login
       const dbUser = await UsersService.create({
         id: uuidv4(),
-        email: normalizedEmail,
+        // email não é enviado para o banco (não existe na tabela users)
         name: userData.name,
         avatar: userData.avatar,
         function: userData.function,
         role: unmapGlobalRole(userData.role),
+        auth_id: null, // Será preenchido quando o usuário fizer login
       });
 
-      const newUser = mapUser(dbUser);
+      // Manter o email no objeto retornado para o frontend
+      const newUser = { ...mapUser(dbUser), email: normalizedEmail };
       setUsers(prev => [...prev, newUser]);
       return newUser;
     } catch (err) {
@@ -344,27 +352,36 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       setLoading(true);
       
-      await UsersService.update(userData.id, {
+      // IMPORTANTE: A tabela 'users' não tem coluna 'email'
+      // O email vem do Supabase Auth e não pode ser alterado aqui
+      const updatedDbUser = await UsersService.update(userData.id, {
         name: userData.name,
-        email: userData.email,
         avatar: userData.avatar,
         function: userData.function,
         role: unmapGlobalRole(userData.role),
       });
 
-      setUsers(prev => prev.map(u => u.id === userData.id ? userData : u));
+      // Mapear o usuário retornado do banco e manter o email do userData original
+      const updatedUser = { ...mapUser(updatedDbUser), email: userData.email };
+
+      setUsers(prev => prev.map(u => u.id === userData.id ? updatedUser : u));
       setProjects(prevProjects => prevProjects.map(p => ({
         ...p,
-        team: p.team.map(tm => tm.user.id === userData.id ? { ...tm, user: userData } : tm),
-        tasks: p.tasks.map(t => t.assignee?.id === userData.id ? { ...t, assignee: userData } : t)
+        team: p.team.map(tm => tm.user.id === userData.id ? { ...tm, user: updatedUser } : tm),
+        tasks: p.tasks.map(t => t.assignee?.id === userData.id ? { ...t, assignee: updatedUser } : t)
       })));
+
+      // Se for o próprio usuário logado, atualizar também o profile no AuthContext
+      if (profile?.id === userData.id) {
+        updateProfile(updatedUser);
+      }
     } catch (err) {
       console.error('Erro ao atualizar usuário:', err);
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [profile, updateProfile]);
 
   const deleteUser = useCallback(async (userId: string, reassignToUserId?: string | null) => {
     try {

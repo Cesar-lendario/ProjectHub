@@ -11,8 +11,10 @@ export const TeamService = {
     const { data, error } = await supabase
       .from('project_team')
       .select(`
-        *,
-        user:users (*)
+        role,
+        user_id,
+        project_id,
+        user:user_id (*)
       `)
       .eq('project_id', projectId);
 
@@ -61,7 +63,7 @@ export const TeamService = {
   async isMember(projectId: string, userId: string) {
     const { data, error } = await supabase
       .from('project_team')
-      .select('id')
+      .select('user_id')
       .eq('project_id', projectId)
       .eq('user_id', userId)
       .single();

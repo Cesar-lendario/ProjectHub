@@ -2,7 +2,11 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Task, TaskPriority, TaskStatus } from '../../types';
-import { XIcon } from '../ui/Icons';
+import Modal from '../ui/Modal';
+import Input from '../ui/Input';
+import Select from '../ui/Select';
+import Textarea from '../ui/Textarea';
+import Button from '../ui/Button';
 
 type EnhancedTask = Task & {
   projectName: string;
@@ -79,125 +83,102 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
     }
   };
   
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center" aria-modal="true" role="dialog">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg m-4 max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">{taskToEdit ? 'Editar Tarefa' : 'Adicionar Nova Tarefa'}</h2>
-          <button onClick={onClose} className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-700/50">
-             <XIcon className="h-6 w-6" />
-          </button>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title={taskToEdit ? 'Editar Tarefa' : 'Adicionar Nova Tarefa'}
+      size="lg"
+    >
+      <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        {/* Nome da Tarefa */}
+        <Input
+          label="Nome da Tarefa"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          placeholder="Ex: Implementar login de usuário"
+        />
+
+        {/* Descrição */}
+        <Textarea
+          label="Descrição"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={3}
+          placeholder="Descreva os detalhes da tarefa..."
+        />
+
+        {/* Row 1: Projeto e Responsável */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Select
+            label="Projeto"
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+            options={[
+              { value: '', label: 'Selecione um projeto' },
+              ...projects.map(project => ({ value: project.id, label: project.name }))
+            ]}
+            required
+          />
+          <Select
+            label="Responsável"
+            value={assigneeId || ''}
+            onChange={(e) => setAssigneeId(e.target.value || null)}
+            options={[
+              { value: '', label: 'Não atribuído' },
+              ...users.map(user => ({ value: user.id, label: user.name }))
+            ]}
+          />
         </div>
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
-          <div>
-            <label htmlFor="task-name" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Nome da Tarefa</label>
-            <input
-              type="text"
-              id="task-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 dark:text-slate-50 bg-white"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="task-description" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Descrição</label>
-            <textarea
-              id="task-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 dark:text-slate-50 bg-white"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label htmlFor="project-id" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Projeto</label>
-                <select 
-                    id="project-id"
-                    value={projectId}
-                    onChange={(e) => setProjectId(e.target.value)}
-                    className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 dark:text-slate-50 bg-white"
-                    required
-                >
-                    <option value="" disabled>Selecione um projeto</option>
-                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-            </div>
-            <div>
-                <label htmlFor="assignee-id" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Responsável</label>
-                <select 
-                    id="assignee-id"
-                    value={assigneeId || ''}
-                    onChange={(e) => setAssigneeId(e.target.value || null)}
-                    className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 dark:text-slate-50 bg-white"
-                >
-                    <option value="">Não atribuído</option>
-                    {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label htmlFor="due-date" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Data de Vencimento</label>
-                <input 
-                    type="date"
-                    id="due-date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 dark:text-slate-50 bg-white"
-                    required
-                />
-            </div>
-             <div>
-                <label htmlFor="duration" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Duração (dias)</label>
-                <input 
-                    type="number"
-                    id="duration"
-                    value={duration}
-                    onChange={(e) => setDuration(Number(e.target.value))}
-                    className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 dark:text-slate-50 bg-white"
-                    min="0"
-                />
-            </div>
-          </div>
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label htmlFor="priority" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Prioridade</label>
-                <select 
-                    id="priority"
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                    className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 dark:text-slate-50 bg-white"
-                >
-                    {Object.values(TaskPriority).map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-            </div>
-            <div>
-                <label htmlFor="status" className="block text-sm font-medium text-slate-700 dark:text-slate-200">Status</label>
-                <select 
-                    id="status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                    className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 dark:text-slate-50 bg-white"
-                >
-                    {Object.values(TaskStatus).map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-            </div>
-          </div>
-        </form>
-        <div className="flex justify-end items-center p-4 border-t bg-slate-50 dark:bg-slate-700/30 rounded-b-lg">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 dark:bg-slate-700/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Cancelar
-            </button>
-            <button type="submit" onClick={handleSubmit} disabled={isLoading} className="ml-3 inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400">
-                {isLoading ? 'Salvando...' : 'Salvar Tarefa'}
-            </button>
+
+        {/* Row 2: Data e Duração */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Data de Vencimento"
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            required
+          />
+          <Input
+            label="Duração (dias)"
+            type="number"
+            value={duration}
+            onChange={(e) => setDuration(Number(e.target.value))}
+            min="1"
+            placeholder="1"
+          />
         </div>
-      </div>
-    </div>
+
+        {/* Row 3: Prioridade e Status */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Select
+            label="Prioridade"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as TaskPriority)}
+            options={Object.values(TaskPriority).map(p => ({ value: p, label: p }))}
+          />
+          <Select
+            label="Status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as TaskStatus)}
+            options={Object.values(TaskStatus).map(s => ({ value: s, label: s }))}
+          />
+        </div>
+
+        {/* Footer com Botões */}
+        <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="primary" disabled={isLoading}>
+            {isLoading ? 'Salvando...' : 'Salvar Tarefa'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };
 

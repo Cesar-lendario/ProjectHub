@@ -29,12 +29,12 @@ export const UsersService = {
     return data;
   },
 
-  // Buscar usuário por email
-  async getByEmail(email: string) {
+  // Buscar usuário por auth_id (vinculado ao Supabase Auth)
+  async getByAuthId(authId: string) {
     const { data, error} = await supabase
       .from('users')
       .select('*')
-      .eq('email', email)
+      .eq('auth_id', authId)
       .single();
 
     if (error) throw error;

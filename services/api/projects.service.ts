@@ -13,12 +13,12 @@ export const ProjectsService = {
       .select(`
         *,
         project_team (
-          id,
           role,
-          user:users (*)
+          user_id,
+          user:user_id (*)
         )
       `)
-      .order('created_at', { ascending: false });
+      .order('updated_at', { ascending: false });
 
     if (error) throw error;
     return data;
@@ -31,9 +31,9 @@ export const ProjectsService = {
       .select(`
         *,
         project_team (
-          id,
           role,
-          user:users (*)
+          user_id,
+          user:user_id (*)
         )
       `)
       .eq('id', id)

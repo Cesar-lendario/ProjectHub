@@ -1,6 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { User, Task, Project } from '../../types';
-import { XIcon, AlertCircleIcon, TrashIcon, UserIcon } from '../ui/Icons';
+import { AlertCircleIcon, TrashIcon, UserIcon } from '../ui/Icons';
+import Modal from '../ui/Modal';
+import Input from '../ui/Input';
+import Select from '../ui/Select';
+import Button from '../ui/Button';
 
 interface DeleteUserModalProps {
   isOpen: boolean;
@@ -97,46 +101,44 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
   const hasImpact = impactAnalysis.projectCount > 0 || impactAnalysis.taskCount > 0;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center" aria-modal="true" role="dialog">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl m-4 max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-slate-200">
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="⚠️ Excluir Membro da Equipe"
+      size="2xl"
+    >
+      <div className="p-6 space-y-6">
+        {/* Alerta de Ação Irreversível */}
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-              <AlertCircleIcon className="h-6 w-6 text-red-600" />
-            </div>
+            <AlertCircleIcon className="h-6 w-6 text-red-600 dark:text-red-400 flex-shrink-0" />
             <div>
-              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">Excluir Membro da Equipe</h2>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">Esta ação não pode ser desfeita</p>
+              <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                Esta ação não pode ser desfeita
+              </p>
+              <p className="text-xs text-red-600 dark:text-red-300 mt-1">
+                O usuário será permanentemente removido do sistema
+              </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-700/50 transition-colors"
-            disabled={isDeleting}
-          >
-            <XIcon className="h-6 w-6" />
-          </button>
         </div>
 
-        {/* Body - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Informações do Usuário */}
-          <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200">
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="w-16 h-16 rounded-full object-cover ring-2 ring-white shadow-md"
-            />
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg text-slate-800 dark:text-slate-50">{user.name}</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300">{user.email}</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{user.function || 'Sem função definida'}</p>
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 mt-2">
-                {user.role}
-              </span>
-            </div>
+        {/* Informações do Usuário */}
+        <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200 dark:border-slate-600">
+          <img
+            src={user.avatar}
+            alt={user.name}
+            className="w-16 h-16 rounded-full object-cover ring-2 ring-white dark:ring-slate-600 shadow-md"
+          />
+          <div className="flex-1">
+            <h3 className="font-semibold text-lg text-slate-800 dark:text-slate-50">{user.name}</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{user.email}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{user.function || 'Sem função definida'}</p>
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-200 mt-2">
+              {user.role}
+            </span>
           </div>
+        </div>
 
           {/* Análise de Impacto */}
           {hasImpact && (
@@ -148,17 +150,17 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
 
               {/* Estatísticas */}
               <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="text-2xl font-bold text-blue-700">{impactAnalysis.projectCount}</div>
-                  <div className="text-sm text-blue-600">Projeto(s)</div>
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{impactAnalysis.projectCount}</div>
+                  <div className="text-sm text-blue-600 dark:text-blue-400">Projeto(s)</div>
                 </div>
-                <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                  <div className="text-2xl font-bold text-orange-700">{impactAnalysis.taskCount}</div>
-                  <div className="text-sm text-orange-600">Tarefa(s) Atribuída(s)</div>
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{impactAnalysis.taskCount}</div>
+                  <div className="text-sm text-orange-600 dark:text-orange-400">Tarefa(s) Atribuída(s)</div>
                 </div>
-                <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                  <div className="text-2xl font-bold text-red-700">{impactAnalysis.adminProjectCount}</div>
-                  <div className="text-sm text-red-600">Admin em Projeto(s)</div>
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="text-2xl font-bold text-red-700 dark:text-red-300">{impactAnalysis.adminProjectCount}</div>
+                  <div className="text-sm text-red-600 dark:text-red-400">Admin em Projeto(s)</div>
                 </div>
               </div>
 
@@ -207,75 +209,72 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
             </div>
           )}
 
-          {/* Reatribuição de Tarefas */}
-          {impactAnalysis.taskCount > 0 && availableUsers.length > 0 && (
-            <div className="space-y-3">
-              <label htmlFor="reassign-user" className="block font-semibold text-slate-800 dark:text-slate-50">
-                Reatribuir tarefas para (opcional):
-              </label>
-              <select
-                id="reassign-user"
-                value={reassignUserId}
-                onChange={(e) => setReassignUserId(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                disabled={isDeleting}
-              >
-                <option value="none">Deixar sem responsável</option>
-                {availableUsers.map(u => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} ({u.function})
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Se não selecionar ninguém, as tarefas ficarão sem responsável e poderão ser reatribuídas depois.
-              </p>
-            </div>
-          )}
-
-          {/* Confirmação com Nome */}
-          <div className="space-y-3">
-            <label htmlFor="confirm-name" className="block font-semibold text-slate-800 dark:text-slate-50">
-              Digite <span className="text-red-600">{user.name}</span> para confirmar:
-            </label>
-            <input
-              id="confirm-name"
-              type="text"
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder={user.name}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+        {/* Reatribuição de Tarefas */}
+        {impactAnalysis.taskCount > 0 && availableUsers.length > 0 && (
+          <div>
+            <Select
+              label="Reatribuir tarefas para (opcional)"
+              value={reassignUserId}
+              onChange={(e) => setReassignUserId(e.target.value)}
+              options={[
+                { value: 'none', label: 'Deixar sem responsável' },
+                ...availableUsers.map(u => ({ 
+                  value: u.id, 
+                  label: `${u.name} (${u.function || 'Sem função'})` 
+                }))
+              ]}
               disabled={isDeleting}
-              autoComplete="off"
             />
-          </div>
-
-          {/* Aviso Final */}
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-800">
-              <strong>⚠️ Esta ação é irreversível.</strong> O perfil do usuário será permanentemente removido do sistema.
-              A conta de autenticação não será afetada.
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+              Se não selecionar ninguém, as tarefas ficarão sem responsável e poderão ser reatribuídas depois.
             </p>
           </div>
+        )}
+
+        {/* Confirmação com Nome */}
+        <div>
+          <Input
+            label={
+              <span>
+                Digite <span className="text-red-600 dark:text-red-400 font-bold">{user.name}</span> para confirmar:
+              </span>
+            }
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder={user.name}
+            disabled={isDeleting}
+            className="focus:ring-red-500 focus:border-red-500"
+          />
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end items-center gap-3 p-6 border-t border-slate-200 bg-slate-50 dark:bg-slate-700/30">
-          <button
+        {/* Aviso Final */}
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-800 dark:text-red-200">
+            <strong>⚠️ Esta ação é irreversível.</strong> O perfil do usuário será permanentemente removido do sistema.
+            A conta de autenticação não será afetada.
+          </p>
+        </div>
+
+        {/* Footer com Botões */}
+        <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <Button 
+            type="button" 
+            variant="ghost" 
             onClick={onClose}
             disabled={isDeleting}
-            className="px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-700/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button 
+            type="button" 
+            variant="danger" 
             onClick={handleConfirm}
             disabled={isDeleting || confirmText !== user.name}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isDeleting ? (
               <>
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
@@ -283,14 +282,14 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
               </>
             ) : (
               <>
-                <TrashIcon className="h-4 w-4" />
+                <TrashIcon className="h-4 w-4 mr-2" />
                 Excluir Permanentemente
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

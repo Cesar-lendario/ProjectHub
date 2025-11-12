@@ -1,8 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Project, TaskStatus } from '../../types';
-import { XIcon, EmailIcon, WhatsappIcon } from '../ui/Icons';
+import { EmailIcon, WhatsappIcon } from '../ui/Icons';
 import WhatsappPreviewModal from './WhatsappPreviewModal';
+import Modal from '../ui/Modal';
+import Select from '../ui/Select';
+import Button from '../ui/Button';
 
 interface NotificationSenderModalProps {
   isOpen: boolean;
@@ -61,78 +64,100 @@ const NotificationSenderModal: React.FC<NotificationSenderModalProps> = ({ isOpe
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center" aria-modal="true" role="dialog">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl m-4 max-h-[90vh] flex flex-col">
-          <div className="flex justify-between items-center p-4 border-b">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">Enviar Lembrete de Tarefas</h2>
-            <button onClick={onClose} className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-700/50">
-              <XIcon className="h-6 w-6" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            <div>
-              <label htmlFor="project-select" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Selecione um Projeto</label>
-              <select
-                id="project-select"
-                value={selectedProjectId}
-                onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 dark:text-slate-50 bg-white"
-              >
-                {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </div>
+      <Modal 
+        isOpen={isOpen} 
+        onClose={onClose} 
+        title="📧 Enviar Lembrete de Tarefas"
+        size="2xl"
+      >
+        <div className="p-6 space-y-6">
+          {/* Seleção de Projeto */}
+          <Select
+            label="Selecione um Projeto"
+            value={selectedProjectId}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+            options={projects.map(p => ({ value: p.id, label: p.name }))}
+          />
 
-            {selectedProject && (
-              <>
-                <div className="p-4 bg-white rounded-lg border border-slate-200">
-                  <h3 className="font-semibold text-slate-800 dark:text-slate-50 text-base">Destinatário</h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">Contato: <span className="font-medium text-slate-900 dark:text-slate-50">{selectedProject.clientName || 'Não informado'}</span></p>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">Email: <span className="font-medium text-slate-900 dark:text-slate-50">{selectedProject.clientEmail || 'Não informado'}</span></p>
+          {selectedProject && (
+            <>
+              {/* Informações do Destinatário */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200 dark:border-slate-600">
+                <h3 className="font-semibold text-slate-800 dark:text-slate-50 text-base mb-3">📧 Destinatário</h3>
+                <div className="space-y-2">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    <span className="font-medium">Contato:</span> 
+                    <span className="ml-2 text-slate-900 dark:text-slate-50">
+                      {selectedProject.clientName || 'Não informado'}
+                    </span>
+                  </p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    <span className="font-medium">Email:</span> 
+                    <span className="ml-2 text-slate-900 dark:text-slate-50">
+                      {selectedProject.clientEmail || 'Não informado'}
+                    </span>
+                  </p>
                 </div>
+              </div>
 
-                <div>
-                  <h3 className="font-semibold text-slate-800 dark:text-slate-50 text-base">Tarefas a serem enviadas ({pendingTasks.length})</h3>
-                  <div className="mt-2 text-sm text-slate-800 dark:text-slate-50 max-h-40 overflow-y-auto border border-slate-200 rounded-md p-3 bg-white space-y-2">
-                    {pendingTasks.length > 0 ? (
-                      pendingTasks.map(task => <div key={task.id}>{task.name}</div>)
-                    ) : (
-                      <div className="text-slate-500 dark:text-slate-400">Nenhuma tarefa pendente ou em andamento para este projeto.</div>
-                    )}
-                  </div>
+              {/* Lista de Tarefas */}
+              <div>
+                <h3 className="font-semibold text-slate-800 dark:text-slate-50 text-base mb-3">
+                  📋 Tarefas a serem enviadas ({pendingTasks.length})
+                </h3>
+                <div className="max-h-40 overflow-y-auto border border-slate-200 dark:border-slate-600 rounded-lg p-3 bg-white dark:bg-slate-700/50 space-y-2">
+                  {pendingTasks.length > 0 ? (
+                    pendingTasks.map(task => (
+                      <div key={task.id} className="flex items-center gap-2 text-sm">
+                        <span className="w-2 h-2 bg-orange-400 rounded-full flex-shrink-0"></span>
+                        <span className="text-slate-800 dark:text-slate-200">{task.name}</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-xs ml-auto">
+                          {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-slate-500 dark:text-slate-400 text-center py-4">
+                      ✅ Nenhuma tarefa pendente ou em andamento para este projeto.
+                    </div>
+                  )}
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+            </>
+          )}
 
-          <div className="flex justify-end items-center p-4 border-t bg-slate-50 dark:bg-slate-700/30 rounded-b-lg gap-3">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 dark:bg-slate-700/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          {/* Footer com Botões */}
+          <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button type="button" variant="ghost" onClick={onClose}>
               Cancelar
-            </button>
+            </Button>
+            
             <a
               href={`mailto:${selectedProject?.clientEmail}?subject=Lembrete de Tarefas Pendentes: ${selectedProject?.name}&body=${generateEmailBody()}`}
               onClick={handleSendEmail}
-              className={`inline-flex items-center gap-2 justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 ${!selectedProject?.clientEmail || pendingTasks.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition-all ${!selectedProject?.clientEmail || pendingTasks.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               aria-disabled={!selectedProject?.clientEmail || pendingTasks.length === 0}
               target="_blank"
               rel="noopener noreferrer"
             >
-              <EmailIcon className="h-5 w-5" /> Enviar por Email
+              <EmailIcon className="h-4 w-4" /> 
+              Enviar por Email
             </a>
-            <button
+            
+            <Button
               type="button"
               onClick={handleOpenWhatsappPreview}
-              className={`inline-flex items-center gap-2 justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 ${pendingTasks.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={pendingTasks.length === 0}
+              className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white"
             >
-              <WhatsappIcon className="h-5 w-5" /> Enviar por WhatsApp
-            </button>
+              <WhatsappIcon className="h-4 w-4 mr-2" />
+              Enviar por WhatsApp
+            </Button>
           </div>
         </div>
-      </div>
+      </Modal>
       <WhatsappPreviewModal
         isOpen={isWhatsappPreviewOpen}
         onClose={() => setIsWhatsappPreviewOpen(false)}

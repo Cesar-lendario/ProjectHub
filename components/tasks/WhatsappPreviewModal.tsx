@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { XIcon, WhatsappIcon } from '../ui/Icons';
+import { WhatsappIcon } from '../ui/Icons';
+import Modal from '../ui/Modal';
+import Textarea from '../ui/Textarea';
+import Button from '../ui/Button';
 
 interface WhatsappPreviewModalProps {
   isOpen: boolean;
@@ -17,47 +20,58 @@ const WhatsappPreviewModal: React.FC<WhatsappPreviewModalProps> = ({ isOpen, onC
     }
   }, [isOpen, initialMessage]);
 
-  if (!isOpen) return null;
-
   const handleSend = () => {
     onSend(message);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[60] flex justify-center items-center" aria-modal="true" role="dialog">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg m-4 max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">Pré-visualizar Mensagem</h2>
-          <button onClick={onClose} className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-700/50">
-            <XIcon className="h-6 w-6" />
-          </button>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="💬 Pré-visualizar Mensagem WhatsApp"
+      size="lg"
+    >
+      <div className="p-6 space-y-6">
+        {/* Preview da mensagem em estilo WhatsApp */}
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <WhatsappIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <span className="text-sm font-medium text-green-800 dark:text-green-200">
+              Pré-visualização WhatsApp
+            </span>
+          </div>
+          <div className="bg-white dark:bg-slate-700 rounded-lg p-3 shadow-sm border border-green-100 dark:border-green-800">
+            <pre className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap font-sans">
+              {message}
+            </pre>
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">
-          <label htmlFor="whatsapp-message" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
-            Edite a mensagem antes de enviar:
-          </label>
-          <textarea
-            id="whatsapp-message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={8}
-            className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 dark:text-slate-50 bg-white"
-          />
-        </div>
-        <div className="flex justify-end items-center p-4 border-t bg-slate-50 dark:bg-slate-700/30 rounded-b-lg gap-3">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 dark:bg-slate-700/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+
+        {/* Editor da mensagem */}
+        <Textarea
+          label="Edite a mensagem antes de enviar:"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={8}
+          placeholder="Digite sua mensagem aqui..."
+        />
+
+        {/* Footer com Botões */}
+        <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <Button type="button" variant="ghost" onClick={onClose}>
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={handleSend}
-            className="inline-flex items-center gap-2 justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white"
           >
-            <WhatsappIcon className="h-5 w-5" /> Enviar via WhatsApp
-          </button>
+            <WhatsappIcon className="h-4 w-4 mr-2" />
+            Enviar via WhatsApp
+          </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 
