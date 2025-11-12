@@ -52,3 +52,4 @@ WHERE table_name = 'projects'
 -- updated_at  | timestamp with time zone | now()
 -- =====================================================
 
+

@@ -10,7 +10,7 @@ import Button from '../ui/Button';
 interface ProjectFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files' | 'actualCost'> | Project) => Promise<void>;
+  onSave: (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files'> | Project) => Promise<void>;
   projectToEdit: Project | null;
 }
 
@@ -19,7 +19,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [budget, setBudget] = useState(0);
   const [status, setStatus] = useState<ProjectStatus>(ProjectStatus.InProgress);
   const [projectType, setProjectType] = useState<ProjectType>(ProjectType.Outros);
   const [clientName, setClientName] = useState('');
@@ -32,7 +31,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
       setDescription(projectToEdit.description);
       setStartDate(projectToEdit.startDate);
       setEndDate(projectToEdit.endDate);
-      setBudget(projectToEdit.budget);
       setStatus(projectToEdit.status);
       setProjectType(projectToEdit.projectType || ProjectType.Outros);
       setClientName(projectToEdit.clientName || '');
@@ -46,7 +44,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
       setDescription('');
       setStartDate(today);
       setEndDate(nextMonth.toISOString().split('T')[0]);
-      setBudget(0);
       setStatus(ProjectStatus.InProgress);
       setProjectType(ProjectType.Outros);
       setClientName('');
@@ -68,7 +65,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
             description,
             startDate,
             endDate,
-            budget,
             status,
             projectType,
             clientName,
@@ -78,7 +74,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
         if (projectToEdit) {
             await onSave({ ...projectToEdit, ...projectData });
         } else {
-            await onSave(projectData as Omit<Project, 'id' | 'tasks' | 'team' | 'files' | 'actualCost'>);
+            await onSave(projectData as Omit<Project, 'id' | 'tasks' | 'team' | 'files'>);
         }
         onClose();
     } catch(error) {
@@ -162,14 +158,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
 
         {/* Row 4 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            label="Orçamento (R$)"
-            type="number"
-            value={budget}
-            onChange={(e) => setBudget(Number(e.target.value))}
-            min="0"
-            placeholder="0.00"
-          />
           <Select
             label="Status"
             value={status}

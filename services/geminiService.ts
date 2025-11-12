@@ -36,8 +36,8 @@ export const analyzeRisksAndOpportunities = async (projects: Project[]): Promise
 
     const projectDataSummary = projects.map(p => {
         const overdueTasks = p.tasks.filter(t => new Date(t.dueDate) < new Date() && t.status !== TaskStatus.Done).length;
-        const budgetStatus = p.actualCost > p.budget ? `Acima do orçamento em $${(p.actualCost - p.budget).toLocaleString()}` : `Abaixo do orçamento em $${(p.budget - p.actualCost).toLocaleString()}`;
-        return `- Projeto "${p.name}": ${p.tasks.length} tarefas, ${overdueTasks} tarefas atrasadas. Status do orçamento: ${budgetStatus}.`;
+        const clientLabel = p.clientName ? `Cliente: ${p.clientName}.` : 'Cliente não informado.';
+        return `- Projeto "${p.name}": ${p.tasks.length} tarefas, ${overdueTasks} tarefas atrasadas. ${clientLabel}`;
     }).join('\n');
 
     const prompt = `

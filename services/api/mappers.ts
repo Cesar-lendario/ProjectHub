@@ -106,8 +106,6 @@ export const mapProject = (dbProject: any): Project => ({
   endDate: dbProject.end_date,
   status: mapProjectStatus(dbProject.status),
   projectType: mapProjectType(dbProject.project_type),
-  budget: dbProject.budget,
-  actualCost: dbProject.actual_cost,
   clientName: dbProject.client_name,
   clientEmail: dbProject.client_email,
   team: dbProject.project_team ? dbProject.project_team.map(mapTeamMember) : [],

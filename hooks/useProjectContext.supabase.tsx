@@ -24,13 +24,14 @@ interface ProjectContextType {
   focusedUserId: string | null;
   setFocusedUserId: (userId: string | null) => void;
 
-  addProject: (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files' | 'actualCost'>) => Promise<void>;
+  addProject: (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files'>) => Promise<void>;
   updateProject: (projectData: Project) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   
   addTask: (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments'>) => Promise<void>;
   updateTask: (taskData: Task) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
+  reorderTasks: (projectId: string, status: TaskStatus, orderedTasks: Task[]) => void;
 
   addUser: (userData: Omit<User, 'id'>) => Promise<User>;
   updateUser: (userData: User) => Promise<void>;
@@ -129,7 +130,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     return teamMember?.role;
   }, [projects, profile]);
 
-  const addProject = useCallback(async (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files' | 'actualCost'>) => {
+  const addProject = useCallback(async (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files'>) => {
     try {
       setLoading(true);
       
@@ -141,8 +142,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         end_date: projectData.endDate,
         status: unmapProjectStatus(projectData.status),
         project_type: unmapProjectType(projectData.projectType),
-        budget: projectData.budget,
-        actual_cost: 0,
         client_name: projectData.clientName,
         client_email: projectData.clientEmail,
       });
@@ -196,8 +195,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         end_date: projectData.endDate,
         status: unmapProjectStatus(projectData.status),
         project_type: unmapProjectType(projectData.projectType),
-        budget: projectData.budget,
-        actual_cost: projectData.actualCost,
         client_name: projectData.clientName,
         client_email: projectData.clientEmail,
       });
@@ -308,6 +305,27 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const reorderTasks = useCallback((projectId: string, status: TaskStatus, orderedTasks: Task[]) => {
+    setProjects(prev =>
+      prev.map(project => {
+        if (project.id !== projectId) return project;
+
+        const orderedMap = new Map(orderedTasks.map(task => [task.id, task]));
+        const untouched = project.tasks.filter(task => !orderedMap.has(task.id));
+
+        const reordered = orderedTasks.map(task => {
+          const existing = project.tasks.find(t => t.id === task.id);
+          return existing ? { ...existing, ...task } : task;
+        });
+
+        return {
+          ...project,
+          tasks: [...untouched, ...reordered],
+        };
+      })
+    );
   }, []);
 
   const addUser = useCallback(async (userData: Omit<User, 'id'>) => {
@@ -615,6 +633,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     addTask,
     updateTask,
     deleteTask,
+    reorderTasks,
     addUser,
     updateUser,
     deleteUser,

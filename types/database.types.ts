@@ -42,8 +42,6 @@ export interface Database {
           end_date: string;
           status: 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
           project_type: 'homologacao' | 'renovacao_cct' | 'outros';
-          budget: number;
-          actual_cost: number;
           client_name: string;
           client_email: string;
           last_email_notification: string | null;
@@ -59,8 +57,6 @@ export interface Database {
           end_date: string;
           status?: 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
           project_type: 'homologacao' | 'renovacao_cct' | 'outros';
-          budget: number;
-          actual_cost?: number;
           client_name: string;
           client_email: string;
           last_email_notification?: string | null;
@@ -76,8 +72,6 @@ export interface Database {
           end_date?: string;
           status?: 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
           project_type?: 'homologacao' | 'renovacao_cct' | 'outros';
-          budget?: number;
-          actual_cost?: number;
           client_name?: string;
           client_email?: string;
           last_email_notification?: string | null;

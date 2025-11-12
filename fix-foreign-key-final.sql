@@ -44,3 +44,4 @@ SELECT id, name, avatar, function, role, auth_id FROM public.users;
 -- 3. Deve funcionar perfeitamente!
 -- =====================================================
 
+

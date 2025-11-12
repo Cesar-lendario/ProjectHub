@@ -104,7 +104,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
       await updateProject(projectData as Project);
     } else {
       // Fix: The Omit utility type takes a union of keys as its second argument, not multiple arguments.
-      await addProject(projectData as Omit<Project, 'id' | 'tasks' | 'team' | 'files' | 'actualCost'>);
+      await addProject(projectData as Omit<Project, 'id' | 'tasks' | 'team' | 'files'>);
     }
     setIsFormOpen(false);
     setProjectToEdit(null);

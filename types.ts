@@ -94,8 +94,6 @@ export interface Project {
   endDate: string;
   status: ProjectStatus;
   projectType: ProjectType;
-  budget: number;
-  actualCost: number;
   clientName: string;
   clientEmail: string;
   team: TeamMember[];

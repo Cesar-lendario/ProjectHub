@@ -139,3 +139,4 @@ ORDER BY tc.table_name;
 -- 5. Se tudo estiver OK, atualize o frontend
 -- =====================================================
 
+

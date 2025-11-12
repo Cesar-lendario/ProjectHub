@@ -34,8 +34,6 @@ export const PROJECTS: Project[] = [
     endDate: '2024-09-01',
     status: ProjectStatus.InProgress,
     projectType: ProjectType.Outros,
-    budget: 50000,
-    actualCost: 25000,
     clientName: 'Alice Martins',
     clientEmail: 'alice.m@clientecorp.com',
     // Fix: Converted the 'team' array from User[] to TeamMember[] by wrapping each user in an object with a role.
@@ -55,8 +53,6 @@ export const PROJECTS: Project[] = [
     endDate: '2024-12-01',
     status: ProjectStatus.InProgress,
     projectType: ProjectType.Outros,
-    budget: 75000,
-    actualCost: 15000,
     clientName: 'Roberto Souza',
     clientEmail: 'roberto.s@fitapp.com',
     // Fix: Converted the 'team' array from User[] to TeamMember[] by wrapping each user in an object with a role.
@@ -76,8 +72,6 @@ export const PROJECTS: Project[] = [
     endDate: '2024-08-15',
     status: ProjectStatus.OnHold,
     projectType: ProjectType.Outros,
-    budget: 120000,
-    actualCost: 60000,
     clientName: 'Carla Dias',
     clientEmail: 'carla.d@infrasolutions.com',
     // Fix: Converted the 'team' array from User[] to TeamMember[] by wrapping each user in an object with a role.

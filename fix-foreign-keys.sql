@@ -1,7 +1,6 @@
 -- =====================================================
 -- CORREÇÃO URGENTE: Foreign Keys Faltantes
 -- =====================================================
--- Este erro está impedindo o salvamento dos dados!
 -- Execute IMEDIATAMENTE no Supabase SQL Editor
 -- =====================================================
 
@@ -21,6 +20,22 @@ ALTER TABLE public.project_team
 ADD CONSTRAINT project_team_project_id_fkey
 FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
+-- 3. Adicionar foreign key entre tasks e users (assignee)
+ALTER TABLE public.tasks
+DROP CONSTRAINT IF EXISTS tasks_assignee_id_fkey;
+
+ALTER TABLE public.tasks
+ADD CONSTRAINT tasks_assignee_id_fkey
+FOREIGN KEY (assignee_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+-- 4. Adicionar foreign key entre tasks e projects
+ALTER TABLE public.tasks
+DROP CONSTRAINT IF EXISTS tasks_project_id_fkey;
+
+ALTER TABLE public.tasks
+ADD CONSTRAINT tasks_project_id_fkey
+FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
 -- 3. Verificar se as foreign keys foram criadas
 SELECT
     tc.table_name, 
@@ -36,7 +51,7 @@ JOIN information_schema.constraint_column_usage AS ccu
     ON ccu.constraint_name = tc.constraint_name
     AND ccu.table_schema = tc.table_schema
 WHERE tc.constraint_type = 'FOREIGN KEY' 
-    AND tc.table_name = 'project_team'
+    AND tc.table_name IN ('project_team', 'tasks')
     AND tc.table_schema = 'public';
 
 -- =====================================================
@@ -44,5 +59,8 @@ WHERE tc.constraint_type = 'FOREIGN KEY'
 -- Deve mostrar 2 foreign keys:
 -- 1. project_team_user_id_fkey -> users(id)
 -- 2. project_team_project_id_fkey -> projects(id)
+-- 3. tasks_assignee_id_fkey -> users(id)
+-- 4. tasks_project_id_fkey -> projects(id)
 -- =====================================================
+
 

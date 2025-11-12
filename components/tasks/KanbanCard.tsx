@@ -3,6 +3,8 @@ import React from 'react';
 import { Task, TaskStatus, TaskPriority } from '../../types';
 import Card from '../ui/Card';
 import { EditIcon, TrashIcon } from '../ui/Icons';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 type EnhancedTask = Task & {
   projectName: string;
@@ -17,23 +19,59 @@ interface KanbanCardProps {
 }
 
 const getPriorityChip = (priority: TaskPriority) => {
-    const baseClasses = "text-xs font-medium px-2 py-0.5 rounded-full";
+    const baseClasses = 'text-xs font-medium px-2 py-0.5 rounded-full';
     switch (priority) {
-        case TaskPriority.High: return `${baseClasses} bg-red-100 text-red-800`;
-        case TaskPriority.Medium: return `${baseClasses} bg-yellow-100 text-yellow-800`;
-        case TaskPriority.Low: return `${baseClasses} bg-blue-100 text-blue-800`;
+        case TaskPriority.High:
+            return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200`;
+        case TaskPriority.Medium:
+            return `${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-amber-500/20 dark:text-amber-200`;
+        case TaskPriority.Low:
+            return `${baseClasses} bg-blue-100 text-blue-800 dark:bg-sky-500/20 dark:text-sky-200`;
     }
-}
+};
+
+const getProjectBadgeStyle = (projectName: string) => {
+    const safeName = projectName || 'Projeto';
+    const charCodes = safeName
+        .split('')
+        .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hue = charCodes % 360;
+    const secondaryHue = (hue + 40) % 360;
+    return {
+        background: `linear-gradient(135deg, hsl(${hue}, 75%, 55%), hsl(${secondaryHue}, 70%, 50%))`,
+        initial: safeName.trim()[0]?.toUpperCase() ?? 'P',
+    };
+};
 
 const KanbanCard: React.FC<KanbanCardProps> = ({ task, onEdit, onDelete, onView, canEdit }) => {
     const isOverdue = new Date(task.dueDate) < new Date() && task.status !== TaskStatus.Done;
+    const projectBadge = getProjectBadgeStyle(task.projectName);
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
+        id: task.id,
+        data: { type: 'task', status: task.status, projectId: task.project_id },
+    });
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
     
     return (
         <Card
-            className="group relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            ref={setNodeRef}
+            style={style}
+            className={`group relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isDragging ? 'opacity-70 shadow-2xl' : ''}`}
             onClick={onView}
             role="button"
             tabIndex={0}
+            {...attributes}
+            {...listeners}
             onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
@@ -67,7 +105,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, onEdit, onDelete, onView,
             )}
             <div className="space-y-2">
                 <p className="font-semibold text-slate-800 dark:text-slate-50 text-base pr-6">{task.name}</p>
-                <p className="text-sm text-indigo-600 font-medium">{task.projectName}</p>
+                <p className="text-sm text-indigo-600 dark:text-indigo-300 font-medium tracking-wide">{task.projectName}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{task.description}</p>
             </div>
             <div className="flex items-center justify-between mt-4">
@@ -76,17 +114,25 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, onEdit, onDelete, onView,
                         <img 
                             src={task.assignee.avatar} 
                             alt={task.assignee.name} 
-                            className="w-7 h-7 rounded-full ring-2 ring-white"
+                            className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-900/60 shadow-sm shadow-slate-900/20"
                             title={task.assignee.name}
                         />
                     ) : (
-                        <div className="w-7 h-7 rounded-full bg-slate-200" title="Não atribuído"></div>
+                        <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white shadow-inner shadow-black/20"
+                            style={{ backgroundImage: projectBadge.background }}
+                            title={task.projectName}
+                        >
+                            {projectBadge.initial}
+                        </div>
                     )}
                 </div>
-                <span className={getPriorityChip(task.priority)}>{task.priority}</span>
+                <span className={`${getPriorityChip(task.priority)} dark:bg-opacity-30`}>
+                    {task.priority}
+                </span>
             </div>
              <div className="mt-3 text-xs font-medium flex justify-end">
-                <span className={`px-2 py-1 rounded-full ${isOverdue ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-600'}`}>
+                <span className={`px-2 py-1 rounded-full ${isOverdue ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-200'}`}>
                    Vence em: {new Date(task.dueDate).toLocaleDateString('pt-BR')}
                 </span>
             </div>
