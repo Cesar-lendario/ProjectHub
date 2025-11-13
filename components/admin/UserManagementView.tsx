@@ -6,6 +6,7 @@ import Card from '../ui/Card';
 import TeamForm from '../team/TeamForm';
 import DeleteUserModal from '../team/DeleteUserModal';
 import { EditIcon, TrashIcon } from '../ui/Icons';
+import { EditIcon, TrashIcon } from '../ui/Icons';
 
 const UserManagementView: React.FC = () => {
     const { users, projects, updateUser, deleteUser } = useProjectContext();
@@ -71,55 +72,59 @@ const UserManagementView: React.FC = () => {
 
     return (
         <>
-            <Card>
+            <Card className="bg-slate-900/70 border border-slate-700/40 shadow-lg shadow-indigo-900/20 backdrop-blur-sm">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Gerenciamento de Usuários</h1>
-                    <p className="mt-1 text-slate-600 dark:text-slate-300">Gerencie os perfis e permissões de todos os usuários do sistema.</p>
+                    <h1 className="text-2xl font-bold text-slate-50">Gerenciamento de Usuários</h1>
+                    <p className="mt-1 text-slate-400 text-sm">Gerencie os perfis e permissões de todos os usuários do sistema.</p>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-200">
-                        <thead className="bg-slate-50 dark:bg-slate-700/30">
+                <div className="overflow-x-auto rounded-xl border border-slate-800/40">
+                    <table className="min-w-full divide-y divide-slate-800/50">
+                        <thead className="bg-slate-900/60">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Usuário</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Função</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Perfil</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ações</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Usuário</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Email</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Função</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Perfil</th>
+                                <th className="px-6 py-3 text-center text-xs font-semibold text-slate-300 uppercase tracking-wider">Ações</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-slate-200">
-                            {users.map(user => (
-                                <tr key={user.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center">
-                                            <img className="h-10 w-10 rounded-full" src={user.avatar} alt={user.name} />
-                                            <div className="ml-4">
-                                                <div className="text-sm font-medium text-slate-900 dark:text-slate-50">{user.name}</div>
+                        <tbody className="bg-slate-900/30 divide-y divide-slate-800/40">
+                            {users.map(user => {
+                                const displayUser = user.id === profile?.id ? profile : user;
+                                return (
+                                    <tr key={user.id} className="hover:bg-slate-800/70 transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-4">
+                                                <img className="h-10 w-10 rounded-full ring-2 ring-slate-800/60" src={displayUser?.avatar || user.avatar} alt={displayUser?.name || user.name} />
+                                                <div>
+                                                    <div className="text-sm font-semibold text-slate-100">{displayUser?.name || user.name}</div>
+                                                    <p className="text-xs text-slate-400 capitalize">{displayUser?.role || user.role}</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{user.email}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{user.function}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800 dark:text-slate-50 font-semibold">{user.role}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                        <button 
-                                            onClick={() => handleEditUser(user)}
-                                            className="text-indigo-600 hover:text-indigo-900 p-2"
-                                            title="Editar"
-                                        >
-                                            <EditIcon className="h-5 w-5" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteUser(user)}
-                                            className="text-slate-500 dark:text-slate-400 hover:text-red-700 p-2 disabled:opacity-30 disabled:cursor-not-allowed"
-                                            title="Excluir"
-                                            disabled={profile?.id === user.id || user.role === GlobalRole.Admin}
-                                        >
-                                            <TrashIcon className="h-5 w-5" />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{displayUser?.email || user.email || 'sem-email@sistema.com'}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{displayUser?.function || user.function || '—'}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-200 font-semibold capitalize">{displayUser?.role || user.role}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                            <button 
+                                                onClick={() => handleEditUser(displayUser || user)}
+                                                className="inline-flex items-center justify-center w-9 h-9 rounded-full text-indigo-300 hover:text-white hover:bg-indigo-500/20 transition-colors"
+                                                title="Editar"
+                                            >
+                                                <EditIcon className="h-5 w-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteUser(user)}
+                                                className="inline-flex items-center justify-center w-9 h-9 rounded-full text-red-400 hover:text-white hover:bg-red-500/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed ml-2"
+                                                title="Excluir"
+                                                disabled={profile?.id === user.id || user.role === GlobalRole.Admin}
+                                            >
+                                                <TrashIcon className="h-5 w-5" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

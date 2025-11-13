@@ -22,6 +22,8 @@ interface SidebarProps {
   currentView: string;
   onSetView: (view: string) => void;
   setGlobalProjectFilter: (filter: string) => void;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 interface NavItemProps {
@@ -31,11 +33,12 @@ interface NavItemProps {
   currentView: string;
   onSetView: (view: string) => void;
   onClose: () => void;
+  isCollapsed: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, view, currentView, onSetView, onClose }) => {
+const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, view, currentView, onSetView, onClose, isCollapsed }) => {
   const isActive = currentView === view;
-  const linkClasses = `flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+  const linkClasses = `flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} rounded-lg py-2.5 text-sm font-medium transition-all ${
     isActive 
       ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-md dark:shadow-indigo-500/30' 
       : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
@@ -52,14 +55,14 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, view, currentView,
         }}
         className={linkClasses}
       >
-        <Icon className="mr-3 h-5 w-5" />
-        <span>{label}</span>
+        <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5`} />
+        {!isCollapsed && <span>{label}</span>}
       </a>
     </li>
   );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetView, setGlobalProjectFilter }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetView, setGlobalProjectFilter, isCollapsed, onToggleCollapse }) => {
   const { profile } = useAuth();
   const isGlobalAdmin = profile?.role === GlobalRole.Admin;
 
@@ -101,21 +104,52 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetVi
       
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 transform flex-col border-r border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/95 backdrop-blur-md transition-all lg:static lg:inset-auto lg:z-auto lg:translate-x-0 shadow-sm dark:shadow-black/20 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 ${isCollapsed ? 'lg:w-20' : 'lg:w-64'} transform flex-col border-r border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/95 backdrop-blur-md transition-all lg:static lg:inset-auto lg:z-auto lg:translate-x-0 shadow-sm dark:shadow-black/20 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 dark:border-slate-700/50 px-4">
-          <span className="text-xl font-bold text-slate-800 dark:text-slate-50">ProjectHub</span>
+          <span className={`text-xl font-bold text-slate-800 dark:text-slate-50 transition-all duration-300 ${isCollapsed ? 'lg:opacity-0 lg:-translate-x-4' : ''}`}>
+            ProjectHub
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onToggleCollapse}
+              className="hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-slate-500 dark:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors"
+              title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                {isCollapsed ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                )}
+              </svg>
+            </button>
           <button onClick={onClose} className="lg:hidden text-slate-500 dark:text-slate-200 p-1 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded transition-colors">
             <XIcon className="h-6 w-6"/>
           </button>
+          </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-4">
-          <ul className="space-y-1">
+        <nav className={`flex-1 overflow-y-auto ${isCollapsed ? 'px-2 py-4' : 'p-4'}`}>
+          <ul className={isCollapsed ? 'space-y-2' : 'space-y-1'}>
             {navItems.map(item => (
-              <NavItem key={item.view} {...item} currentView={currentView} onSetView={handleSetView} onClose={onClose} />
+              <NavItem
+                key={item.view}
+                {...item}
+                currentView={currentView}
+                onSetView={handleSetView}
+                onClose={onClose}
+                isCollapsed={isCollapsed}
+              />
             ))}
           </ul>
         </nav>

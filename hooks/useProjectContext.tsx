@@ -42,6 +42,7 @@ interface ProjectContextType {
   updateTeamMemberRole: (projectId: string, userId: string, role: TeamMember['role']) => Promise<void>;
 
   addFile: (projectId: string, file: File) => Promise<void>;
+  deleteFile: (fileId: string, projectId: string) => Promise<void>;
   addMessage: (messageData: Omit<Message, 'id' | 'sender' | 'isRead'>) => Promise<void>;
   logNotification: (projectId: string, type: 'email' | 'whatsapp') => Promise<void>;
   refreshData: () => Promise<void>;
@@ -595,6 +596,28 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [profile]);
 
+  const deleteFile = useCallback(async (fileId: string, projectId: string) => {
+    try {
+      setLoading(true);
+      
+      // Deletar do Supabase Storage e banco
+      await AttachmentsService.delete(fileId);
+
+      // Atualizar estado local
+      setProjects(prev => prev.map(p => {
+        if (p.id === projectId) {
+          return { ...p, files: p.files.filter(f => f.id !== fileId) };
+        }
+        return p;
+      }));
+    } catch (err) {
+      console.error('Erro ao deletar arquivo:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const addMessage = useCallback(async (messageData: Omit<Message, 'id' | 'sender' | 'isRead'>) => {
     const sender = users.find(u => u.id === messageData.sender_id);
     if (!sender) throw new Error("Sender not found");
@@ -740,6 +763,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     removeUserFromProject,
     updateTeamMemberRole,
     addFile,
+    deleteFile,
     addMessage,
     logNotification,
     refreshData,

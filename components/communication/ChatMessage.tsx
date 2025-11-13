@@ -17,20 +17,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, currentUser }) => {
     const isCurrentUser = message.sender.id === currentUser.id;
 
     return (
-        <div className={`flex items-start gap-3 ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex items-start gap-4 ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
             <img 
                 src={message.sender.avatar} 
                 alt={message.sender.name} 
-                className="w-9 h-9 rounded-full flex-shrink-0"
+                className="w-9 h-9 rounded-full flex-shrink-0 ring-2 ring-slate-800/60"
             />
             <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
-                <div className={`px-4 py-2 rounded-lg max-w-md ${isCurrentUser ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-800'}`}>
-                    <p className={`font-bold text-sm mb-1 ${isCurrentUser ? 'text-indigo-200' : 'text-slate-600'}`}>
+                <div className={`px-4 py-3 rounded-2xl max-w-xl shadow-lg backdrop-blur-sm ${isCurrentUser ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white' : 'bg-slate-800/80 text-slate-100 border border-slate-700/40'}`}>
+                    <p className={`font-semibold text-xs uppercase tracking-wide mb-2 ${isCurrentUser ? 'text-indigo-100/80' : 'text-slate-300/90'}`}>
                         {message.sender.name}
                     </p>
-                    <p className="text-sm">{message.content}</p>
+                    <p className="text-sm leading-relaxed">{message.content}</p>
                 </div>
-                <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <span className="text-xs text-slate-500 mt-2">
                     {formatTime(message.timestamp)}
                 </span>
             </div>

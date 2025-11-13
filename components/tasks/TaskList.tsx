@@ -100,9 +100,13 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
     () => buildColumns(enhancedTasks)
   );
 
+  const [isDragging, setIsDragging] = useState(false);
+
   useEffect(() => {
-    setTasksByStatus(prev => mergeColumns(prev, enhancedTasks));
-  }, [enhancedTasks, mergeColumns]);
+    if (!isDragging) {
+      setTasksByStatus(prev => mergeColumns(prev, enhancedTasks));
+    }
+  }, [enhancedTasks, mergeColumns, isDragging]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -122,6 +126,10 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
     },
     [statuses, tasksByStatus]
   );
+
+  const handleDragStart = useCallback(() => {
+    setIsDragging(true);
+  }, []);
 
   const handleDragOver = useCallback(
     ({ active, over }: DragOverEvent) => {
@@ -176,15 +184,25 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
 
   const handleDragEnd = useCallback(
     async ({ active, over }: DragEndEvent) => {
-      if (!over) return;
+      if (!over) {
+        setIsDragging(false);
+        return;
+      }
 
       const activeId = active.id as string;
       const overId = over.id as string;
 
       const sourceStatus = findContainer(activeId);
-      const targetStatus = findContainer(overId);
+      let targetStatus = findContainer(overId);
+
+      // Se não encontrou targetStatus, pode ser que estejamos soltando sobre a coluna (droppable)
+      if (!targetStatus && over.data?.current?.type === 'column') {
+        targetStatus = over.data.current.status as TaskStatus;
+      }
 
       if (!sourceStatus || !targetStatus) {
+        console.error('handleDragEnd: não encontrou sourceStatus ou targetStatus', { sourceStatus, targetStatus, activeId, overId });
+        setIsDragging(false);
         return;
       }
 
@@ -210,6 +228,7 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
           }
         }
 
+        setIsDragging(false);
         return;
       }
 
@@ -217,7 +236,11 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
       const targetItems = tasksByStatus[targetStatus];
       const activeIndex = sourceItems.findIndex(task => task.id === activeId);
 
-      if (activeIndex === -1) return;
+      if (activeIndex === -1) {
+        console.error('handleDragEnd: tarefa não encontrada no sourceStatus', { activeId, sourceStatus });
+        setIsDragging(false);
+        return;
+      }
 
       const overIndexFromSortable = over.data?.current?.sortable?.index;
       const overIndex = targetItems.findIndex(task => task.id === overId);
@@ -226,12 +249,23 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
 
       const updatedSource = [...sourceItems];
       const [movedTask] = updatedSource.splice(activeIndex, 1);
-      if (!movedTask) return;
+      if (!movedTask) {
+        console.error('handleDragEnd: não conseguiu remover tarefa do sourceItems', { activeIndex, sourceItems });
+        setIsDragging(false);
+        return;
+      }
 
       const updatedTask: EnhancedTask = { ...movedTask, status: targetStatus };
       const updatedTarget = [...targetItems];
       const clampedIndex = Math.min(insertIndex, updatedTarget.length);
       updatedTarget.splice(clampedIndex, 0, updatedTask);
+
+      console.log('handleDragEnd: movendo tarefa entre colunas', {
+        taskId: activeId,
+        from: sourceStatus,
+        to: targetStatus,
+        updatedTask,
+      });
 
       setTasksByStatus(prev => ({
         ...prev,
@@ -239,13 +273,16 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
         [targetStatus]: updatedTarget,
       }));
 
-      reorderTasks(movedTask.project_id, sourceStatus, updatedSource);
       reorderTasks(updatedTask.project_id, targetStatus, updatedTarget);
+      reorderTasks(movedTask.project_id, sourceStatus, updatedSource);
 
       try {
         await updateTask(updatedTask);
+        console.log('handleDragEnd: tarefa atualizada com sucesso no Supabase');
       } catch (error) {
         console.error('Erro ao atualizar tarefa após movimento:', error);
+      } finally {
+        setIsDragging(false);
       }
     },
     [findContainer, reorderTasks, tasksByStatus, updateTask]
@@ -332,6 +369,7 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >

@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
-import { Project, ProjectStatus } from '../../types';
+import { Project, ProjectStatus, TaskStatus } from '../../types';
 import Card from '../ui/Card';
-import { PlusIcon, EditIcon, TrashIcon, UsersIcon } from '../ui/Icons';
+import { PlusIcon, EditIcon, TrashIcon, UsersIcon, EyeIcon, UploadIcon } from '../ui/Icons';
 import ProjectForm from './ProjectForm';
 import TeamManagementModal from '../team/TeamManagementModal';
+import FileUpload from '../files/FileUpload';
+import SuccessToast from '../ui/SuccessToast';
 
 interface ProjectListProps {
   setCurrentView: (view: string) => void;
@@ -19,10 +21,12 @@ const ProjectCard: React.FC<{
   onEdit: () => void;
   onDelete: () => void;
   onManageTeam: () => void;
-}> = ({ project, onSelect, onEdit, onDelete, onManageTeam }) => {
-  const progress = project.tasks.length > 0
-    ? (project.tasks.filter(t => t.status === 'Concluído').length / project.tasks.length) * 100
-    : 0;
+  onUploadFile: () => void;
+}> = ({ project, onSelect, onEdit, onDelete, onManageTeam, onUploadFile }) => {
+  const totalTasks = project.tasks.length;
+  const completedTasks = project.tasks.filter(t => t.status === TaskStatus.Done).length;
+  const baseProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+  const progress = project.status === ProjectStatus.Completed ? 100 : baseProgress;
 
   const statusColors: { [key in ProjectStatus]: string } = {
     [ProjectStatus.InProgress]: 'bg-blue-100 text-blue-800',
@@ -67,9 +71,21 @@ const ProjectCard: React.FC<{
           )}
         </div>
         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-          <button onClick={onManageTeam} title="Gerenciar Equipe" className="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:bg-slate-700/50 rounded-full transition-colors"><UsersIcon className="h-5 w-5"/></button>
-          <button onClick={onEdit} title="Editar" className="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:bg-slate-700/50 rounded-full transition-colors"><EditIcon className="h-5 w-5"/></button>
-          <button onClick={onDelete} title="Excluir" className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors"><TrashIcon className="h-5 w-5"/></button>
+          <button onClick={onSelect} title="Visualizar Projeto" className="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 rounded-full transition-colors">
+            <EyeIcon className="h-5 w-5"/>
+          </button>
+          <button onClick={onUploadFile} title="Upload de Arquivo" className="p-2 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/20 rounded-full transition-colors">
+            <UploadIcon className="h-5 w-5"/>
+          </button>
+          <button onClick={onManageTeam} title="Gerenciar Equipe" className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 rounded-full transition-colors">
+            <UsersIcon className="h-5 w-5"/>
+          </button>
+          <button onClick={onEdit} title="Editar Projeto" className="p-2 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/20 rounded-full transition-colors">
+            <EditIcon className="h-5 w-5"/>
+          </button>
+          <button onClick={onDelete} title="Excluir Projeto" className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 rounded-full transition-colors">
+            <TrashIcon className="h-5 w-5"/>
+          </button>
         </div>
       </div>
     </Card>
@@ -78,10 +94,12 @@ const ProjectCard: React.FC<{
 
 
 const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProjectFilter }) => {
-  const { projects, addProject, updateProject, deleteProject } = useProjectContext();
+  const { projects, addProject, updateProject, deleteProject, addFile } = useProjectContext();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
   const [teamModalProject, setTeamModalProject] = useState<Project | null>(null);
+  const [uploadModalProjectId, setUploadModalProjectId] = useState<string | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const handleProjectSelect = (projectId: string) => {
     setGlobalProjectFilter(projectId);
@@ -110,8 +128,29 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
     setProjectToEdit(null);
   };
 
+  const handleUploadFile = async (projectId: string, file: File) => {
+    try {
+      await addFile(projectId, file);
+      setUploadModalProjectId(null);
+      
+      // Mostrar mensagem de sucesso
+      setShowSuccessMessage(true);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert(error instanceof Error ? error.message : "Não foi possível fazer o upload do arquivo.");
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Mensagem de Sucesso */}
+      <SuccessToast 
+        message="Arquivo enviado com sucesso!"
+        isVisible={showSuccessMessage}
+        onClose={() => setShowSuccessMessage(false)}
+        duration={3000}
+      />
+
       <div className="flex justify-between items-center">
         <div>
             <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Projetos</h1>
@@ -131,6 +170,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
             onEdit={() => handleEdit(project)}
             onDelete={() => handleDelete(project.id)}
             onManageTeam={() => setTeamModalProject(project)}
+            onUploadFile={() => setUploadModalProjectId(project.id)}
           />
         ))}
       </div>
@@ -149,6 +189,13 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
             project={teamModalProject}
         />
       )}
+      
+      <FileUpload 
+        isOpen={!!uploadModalProjectId}
+        onClose={() => setUploadModalProjectId(null)}
+        onUpload={handleUploadFile}
+        preSelectedProjectId={uploadModalProjectId || undefined}
+      />
     </div>
   );
 };

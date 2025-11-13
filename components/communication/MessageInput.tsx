@@ -36,11 +36,11 @@ const MessageInput: React.FC<MessageInputProps> = ({ activeChannel, currentUser 
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={`Mensagem em ${activeChannel.startsWith('#') ? activeChannel : 'projeto'}`}
-                className="flex-1 border border-slate-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-50 bg-white"
+                className="flex-1 border border-slate-700 bg-slate-900/80 text-slate-100 placeholder-slate-500 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition shadow-inner shadow-black/20"
             />
             <button
                 type="submit"
-                className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300"
+                className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold rounded-lg shadow-lg shadow-indigo-900/30 hover:from-indigo-400 hover:to-purple-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-40 transition"
                 disabled={!content.trim()}
             >
                 Enviar

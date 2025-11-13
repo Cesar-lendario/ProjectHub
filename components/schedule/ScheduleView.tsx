@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import Card from '../ui/Card';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Task, TaskStatus } from '../../types';
@@ -11,16 +11,59 @@ const addDays = (date: Date, days: number): Date => {
 };
 
 const getDaysDifference = (startDate: Date, endDate: Date): number => {
-  // Reset time to midnight for accurate day difference calculation
   const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
   const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
   const diffTime = end.getTime() - start.getTime();
   return Math.round(diffTime / (1000 * 60 * 60 * 24));
 };
 
+const formatDate = (date: Date): string =>
+  date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+const formatDayLabel = (date: Date): string =>
+  date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+const getMonthLabel = (date: Date): string =>
+  date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+const startOfDay = (date: Date): Date => {
+  const dt = new Date(date);
+  dt.setHours(0, 0, 0, 0);
+  return dt;
+};
+
+const endOfDay = (date: Date): Date => {
+  const dt = new Date(date);
+  dt.setHours(23, 59, 59, 999);
+  return dt;
+};
+
+const startOfWeek = (date: Date): Date => {
+  const dt = new Date(date);
+  dt.setHours(0, 0, 0, 0);
+  const day = dt.getDay();
+  const diff = dt.getDate() - day;
+  return new Date(dt.setDate(diff));
+};
+
+const endOfWeek = (date: Date): Date => {
+  const dt = new Date(date);
+  dt.setHours(23, 59, 59, 999);
+  const day = dt.getDay();
+  const diff = dt.getDate() - day + 6;
+  return new Date(dt.setDate(diff));
+};
+
+const startOfMonth = (date: Date): Date =>
+  new Date(date.getFullYear(), date.getMonth(), 1);
+
+const endOfMonth = (date: Date): Date =>
+  new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+
+const addMonths = (date: Date, months: number): Date => {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
 };
 
 interface GanttTask extends Task {
@@ -30,161 +73,245 @@ interface GanttTask extends Task {
 
 const getTaskColor = (status: TaskStatus): string => {
   switch (status) {
-    case TaskStatus.Done:
-      return 'bg-green-500';
-    case TaskStatus.InProgress:
-      return 'bg-yellow-500';
-    case TaskStatus.ToDo:
-      return 'bg-blue-500';
     case TaskStatus.Pending:
-       return 'bg-purple-500';
+      return 'bg-purple-400';
+    case TaskStatus.ToDo:
+      return 'bg-blue-400';
+    case TaskStatus.InProgress:
+      return 'bg-amber-400';
+    case TaskStatus.Done:
+      return 'bg-emerald-400';
     default:
       return 'bg-slate-400';
   }
 };
 
+type ViewMode = 'daily' | 'weekly' | 'monthly';
+
+const VIEW_CONFIG: Record<ViewMode, { dayWidth: number; label: string }> = {
+  daily: { dayWidth: 56, label: 'Diário' },
+  weekly: { dayWidth: 28, label: 'Semanal' },
+  monthly: { dayWidth: 10, label: 'Mensal' },
+};
 
 const ScheduleView: React.FC = () => {
   const { projects } = useProjectContext();
-  
-  // Gets the start of the week (Sunday) for a given date
-  const getStartOfWeek = (date: Date): Date => {
-    const dt = new Date(date);
-    dt.setHours(0, 0, 0, 0);
-    const day = dt.getDay();
-    const diff = dt.getDate() - day;
-    return new Date(dt.setDate(diff));
-  };
+  const [viewMode, setViewMode] = useState<ViewMode>('weekly');
 
-  // Gets the end of the week (Saturday) for a given date
-  const getEndOfWeek = (date: Date): Date => {
-    const dt = new Date(date);
-    dt.setHours(23, 59, 59, 999);
-    const day = dt.getDay();
-    const diff = dt.getDate() - day + 6;
-    return new Date(dt.setDate(diff));
-  };
+  const {
+    ganttTasksByProject,
+    timelineStart,
+    timelineEnd,
+    headers,
+    dayWidth,
+    totalDays,
+  } = useMemo(() => {
+    const dayWidth = VIEW_CONFIG[viewMode].dayWidth;
 
-
-  const { ganttTasksByProject, timelineStart, weeklyHeaders } = useMemo(() => {
-    if (projects.length === 0 || projects.flatMap(p => p.tasks).length === 0) {
-      return { 
-        ganttTasksByProject: new Map(), 
+    if (projects.length === 0 || projects.flatMap((p) => p.tasks).length === 0) {
+      return {
+        ganttTasksByProject: new Map<string, { name: string; tasks: GanttTask[] }>(),
         timelineStart: new Date(),
-        weeklyHeaders: [] 
+        timelineEnd: new Date(),
+        headers: [] as { startDate: Date; endDate: Date; label: string }[],
+        dayWidth,
+        totalDays: 0,
       };
     }
-    
+
     let earliestStartOverall: Date | null = null;
     let latestEndOverall: Date | null = null;
-    const ganttTasksByProject = new Map<string, { name: string, tasks: GanttTask[] }>();
 
-    projects.forEach(project => {
-        if(project.tasks.length === 0) return;
+    const ganttTasksByProject = new Map<string, { name: string; tasks: GanttTask[] }>();
 
-        const processedTasks: GanttTask[] = project.tasks.map(task => {
-            // Parse date string as local time to avoid timezone issues.
-            // The due date is inclusive, so we consider the end of that day.
-            const endDate = new Date(`${task.dueDate}T23:59:59`);
-            
-            // Duration includes the end day. A 1-day task starts and ends on the same day.
-            const startDate = addDays(new Date(`${task.dueDate}T00:00:00`), -task.duration + 1);
-            
-            if (!earliestStartOverall || startDate < earliestStartOverall) earliestStartOverall = startDate;
-            if (!latestEndOverall || endDate > latestEndOverall) latestEndOverall = endDate;
-            
-            return { ...task, startDate, endDate };
-        });
-       
-        ganttTasksByProject.set(project.id, { name: project.name, tasks: processedTasks });
-    });
-    
-    if (!earliestStartOverall || !latestEndOverall) {
-        return { ganttTasksByProject: new Map(), timelineStart: new Date(), weeklyHeaders: [] };
-    }
+    projects.forEach((project) => {
+      if (project.tasks.length === 0) return;
 
-    const timelineStart = getStartOfWeek(earliestStartOverall);
-    const timelineEnd = getEndOfWeek(latestEndOverall);
+      const processedTasks: GanttTask[] = project.tasks.map((task) => {
+        const endDate = new Date(`${task.dueDate}T23:59:59`);
+        const startDate = addDays(new Date(`${task.dueDate}T00:00:00`), -task.duration + 1);
 
-    const headers = [];
-    let currentDate = new Date(timelineStart);
-    while (currentDate <= timelineEnd) {
-      headers.push({
-        startDate: new Date(currentDate),
-        label: `Semana de ${formatDate(currentDate)}`
+        if (!earliestStartOverall || startDate < earliestStartOverall) earliestStartOverall = startDate;
+        if (!latestEndOverall || endDate > latestEndOverall) latestEndOverall = endDate;
+
+        return { ...task, startDate, endDate };
       });
-      currentDate = addDays(currentDate, 7);
+
+      ganttTasksByProject.set(project.id, { name: project.name, tasks: processedTasks });
+    });
+
+    if (!earliestStartOverall || !latestEndOverall) {
+      return {
+        ganttTasksByProject: new Map<string, { name: string; tasks: GanttTask[] }>(),
+        timelineStart: new Date(),
+        timelineEnd: new Date(),
+        headers: [] as { startDate: Date; endDate: Date; label: string }[],
+        dayWidth,
+        totalDays: 0,
+      };
     }
 
-    return { ganttTasksByProject, timelineStart, weeklyHeaders: headers };
-  }, [projects]);
-  
-  const WEEK_CELL_WIDTH = 120; // in pixels
+    const timelineStart =
+      viewMode === 'daily'
+        ? startOfDay(earliestStartOverall)
+        : viewMode === 'weekly'
+        ? startOfWeek(earliestStartOverall)
+        : startOfMonth(earliestStartOverall);
+
+    const timelineEnd =
+      viewMode === 'daily'
+        ? endOfDay(latestEndOverall)
+        : viewMode === 'weekly'
+        ? endOfWeek(latestEndOverall)
+        : endOfMonth(latestEndOverall);
+
+    const headers: { startDate: Date; endDate: Date; label: string }[] = [];
+
+    if (viewMode === 'daily') {
+      let current = new Date(timelineStart);
+      while (current <= timelineEnd) {
+        const headerStart = startOfDay(current);
+        const headerEnd = endOfDay(current);
+        headers.push({
+          startDate: headerStart,
+          endDate: headerEnd > timelineEnd ? timelineEnd : headerEnd,
+          label: formatDayLabel(headerStart),
+        });
+        current = addDays(current, 1);
+      }
+    } else if (viewMode === 'weekly') {
+      let current = new Date(timelineStart);
+      while (current <= timelineEnd) {
+        const headerStart = startOfWeek(current);
+        const headerEnd = endOfWeek(current);
+        headers.push({
+          startDate: headerStart,
+          endDate: headerEnd > timelineEnd ? timelineEnd : headerEnd,
+          label: `Semana de ${formatDate(headerStart)}`,
+        });
+        current = addDays(headerStart, 7);
+      }
+    } else {
+      let current = startOfMonth(timelineStart);
+      while (current <= timelineEnd) {
+        const headerStart = startOfMonth(current);
+        const headerEnd = endOfMonth(current);
+        headers.push({
+          startDate: headerStart,
+          endDate: headerEnd > timelineEnd ? timelineEnd : headerEnd,
+          label: getMonthLabel(headerStart),
+        });
+        current = startOfMonth(addMonths(headerStart, 1));
+      }
+    }
+
+    const totalDays = getDaysDifference(timelineStart, timelineEnd) + 1;
+
+    return { ganttTasksByProject, timelineStart, timelineEnd, headers, dayWidth, totalDays };
+  }, [projects, viewMode]);
+
+  const timelineWidth = Math.max(totalDays * dayWidth, headers.length * dayWidth);
+  const hasTasks = Array.from(ganttTasksByProject.values()).some((group) => group.tasks.length > 0);
 
   return (
-    <Card>
-        <div className="mb-6">
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Cronograma do Projeto (Gantt)</h2>
-            <p className="mt-1 text-slate-600 dark:text-slate-300">Visualize as tarefas e seus prazos em uma linha do tempo semanal.</p>
+    <Card className="bg-slate-900/70 border border-slate-700/40 shadow-lg shadow-indigo-900/20 backdrop-blur-sm min-h-[70vh] flex flex-col">
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-50">Cronograma do Projeto (Gantt)</h2>
+          <p className="mt-1 text-slate-400 text-sm">
+            Visualize as tarefas e seus prazos em diferentes escalas de tempo.
+          </p>
         </div>
-        <div className="overflow-x-auto relative border border-slate-200 rounded-lg">
-            <div style={{ minWidth: `${weeklyHeaders.length * WEEK_CELL_WIDTH}px` }}>
-                {/* Timeline Header */}
-                <div className="flex bg-slate-50 dark:bg-slate-700/30 sticky top-0 z-10 border-b border-slate-200">
-                    {weeklyHeaders.map((week, index) => (
-                        <div 
-                            key={index} 
-                            style={{ width: `${WEEK_CELL_WIDTH}px` }} 
-                            className="flex-shrink-0 text-center border-r border-slate-200 py-3"
-                        >
-                           <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{week.label}</div>
-                        </div>
-                    ))}
-                </div>
-                 {/* Gantt Body */}
-                 <div className="relative">
-                    {Array.from(ganttTasksByProject.entries()).map(([projectId, projectData]) => (
-                        <div key={projectId} className="border-t border-slate-200">
-                            <h3 className="text-md font-bold text-indigo-700 p-2 bg-indigo-50 sticky left-0 w-full z-10">{projectData.name}</h3>
-                            <div className="relative">
-                              {projectData.tasks.map((task) => {
-                                  const offsetDays = getDaysDifference(timelineStart, task.startDate);
-                                  const left = (offsetDays / 7) * WEEK_CELL_WIDTH;
+        <div className="flex items-center gap-2">
+          {(Object.keys(VIEW_CONFIG) as ViewMode[]).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                viewMode === mode
+                  ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-900/30'
+                  : 'bg-slate-800/60 text-slate-300 hover:bg-slate-700/70'
+              }`}
+            >
+              {VIEW_CONFIG[mode].label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-                                  const widthDays = task.duration > 0 ? task.duration : 1;
-                                  const width = (widthDays / 7) * WEEK_CELL_WIDTH - 4; // -4 for padding
-                                  
-                                  return (
-                                      <div key={task.id} className="relative h-10 my-1 flex items-center group px-2">
-                                          <div 
-                                              className={`absolute h-8 rounded ${getTaskColor(task.status)} transition-all duration-300 hover:opacity-80 shadow-sm`}
-                                              style={{
-                                                  left: `${left}px`,
-                                                  width: `${width}px`,
-                                              }}
-                                          >
-                                              <span className="text-xs font-medium text-white px-2 py-1 absolute inset-0 flex items-center whitespace-nowrap overflow-hidden text-ellipsis">
-                                                  {task.name}
-                                              </span>
-                                              {/* Tooltip */}
-                                              <div className="absolute bottom-full mb-2 hidden group-hover:block w-max bg-slate-800 text-white text-xs rounded py-1 px-2 z-20 shadow-lg">
-                                                  <p><strong>Tarefa:</strong> {task.name}</p>
-                                                  <p><strong>Início:</strong> {task.startDate.toLocaleDateString('pt-BR')}</p>
-                                                  <p><strong>Fim:</strong> {task.endDate.toLocaleDateString('pt-BR')}</p>
-                                                  <p><strong>Status:</strong> {task.status}</p>
-                                                  <p><strong>Responsável:</strong> {task.assignee?.name || 'N/A'}</p>
-                                              </div>
-                                          </div>
-                                      </div>
-                                  );
-                              })}
-                            </div>
-                        </div>
-                    ))}
-                 </div>
-            </div>
+      {!hasTasks || headers.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center text-slate-400">
+          <p>Nenhuma tarefa para exibir no cronograma. Adicione tarefas aos seus projetos.</p>
         </div>
-         {projects.flatMap(p => p.tasks).length === 0 && <p className="text-center py-8 text-slate-500 dark:text-slate-400">Nenhuma tarefa para exibir no cronograma. Adicione tarefas aos seus projetos.</p>}
+      ) : (
+        <div className="flex-1 overflow-x-auto relative border border-slate-800/40 rounded-xl bg-slate-900/40">
+          <div style={{ minWidth: `${timelineWidth}px` }}>
+            <div className="flex bg-slate-900/60 sticky top-0 z-10 border-b border-slate-800/60">
+              {headers.map((header, index) => {
+                const spanDays = getDaysDifference(header.startDate, header.endDate) + 1;
+                return (
+                  <div
+                    key={`${header.label}-${index}`}
+                    style={{ width: `${spanDays * dayWidth}px` }}
+                    className="flex-shrink-0 text-center border-r border-slate-800/60 py-3"
+                  >
+                    <div className="text-sm font-semibold text-slate-200 capitalize">
+                      {header.label}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="relative">
+              {Array.from(ganttTasksByProject.entries()).map(([projectId, projectData]) => (
+                <div key={projectId} className="border-t border-slate-800/50">
+                  <div className="px-4 py-3 text-sm font-semibold text-slate-200 flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-indigo-500" />
+                    {projectData.name}
+                  </div>
+                  <div className="relative h-20">
+                    {projectData.tasks.map((task) => {
+                      const clampedStart =
+                        task.startDate < timelineStart ? timelineStart : task.startDate;
+                      const clampedEnd =
+                        task.endDate > timelineEnd ? timelineEnd : task.endDate;
+
+                      const offsetDays = Math.max(
+                        0,
+                        getDaysDifference(timelineStart, clampedStart)
+                      );
+                      const taskDurationDays = Math.max(
+                        1,
+                        getDaysDifference(clampedStart, clampedEnd) + 1
+                      );
+
+                      const taskWidth = taskDurationDays * dayWidth;
+                      const leftOffset = offsetDays * dayWidth;
+
+                      return (
+                        <div key={task.id} className="relative h-10 my-1 flex items-center px-2">
+                          <div
+                            className={`absolute top-1 h-8 rounded-lg ${getTaskColor(
+                              task.status
+                            )} bg-opacity-90 flex items-center px-3 text-xs font-semibold text-slate-900 shadow-md transition-all duration-300 hover:shadow-lg`}
+                            style={{
+                              width: `${taskWidth}px`,
+                              left: `${leftOffset}px`,
+                            }}
+                          >
+                            <span className="truncate">{task.name}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };

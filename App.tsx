@@ -75,6 +75,7 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, globalProjectFilter, setGlobalProjectFilter }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { setFocusedUserId } = useProjectContext();
   const { profile } = useAuth();
   
@@ -128,6 +129,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
         currentView={currentView}
         onSetView={setCurrentView}
         setGlobalProjectFilter={setGlobalProjectFilter}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(prev => !prev)}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header 
