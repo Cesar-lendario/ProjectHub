@@ -4,13 +4,13 @@ import { Project, Task, User, Message, Attachment, TeamMember, ProjectStatus, Ta
 // Mapeamento de status do projeto
 const mapProjectStatus = (status: string): ProjectStatus => {
   const statusMap: Record<string, ProjectStatus> = {
-    'planning': ProjectStatus.Planning,
+    'planning': ProjectStatus.InProgress,
     'in_progress': ProjectStatus.InProgress,
     'on_hold': ProjectStatus.OnHold,
     'completed': ProjectStatus.Completed,
-    'cancelled': ProjectStatus.Cancelled,
+    'cancelled': ProjectStatus.Canceled,
   };
-  return statusMap[status] || ProjectStatus.Planning;
+  return statusMap[status] || ProjectStatus.InProgress;
 };
 
 // Mapeamento de tipo de projeto
@@ -107,12 +107,13 @@ export const mapProject = (dbProject: any): Project => ({
   status: mapProjectStatus(dbProject.status),
   projectType: mapProjectType(dbProject.project_type),
   clientName: dbProject.client_name,
-  clientEmail: dbProject.client_email,
+  clientEmail: dbProject.cliente_email,
   team: dbProject.project_team ? dbProject.project_team.map(mapTeamMember) : [],
   tasks: [], // Tarefas serão carregadas separadamente
   files: [], // Arquivos serão carregados separadamente
   lastEmailNotification: dbProject.last_email_notification,
   lastWhatsappNotification: dbProject.last_whatsapp_notification,
+  createdBy: dbProject.created_by,
 });
 
 // Converter mensagem do Supabase para tipo da aplicação
@@ -128,51 +129,50 @@ export const mapMessage = (dbMessage: any): Message => ({
 
 // Funções inversas - converter tipos da aplicação para Supabase
 
-export const unmapProjectStatus = (status: ProjectStatus): string => {
-  const statusMap: Record<ProjectStatus, string> = {
-    [ProjectStatus.Planning]: 'planning',
+export const unmapProjectStatus = (status: ProjectStatus): 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled' => {
+  const statusMap: Record<ProjectStatus, 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled'> = {
     [ProjectStatus.InProgress]: 'in_progress',
     [ProjectStatus.OnHold]: 'on_hold',
     [ProjectStatus.Completed]: 'completed',
-    [ProjectStatus.Cancelled]: 'cancelled',
+    [ProjectStatus.Canceled]: 'cancelled',
   };
-  return statusMap[status];
+  return statusMap[status] || 'in_progress';
 };
 
-export const unmapProjectType = (type: ProjectType): string => {
-  const typeMap: Record<ProjectType, string> = {
+export const unmapProjectType = (type: ProjectType): 'homologacao' | 'renovacao_cct' | 'outros' => {
+  const typeMap: Record<ProjectType, 'homologacao' | 'renovacao_cct' | 'outros'> = {
     [ProjectType.Homologacao]: 'homologacao',
     [ProjectType.RenovacaoCCT]: 'renovacao_cct',
     [ProjectType.Outros]: 'outros',
   };
-  return typeMap[type];
+  return typeMap[type] || 'outros';
 };
 
-export const unmapTaskStatus = (status: TaskStatus): string => {
-  const statusMap: Record<TaskStatus, string> = {
+export const unmapTaskStatus = (status: TaskStatus): 'pending' | 'todo' | 'in_progress' | 'done' => {
+  const statusMap: Record<TaskStatus, 'pending' | 'todo' | 'in_progress' | 'done'> = {
     [TaskStatus.Pending]: 'pending',
     [TaskStatus.ToDo]: 'todo',
     [TaskStatus.InProgress]: 'in_progress',
     [TaskStatus.Done]: 'done',
   };
-  return statusMap[status];
+  return statusMap[status] || 'pending';
 };
 
-export const unmapTaskPriority = (priority: TaskPriority): string => {
-  const priorityMap: Record<TaskPriority, string> = {
+export const unmapTaskPriority = (priority: TaskPriority): 'low' | 'medium' | 'high' => {
+  const priorityMap: Record<TaskPriority, 'low' | 'medium' | 'high'> = {
     [TaskPriority.Low]: 'low',
     [TaskPriority.Medium]: 'medium',
     [TaskPriority.High]: 'high',
   };
-  return priorityMap[priority];
+  return priorityMap[priority] || 'medium';
 };
 
-export const unmapGlobalRole = (role: GlobalRole): string => {
-  const roleMap: Record<GlobalRole, string> = {
+export const unmapGlobalRole = (role: GlobalRole): 'admin' | 'supervisor' | 'engineer' => {
+  const roleMap: Record<GlobalRole, 'admin' | 'supervisor' | 'engineer'> = {
     [GlobalRole.Admin]: 'admin',
     [GlobalRole.Supervisor]: 'supervisor',
     [GlobalRole.Engineer]: 'engineer',
   };
-  return roleMap[role];
+  return roleMap[role] || 'engineer';
 };
 

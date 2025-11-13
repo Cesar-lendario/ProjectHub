@@ -65,8 +65,8 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen, onClo
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center" aria-modal="true" role="dialog">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl m-4 max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl m-4 max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">Gerenciar Equipe: {project.name}</h2>
           <button onClick={onClose} className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-700/50">
             <XIcon className="h-6 w-6" />
@@ -80,7 +80,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen, onClo
               <select
                 value={userToAdd}
                 onChange={(e) => setUserToAdd(e.target.value)}
-                className="flex-grow border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="flex-grow border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               >
                 <option value="">Selecione um usuário</option>
                 {availableUsers.map(user => (
@@ -111,7 +111,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen, onClo
                       value={role}
                       onChange={(e) => handleRoleChange(user.id, e.target.value as TeamMember['role'])}
                       disabled={isLoading}
-                      className="border border-slate-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                      className="border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1 px-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                     >
                       <option value="admin">Admin</option>
                       <option value="editor">Editor</option>

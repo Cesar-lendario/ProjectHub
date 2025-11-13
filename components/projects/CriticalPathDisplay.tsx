@@ -21,9 +21,9 @@ const CriticalPathDisplay: React.FC<{ project: Project }> = ({ project }) => {
         setCriticalPath(pathResult);
 
         if (pathResult && pathResult.path.length > 0) {
-          const { getCriticalPathInsights } = await import('../../services/geminiService');
-          const geminiInsights = await getCriticalPathInsights(project, pathResult);
-          setInsights(geminiInsights);
+          const { getCriticalPathInsights } = await import('../../services/openaiService');
+          const aiInsights = await getCriticalPathInsights(project, pathResult);
+          setInsights(aiInsights);
         } else {
           setInsights("Não foi possível determinar um caminho crítico para este projeto.");
         }

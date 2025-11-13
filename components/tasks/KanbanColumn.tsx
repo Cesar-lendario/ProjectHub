@@ -28,16 +28,16 @@ const getStatusAppearance = (status: TaskStatus) => {
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onEditTask, onDeleteTask, onViewTask, canEditTask }) => {
     const { bg, text, border } = getStatusAppearance(status);
-    const { setNodeRef, isOver } = useDroppable({
-        id: status,
-        data: { type: 'column', status },
-    });
+    // Desativando a funcionalidade de drag and drop
+    // Mantendo a variável isOver para não quebrar o estilo visual
+    const setNodeRef = (element: HTMLElement | null) => {};
+    const isOver = false;
 
     return (
         <div
             ref={setNodeRef}
-            className={`bg-slate-50 dark:bg-slate-900/40 rounded-xl p-4 border border-slate-200 dark:border-slate-700/60 border-t-4 ${border} backdrop-blur-sm transition-all ${
-                isOver ? 'ring-2 ring-indigo-400 dark:ring-indigo-300 ring-offset-2' : ''
+            className={`bg-slate-50 dark:bg-slate-900/40 rounded-xl p-4 border border-slate-200 dark:border-slate-700/60 border-t-4 ${border} backdrop-blur-sm transition-all min-h-[200px] ${
+                isOver ? 'ring-4 ring-indigo-400 dark:ring-indigo-300 ring-offset-2 bg-indigo-50/50 dark:bg-indigo-900/20 scale-[1.02] shadow-lg' : ''
             }`}
         >
             <div className="flex items-center justify-between mb-4">

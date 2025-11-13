@@ -6,7 +6,6 @@ import Card from '../ui/Card';
 import TeamForm from '../team/TeamForm';
 import DeleteUserModal from '../team/DeleteUserModal';
 import { EditIcon, TrashIcon } from '../ui/Icons';
-import { EditIcon, TrashIcon } from '../ui/Icons';
 
 const UserManagementView: React.FC = () => {
     const { users, projects, updateUser, deleteUser } = useProjectContext();

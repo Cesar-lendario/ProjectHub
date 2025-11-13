@@ -1,14 +1,14 @@
 
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import OpenAI from 'openai';
 import { Project, CriticalPathResult, TaskStatus } from '../types';
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
 
 if (!API_KEY) {
-  console.warn("A variável de ambiente API_KEY não foi definida. Os recursos do Gemini serão desativados.");
+  console.warn("A variável de ambiente OPENAI_API_KEY não foi definida. Os recursos de IA serão desativados.");
 }
 
-const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+const openai = API_KEY ? new OpenAI({ apiKey: API_KEY, dangerouslyAllowBrowser: true }) : null;
 
 // Helper para tentar novamente as chamadas de API com um simples backoff
 const withRetry = async <T>(apiCall: () => Promise<T>, retries = 3, delay = 1000): Promise<T> => {
@@ -32,7 +32,7 @@ const withRetry = async <T>(apiCall: () => Promise<T>, retries = 3, delay = 1000
 };
 
 export const analyzeRisksAndOpportunities = async (projects: Project[]): Promise<string> => {
-    if (!ai) return "Chave da API Gemini não configurada. A análise está indisponível.";
+    if (!openai) return "Chave da API OpenAI não configurada. A análise está indisponível.";
 
     const projectDataSummary = projects.map(p => {
         const overdueTasks = p.tasks.filter(t => new Date(t.dueDate) < new Date() && t.status !== TaskStatus.Done).length;
@@ -49,24 +49,27 @@ export const analyzeRisksAndOpportunities = async (projects: Project[]): Promise
     ${projectDataSummary}
     `;
     
-    const apiCall = () => ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-    });
+    const apiCall = async () => {
+        const response = await openai!.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+        });
+        return response.choices[0]?.message?.content || 'Sem resposta da IA.';
+    };
 
     try {
-        // Fix: Explicitly type the awaited response to resolve the 'unknown' type and allow access to the 'text' property.
-        const response = await withRetry<GenerateContentResponse>(apiCall);
-        return response.text;
+        const response = await withRetry<string>(apiCall);
+        return response;
     } catch (error) {
-        console.error("Erro final ao analisar riscos com Gemini:", error);
-        throw error instanceof Error ? error : new Error("Falha ao obter análise do Gemini.");
+        console.error("Erro final ao analisar riscos com OpenAI:", error);
+        throw error instanceof Error ? error : new Error("Falha ao obter análise da OpenAI.");
     }
 };
 
 
 export const getCriticalPathInsights = async (project: Project, criticalPath: CriticalPathResult): Promise<string> => {
-    if (!ai) return "Chave da API Gemini não configurada. Insights indisponíveis.";
+    if (!openai) return "Chave da API OpenAI não configurada. Insights indisponíveis.";
 
     const pathTasks = criticalPath.path
         .map(taskId => project.tasks.find(t => t.id === taskId))
@@ -87,17 +90,20 @@ export const getCriticalPathInsights = async (project: Project, criticalPath: Cr
     Formate sua resposta como um parágrafo curto.
     `;
 
-    const apiCall = () => ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-    });
+    const apiCall = async () => {
+        const response = await openai!.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+        });
+        return response.choices[0]?.message?.content || 'Sem resposta da IA.';
+    };
 
     try {
-        // Fix: Explicitly type the awaited response to resolve the 'unknown' type and allow access to the 'text' property.
-        const response = await withRetry<GenerateContentResponse>(apiCall);
-        return response.text;
+        const response = await withRetry<string>(apiCall);
+        return response;
     } catch (error) {
-        console.error("Erro final ao obter insights do caminho crítico com Gemini:", error);
-        throw error instanceof Error ? error : new Error("Falha ao obter insights do Gemini.");
+        console.error("Erro final ao obter insights do caminho crítico com OpenAI:", error);
+        throw error instanceof Error ? error : new Error("Falha ao obter insights da OpenAI.");
     }
 };

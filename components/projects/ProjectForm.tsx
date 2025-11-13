@@ -71,15 +71,23 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
             clientEmail,
         };
 
+        console.log('Salvando projeto:', projectData);
+
         if (projectToEdit) {
-            await onSave({ ...projectToEdit, ...projectData });
+            console.log('Modo de edição - ID do projeto:', projectToEdit.id);
+            const updatedProject = { ...projectToEdit, ...projectData };
+            console.log('Dados completos para atualização:', updatedProject);
+            await onSave(updatedProject);
+            console.log('Projeto atualizado com sucesso');
         } else {
+            console.log('Criando novo projeto');
             await onSave(projectData as Omit<Project, 'id' | 'tasks' | 'team' | 'files'>);
+            console.log('Novo projeto criado com sucesso');
         }
         onClose();
     } catch(error) {
-        console.error("Failed to save project", error);
-        alert(error instanceof Error ? error.message : "Could not save project");
+        console.error("Falha ao salvar projeto:", error);
+        alert(error instanceof Error ? error.message : "Não foi possível salvar o projeto. Verifique o console para mais detalhes.");
     } finally {
         setIsLoading(false);
     }

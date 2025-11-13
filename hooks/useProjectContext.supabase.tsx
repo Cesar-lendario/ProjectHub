@@ -134,6 +134,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       setLoading(true);
       
+      console.log('addProject - Dados recebidos:', projectData);
+      console.log('addProject - ID do usuário logado:', profile?.id);
+      
       // Criar projeto no Supabase
       const dbProject = await ProjectsService.create({
         name: projectData.name,
@@ -143,8 +146,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         status: unmapProjectStatus(projectData.status),
         project_type: unmapProjectType(projectData.projectType),
         client_name: projectData.clientName,
-        client_email: projectData.clientEmail,
+        cliente_email: projectData.clientEmail,
+        created_by: profile?.id || null, // Usar o ID do usuário logado
       });
+      
+      console.log('addProject - Projeto criado no Supabase:', dbProject);
 
       const newProject = mapProject(dbProject);
       newProject.tasks = [];
@@ -164,7 +170,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           project_id: newProject.id,
           name,
           description: `Descrição para ${name}`,
-          status: 'pending' as const,
+          status: 'todo' as const, // Alterado de 'pending' para 'todo' (A Fazer)
           priority: 'medium' as const,
           due_date: new Date().toISOString().split('T')[0],
           duration: 1,
@@ -188,7 +194,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       setLoading(true);
       
-      await ProjectsService.update(projectData.id, {
+      console.log('updateProject - Dados recebidos:', projectData);
+      console.log('updateProject - ID do usuário logado:', profile?.id);
+      
+      const updatedProject = await ProjectsService.update(projectData.id, {
         name: projectData.name,
         description: projectData.description,
         start_date: projectData.startDate,
@@ -196,10 +205,24 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         status: unmapProjectStatus(projectData.status),
         project_type: unmapProjectType(projectData.projectType),
         client_name: projectData.clientName,
-        client_email: projectData.clientEmail,
+        cliente_email: projectData.clientEmail,
+        // Não enviar created_by no update - esse campo só é definido na criação
       });
 
-      setProjects(prev => prev.map(p => p.id === projectData.id ? projectData : p));
+      console.log('updateProject - Projeto atualizado com sucesso:', updatedProject);
+
+      // Preservar as tarefas, equipe e arquivos existentes ao atualizar o projeto no estado
+      setProjects(prev => prev.map(p => {
+        if (p.id === projectData.id) {
+          return {
+            ...projectData,
+            tasks: p.tasks,
+            team: p.team,
+            files: p.files,
+          };
+        }
+        return p;
+      }));
     } catch (err) {
       console.error('Erro ao atualizar projeto:', err);
       throw err;
@@ -340,11 +363,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       
       const dbUser = await UsersService.create({
         id: uuidv4(),
-        email: normalizedEmail,
         name: userData.name,
         avatar: userData.avatar,
         function: userData.function,
         role: unmapGlobalRole(userData.role),
+        // Nota: email não é armazenado na tabela users, vem do Supabase Auth via auth_id
       });
 
       const newUser = mapUser(dbUser);
@@ -364,10 +387,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       
       await UsersService.update(userData.id, {
         name: userData.name,
-        email: userData.email,
         avatar: userData.avatar,
         function: userData.function,
         role: unmapGlobalRole(userData.role),
+        // Nota: email não é armazenado na tabela users, vem do Supabase Auth via auth_id
       });
 
       setUsers(prev => prev.map(u => u.id === userData.id ? userData : u));

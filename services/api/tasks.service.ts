@@ -85,15 +85,41 @@ export const TasksService = {
     if (error) throw error;
   },
 
-  // Criar múltiplas tarefas (útil para tarefas padrão)
+  // Criar múltiplas tarefas (útil para tarefas padrão) usando fetch direto
   async createBulk(tasks: TaskInsert[]) {
-    const { data, error } = await supabase
-      .from('tasks')
-      .insert(tasks)
-      .select();
+    console.log('TasksService.createBulk - Criando', tasks.length, 'tarefas...');
+    
+    try {
+      const supabaseUrl = 'https://siujbzskkmjxipcablao.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpdWpienNra21qeGlwY2FibGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MTUyNjgsImV4cCI6MjA3ODM5MTI2OH0.TVJ_7RHPOQhZBQkykHcZOzCF5MQj7pIY-_rxxJ9XqGI';
+      
+      const response = await fetch(`${supabaseUrl}/rest/v1/tasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(tasks)
+      });
 
-    if (error) throw error;
-    return data;
+      console.log('TasksService.createBulk - Fetch concluído, status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('TasksService.createBulk - Erro HTTP:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('TasksService.createBulk - Tarefas criadas:', data.length);
+      
+      return data;
+    } catch (err) {
+      console.error('TasksService.createBulk - ERRO:', err);
+      throw err;
+    }
   },
 };
 

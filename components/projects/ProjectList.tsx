@@ -94,7 +94,7 @@ const ProjectCard: React.FC<{
 
 
 const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProjectFilter }) => {
-  const { projects, addProject, updateProject, deleteProject, addFile } = useProjectContext();
+  const { projects, addProject, updateProject, deleteProject, addFile, refreshData } = useProjectContext();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
   const [teamModalProject, setTeamModalProject] = useState<Project | null>(null);
@@ -118,14 +118,22 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
   };
 
   const handleSave = async (projectData: Omit<Project, 'id'> | Project) => {
-    if ('id' in projectData) {
-      await updateProject(projectData as Project);
-    } else {
-      // Fix: The Omit utility type takes a union of keys as its second argument, not multiple arguments.
-      await addProject(projectData as Omit<Project, 'id' | 'tasks' | 'team' | 'files'>);
+    try {
+      if ('id' in projectData) {
+        await updateProject(projectData as Project);
+      } else {
+        // Fix: The Omit utility type takes a union of keys as its second argument, not multiple arguments.
+        await addProject(projectData as Omit<Project, 'id' | 'tasks' | 'team' | 'files'>);
+      }
+      setIsFormOpen(false);
+      setProjectToEdit(null);
+      
+      // Atualizar dados sem recarregar a página
+      await refreshData();
+    } catch (error) {
+      console.error('Erro ao salvar projeto:', error);
+      alert('Erro ao salvar projeto. Verifique o console para mais detalhes.');
     }
-    setIsFormOpen(false);
-    setProjectToEdit(null);
   };
 
   const handleUploadFile = async (projectId: string, file: File) => {

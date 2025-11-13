@@ -16,7 +16,7 @@ const RisksAndOpportunities: React.FC = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const { analyzeRisksAndOpportunities } = await import('../../services/geminiService');
+        const { analyzeRisksAndOpportunities } = await import('../../services/openaiService');
         const result = await analyzeRisksAndOpportunities(projects);
         const htmlResult = marked(result) as string;
         setAnalysis(htmlResult);

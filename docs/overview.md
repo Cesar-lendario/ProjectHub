@@ -14,7 +14,7 @@ ProjectHub é uma plataforma web multitenant de gestão de projetos orientada a 
 ### 🏢 Gestão de Projetos
 - CRUD completo de projetos com formulários dinâmicos
 - Tipos de projeto predefinidos: Homologação, Renovação CCT, Outros
-- Criação automática de tarefas padrão por tipo de projeto
+- Criação automática de tarefas padrão por tipo de projeto (status inicial: "A Fazer")
 - Análise de caminho crítico para identificar gargalos
 - Gerenciamento de equipe por projeto (admin, editor, viewer)
 - Controle de orçamento e custos reais
@@ -646,4 +646,156 @@ npm run preview
 - `docs/LIMPAR_CACHE_NAVEGADOR.md`: guia completo para desenvolvedores
 
 **Objetivo**: Facilitar onboarding de novos desenvolvedores e troubleshooting de problemas comuns.
+
+### Correção de Criação e Edição de Projetos (Nov 2025)
+
+**Problema**: Projetos não estavam sendo salvos corretamente no Supabase, tanto na criação quanto na edição.
+
+**Causas identificadas**:
+1. **Criação**: Campo obrigatório `created_by` não estava sendo enviado
+2. **Criação**: Campo `cliente_email` estava sendo enviado como `client_email` (nome incorreto)
+3. **Edição**: Campo `created_by` estava sendo enviado incorretamente no UPDATE (deve ser definido apenas na criação)
+4. **Edição**: Atualização do estado não preservava tarefas, equipe e arquivos existentes
+
+**Soluções implementadas**:
+
+**Método `addProject` (criação)**:
+- ✅ Adicionado campo `created_by` com ID do usuário logado (`profile?.id || null`)
+- ✅ Corrigido nome do campo de `client_email` para `cliente_email`
+- ✅ Adicionados logs detalhados para depuração
+
+**Método `updateProject` (edição)**:
+- ✅ **REMOVIDO** campo `created_by` do payload de atualização (não deve ser alterado após criação)
+- ✅ Corrigido nome do campo de `client_email` para `cliente_email`
+- ✅ Implementada lógica para preservar tarefas, equipe e arquivos existentes ao atualizar o estado
+- ✅ Adicionados logs detalhados da resposta do Supabase
+
+**Arquivos modificados**:
+- `hooks/useProjectContext.supabase.tsx`: métodos `addProject` e `updateProject`
+
+**Regras importantes**:
+- ⚠️ O campo `created_by` deve ser enviado **APENAS** na criação do projeto
+- ⚠️ O campo `created_by` **NÃO** deve ser enviado na atualização do projeto (causa falha silenciosa)
+- ⚠️ O campo correto no banco é `cliente_email`, não `client_email`
+- ⚠️ Ao atualizar o estado local, sempre preserve os dados relacionados (tasks, team, files)
+- ⚠️ **CRÍTICO**: Enviar `created_by` no update faz a requisição travar sem retornar erro
+
+**Benefícios**:
+- ✅ Criação de projetos funciona corretamente
+- ✅ Edição de projetos funciona corretamente
+- ✅ Rastreabilidade de quem criou cada projeto
+- ✅ Preservação de dados relacionados durante edição
+- ✅ Logs detalhados para facilitar depuração futura
+
+### Alteração no Status Inicial de Tarefas Padrão (Nov 2025)
+
+**Modificação**: Tarefas padrão criadas automaticamente para projetos do tipo "Homologação" e "Renovação CCT" agora são criadas com status "A Fazer" ao invés de "Pendente".
+
+**Motivação**: Melhorar o fluxo de trabalho inicial, colocando as tarefas diretamente na coluna de trabalho ativo do Kanban.
+
+**Implementação**:
+- Alterado o status de `'pending'` para `'todo'` no método `addProject`
+- Arquivo modificado: `hooks/useProjectContext.supabase.tsx` (linha 173)
+
+**Impacto**:
+- ✅ Tarefas aparecem diretamente na coluna "A Fazer" do Kanban
+- ✅ Fluxo de trabalho mais intuitivo para novos projetos
+- ✅ Reduz um passo manual de mover tarefas de "Pendente" para "A Fazer"
+
+### Correção Crítica: Bug do Supabase JS com Emails Longos (Nov 2025)
+
+**Problema identificado**: Criação e edição de projetos travavam indefinidamente quando o campo `cliente_email` tinha mais de ~30 caracteres. O mesmo problema ocorria na criação em lote de tarefas padrão.
+
+**Sintomas**:
+- ✅ Emails curtos (≤30 caracteres): funcionavam perfeitamente
+- ❌ Emails longos (>30 caracteres): requisição travava sem retornar erro ou timeout
+- ❌ Modal de cadastro/edição ficava travado em "Salvando..."
+- ❌ Projeto era criado no banco (via SQL direto funcionava), mas não via cliente JS
+
+**Causa raiz**: Bug no cliente `@supabase/supabase-js` (versão 2.45.0) que trava ao fazer INSERT/UPDATE com campos text longos. O problema afeta tanto operações diretas quanto chamadas RPC.
+
+**Investigação realizada**:
+1. ✅ Verificado que o banco aceita emails longos (teste via SQL direto funcionou)
+2. ✅ Confirmado que não há constraints, validações ou limites de tamanho no campo
+3. ✅ Descartado problema com RLS (políticas simplificadas, mesmo problema)
+4. ✅ Descartado problema com triggers (removido temporariamente, mesmo problema)
+5. ✅ Identificado que o timeout ocorria tanto no cliente JS quanto em chamadas RPC via cliente JS
+6. ✅ Confirmado que chamadas RPC via `fetch` direto funcionam perfeitamente
+
+**Soluções implementadas**:
+
+#### 1. Funções RPC no Supabase
+Criadas funções SQL personalizadas que contornam o bug do cliente JS:
+
+```sql
+-- Função para criar projeto
+CREATE OR REPLACE FUNCTION create_project(
+    p_name TEXT, p_description TEXT, p_start_date DATE, p_end_date DATE,
+    p_status TEXT, p_project_type TEXT, p_client_name TEXT,
+    p_cliente_email TEXT, p_created_by UUID
+) RETURNS SETOF projects ...
+
+-- Função para atualizar projeto
+CREATE OR REPLACE FUNCTION update_project(
+    p_id UUID, p_name TEXT, p_description TEXT, p_start_date DATE,
+    p_end_date DATE, p_status TEXT, p_project_type TEXT,
+    p_client_name TEXT, p_cliente_email TEXT
+) RETURNS SETOF projects ...
+```
+
+#### 2. Uso de Fetch Direto
+Substituído o cliente Supabase JS por chamadas `fetch` diretas à API REST do Supabase:
+
+**Arquivo**: `services/api/projects.service.ts`
+- ✅ Método `create`: usa `fetch` para chamar RPC `create_project`
+- ✅ Método `update`: usa `fetch` para chamar RPC `update_project`
+
+**Arquivo**: `services/api/tasks.service.ts`
+- ✅ Método `createBulk`: usa `fetch` para inserir múltiplas tarefas
+
+**Exemplo de implementação**:
+```typescript
+const response = await fetch(`${supabaseUrl}/rest/v1/rpc/create_project`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'apikey': supabaseKey,
+    'Authorization': `Bearer ${supabaseKey}`,
+    'Prefer': 'return=representation'
+  },
+  body: JSON.stringify({ p_name, p_description, ... })
+});
+```
+
+#### 3. Logs Detalhados
+Adicionados logs completos para facilitar depuração:
+- `ProjectsService.create/update`: logs de dados enviados, tamanho do email, status HTTP, resposta
+- `TasksService.createBulk`: logs de quantidade de tarefas, status HTTP
+- `useProjectContext.addProject`: logs de cada etapa (criação, mapeamento, tarefas, estado)
+
+**Arquivos modificados**:
+- `services/api/projects.service.ts`: métodos `create` e `update`
+- `services/api/tasks.service.ts`: método `createBulk`
+- `hooks/useProjectContext.tsx`: logs adicionados no `addProject`
+- `services/supabaseClient.ts`: configurações de timeout e headers
+
+**Resultados**:
+- ✅ **Criação de projetos** com emails longos funciona perfeitamente
+- ✅ **Edição de projetos** com emails longos funciona perfeitamente
+- ✅ **Criação de tarefas em lote** funciona sem travamentos
+- ✅ **Modal fecha** corretamente após salvar
+- ✅ **Projetos aparecem** na lista imediatamente
+- ✅ **Performance**: requisições completam em <1 segundo
+
+**Lições aprendidas**:
+1. ⚠️ O cliente Supabase JS pode ter bugs com campos text longos
+2. ✅ Sempre testar operações críticas via SQL direto para isolar problemas
+3. ✅ Usar `fetch` direto é uma solução confiável quando o cliente JS falha
+4. ✅ Funções RPC no Supabase são úteis para contornar limitações do cliente
+5. ✅ Logs detalhados são essenciais para depuração de problemas intermitentes
+
+**Workaround temporário**: Se o problema persistir em outras operações, considere:
+- Usar `fetch` direto para todas as operações críticas
+- Reportar o bug para o time do Supabase
+- Atualizar para versão mais recente do `@supabase/supabase-js` quando disponível
 

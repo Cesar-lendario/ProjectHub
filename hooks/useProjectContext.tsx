@@ -67,13 +67,18 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setLoading(true);
       setError(null);
 
+      console.log('🔄 Iniciando carregamento de dados...');
+
       // Carregar usuários
       const dbUsers = await UsersService.getAll();
+      console.log('👥 Usuários carregados:', dbUsers.length);
       const mappedUsers = dbUsers.map(mapUser);
       setUsers(mappedUsers);
 
       // Carregar projetos com equipes
       const dbProjects = await ProjectsService.getAll();
+      console.log('📁 Projetos carregados do banco:', dbProjects.length);
+      console.log('📁 Dados dos projetos:', dbProjects);
       
       // Para cada projeto, carregar tarefas e arquivos
       const projectsWithDetails = await Promise.all(
@@ -92,6 +97,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         })
       );
 
+      console.log('✅ Projetos processados:', projectsWithDetails.length);
+      console.log('✅ Projetos com detalhes:', projectsWithDetails);
       setProjects(projectsWithDetails);
 
       // Carregar mensagens
@@ -148,13 +155,18 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         status: unmapProjectStatus(projectData.status),
         project_type: unmapProjectType(projectData.projectType),
         client_name: projectData.clientName,
-        client_email: projectData.clientEmail,
+        cliente_email: projectData.clientEmail,
+        created_by: profile?.id || null,
       });
 
+      console.log('addProject - Projeto criado no Supabase:', dbProject);
+      
       const newProject = mapProject(dbProject);
       newProject.tasks = [];
       newProject.files = [];
       newProject.team = [];
+
+      console.log('addProject - Projeto mapeado:', newProject);
 
       // Criar tarefas padrão baseadas no tipo de projeto
       let taskNames: string[] = [];
@@ -164,23 +176,29 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         taskNames = RENOVACAO_CCT_TASK_NAMES;
       }
 
+      console.log('addProject - Tarefas a criar:', taskNames.length);
+
       if (taskNames.length > 0) {
         const tasksToCreate = taskNames.map((name) => ({
           project_id: newProject.id,
           name,
           description: `Descrição para ${name}`,
-          status: 'pending' as const,
+          status: 'todo' as const, // Tarefas criadas com status "A Fazer"
           priority: 'medium' as const,
           due_date: new Date().toISOString().split('T')[0],
           duration: 1,
           dependencies: [],
         }));
 
+        console.log('addProject - Criando tarefas...');
         const dbTasks = await TasksService.createBulk(tasksToCreate);
+        console.log('addProject - Tarefas criadas:', dbTasks.length);
         newProject.tasks = dbTasks.map(mapTask);
       }
 
+      console.log('addProject - Adicionando projeto ao estado...');
       setProjects(prev => [...prev, newProject]);
+      console.log('addProject - Projeto adicionado com sucesso!');
     } catch (err) {
       console.error('Erro ao criar projeto:', err);
       throw err;
@@ -201,10 +219,24 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         status: unmapProjectStatus(projectData.status),
         project_type: unmapProjectType(projectData.projectType),
         client_name: projectData.clientName,
-        client_email: projectData.clientEmail,
+        cliente_email: projectData.clientEmail,
+        // NÃO enviar created_by no update - esse campo só é definido na criação
       });
 
-      setProjects(prev => prev.map(p => p.id === projectData.id ? projectData : p));
+      // Preservar as tarefas, equipe e arquivos existentes ao atualizar o projeto no estado
+      setProjects(prev => prev.map(p => {
+        if (p.id === projectData.id) {
+          return {
+            ...projectData,
+            tasks: p.tasks,        // Preservar tarefas existentes
+            team: p.team,          // Preservar equipe existente
+            files: p.files         // Preservar arquivos existentes
+          };
+        }
+        return p;
+      }));
+      
+      console.log('Projeto atualizado com sucesso:', projectData.name);
     } catch (err) {
       console.error('Erro ao atualizar projeto:', err);
       throw err;
@@ -298,7 +330,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const deleteTask = useCallback(async (taskId: string) => {
     try {
-      setLoading(false);
+      setLoading(true);
       await TasksService.delete(taskId);
       setProjects(prev => prev.map(p => ({
         ...p,

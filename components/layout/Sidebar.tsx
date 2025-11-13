@@ -101,6 +101,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetVi
         onClick={onClose}
         aria-hidden="true"
       />
+
+      {/* Floating Expand Button - only visible when collapsed on desktop */}
+      {isCollapsed && (
+        <button
+          onClick={onToggleCollapse}
+          className="hidden lg:flex fixed left-[88px] top-20 z-50 items-center justify-center h-12 w-12 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white shadow-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all hover:scale-110 animate-pulse hover:animate-none"
+          title="Expandir menu lateral"
+          aria-label="Expandir menu lateral"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
       
       {/* Sidebar */}
       <div
@@ -108,14 +129,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetVi
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 dark:border-slate-700/50 px-4">
-          <span className={`text-xl font-bold text-slate-800 dark:text-slate-50 transition-all duration-300 ${isCollapsed ? 'lg:opacity-0 lg:-translate-x-4' : ''}`}>
+        <div className={`flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 dark:border-slate-700/50 ${isCollapsed ? 'px-2' : 'px-4'}`}>
+          <span className={`text-xl font-bold text-slate-800 dark:text-slate-50 transition-all duration-300 ${isCollapsed ? 'lg:opacity-0 lg:w-0 lg:overflow-hidden' : ''}`}>
             ProjectHub
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={onToggleCollapse}
-              className="hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-slate-500 dark:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors"
+              className={`hidden lg:flex items-center justify-center h-8 w-8 rounded-lg transition-all ${
+                isCollapsed 
+                  ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/60' 
+                  : 'text-slate-500 dark:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/60'
+              }`}
               title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
             >
               <svg

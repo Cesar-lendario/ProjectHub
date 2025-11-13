@@ -43,11 +43,12 @@ export interface Database {
           status: 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
           project_type: 'homologacao' | 'renovacao_cct' | 'outros';
           client_name: string;
-          client_email: string;
+          cliente_email: string;
+          created_by: string | null;
           last_email_notification: string | null;
           last_whatsapp_notification: string | null;
           created_at: string;
-          updated_at: string;
+          atualizado_at: string;
         };
         Insert: {
           id?: string;
@@ -58,11 +59,12 @@ export interface Database {
           status?: 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
           project_type: 'homologacao' | 'renovacao_cct' | 'outros';
           client_name: string;
-          client_email: string;
+          cliente_email: string;
+          created_by?: string | null;
           last_email_notification?: string | null;
           last_whatsapp_notification?: string | null;
           created_at?: string;
-          updated_at?: string;
+          atualizado_at?: string;
         };
         Update: {
           id?: string;
@@ -73,11 +75,12 @@ export interface Database {
           status?: 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
           project_type?: 'homologacao' | 'renovacao_cct' | 'outros';
           client_name?: string;
-          client_email?: string;
+          cliente_email?: string;
+          created_by?: string | null;
           last_email_notification?: string | null;
           last_whatsapp_notification?: string | null;
           created_at?: string;
-          updated_at?: string;
+          atualizado_at?: string;
         };
       };
       tasks: {

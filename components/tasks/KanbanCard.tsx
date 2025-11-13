@@ -46,27 +46,19 @@ const getProjectBadgeStyle = (projectName: string) => {
 const KanbanCard: React.FC<KanbanCardProps> = ({ task, onEdit, onDelete, onView, canEdit }) => {
     const isOverdue = new Date(task.dueDate) < new Date() && task.status !== TaskStatus.Done;
     const projectBadge = getProjectBadgeStyle(task.projectName);
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({
-        id: task.id,
-        data: { type: 'task', status: task.status, projectId: task.project_id },
-    });
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    };
+    // Desativando a funcionalidade de drag and drop
+    // Mantendo as variáveis para não quebrar o código
+    const setNodeRef = (element: HTMLElement | null) => {};
+    const isDragging = false;
+    const style = {};
+    const attributes = {};
+    const listeners = {};
     
     return (
         <Card
             ref={setNodeRef}
             style={style}
-            className={`group relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isDragging ? 'opacity-70 shadow-2xl' : ''}`}
+            className={`group relative cursor-grab active:cursor-grabbing focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all hover:shadow-lg ${isDragging ? 'opacity-50 shadow-2xl ring-2 ring-indigo-400 scale-105 rotate-2' : ''}`}
             onClick={onView}
             role="button"
             tabIndex={0}

@@ -101,6 +101,7 @@ export interface Project {
   files: Attachment[];
   lastEmailNotification?: string;
   lastWhatsappNotification?: string;
+  createdBy?: string;
 }
 
 export interface Message {

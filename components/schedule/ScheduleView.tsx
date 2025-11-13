@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Card from '../ui/Card';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Task, TaskStatus } from '../../types';
+import ImplementationTimeline from './ImplementationTimeline';
 
 // Helper functions for date manipulation
 const addDays = (date: Date, days: number): Date => {
@@ -86,17 +87,31 @@ const getTaskColor = (status: TaskStatus): string => {
   }
 };
 
-type ViewMode = 'daily' | 'weekly' | 'monthly';
+type ViewMode = 'implementation';
 
 const VIEW_CONFIG: Record<ViewMode, { dayWidth: number; label: string }> = {
-  daily: { dayWidth: 56, label: 'Diário' },
-  weekly: { dayWidth: 28, label: 'Semanal' },
-  monthly: { dayWidth: 10, label: 'Mensal' },
+  implementation: { dayWidth: 0, label: 'Cronograma' },
 };
 
 const ScheduleView: React.FC = () => {
   const { projects } = useProjectContext();
-  const [viewMode, setViewMode] = useState<ViewMode>('weekly');
+  const [viewMode, setViewMode] = useState<ViewMode>('implementation');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  
+  // Selecionar o primeiro projeto por padrão
+  useEffect(() => {
+    if (projects.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(projects[0].id);
+    }
+  }, [projects, selectedProjectId]);
+
+  // Função para filtrar projetos com base no projeto selecionado
+  const filteredProjects = useMemo(() => {
+    if (!selectedProjectId || selectedProjectId === 'all') {
+      return projects;
+    }
+    return projects.filter(project => project.id === selectedProjectId);
+  }, [projects, selectedProjectId]);
 
   const {
     ganttTasksByProject,
@@ -108,7 +123,7 @@ const ScheduleView: React.FC = () => {
   } = useMemo(() => {
     const dayWidth = VIEW_CONFIG[viewMode].dayWidth;
 
-    if (projects.length === 0 || projects.flatMap((p) => p.tasks).length === 0) {
+    if (filteredProjects.length === 0 || filteredProjects.flatMap((p) => p.tasks).length === 0) {
       return {
         ganttTasksByProject: new Map<string, { name: string; tasks: GanttTask[] }>(),
         timelineStart: new Date(),
@@ -124,7 +139,7 @@ const ScheduleView: React.FC = () => {
 
     const ganttTasksByProject = new Map<string, { name: string; tasks: GanttTask[] }>();
 
-    projects.forEach((project) => {
+    filteredProjects.forEach((project) => {
       if (project.tasks.length === 0) return;
 
       const processedTasks: GanttTask[] = project.tasks.map((task) => {
@@ -208,38 +223,46 @@ const ScheduleView: React.FC = () => {
     const totalDays = getDaysDifference(timelineStart, timelineEnd) + 1;
 
     return { ganttTasksByProject, timelineStart, timelineEnd, headers, dayWidth, totalDays };
-  }, [projects, viewMode]);
+  }, [filteredProjects, viewMode]);
 
   const timelineWidth = Math.max(totalDays * dayWidth, headers.length * dayWidth);
-  const hasTasks = Array.from(ganttTasksByProject.values()).some((group) => group.tasks.length > 0);
+  const hasTasks = Array.from(ganttTasksByProject.values()).some((group: { name: string; tasks: GanttTask[] }) => group.tasks.length > 0);
+
+  // Verificar se há projetos
+  const noProjects = projects.length === 0;
 
   return (
     <Card className="bg-slate-900/70 border border-slate-700/40 shadow-lg shadow-indigo-900/20 backdrop-blur-sm min-h-[70vh] flex flex-col">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-50">Cronograma do Projeto (Gantt)</h2>
+          <h2 className="text-2xl font-bold text-slate-50">Cronograma do Projeto</h2>
           <p className="mt-1 text-slate-400 text-sm">
             Visualize as tarefas e seus prazos em diferentes escalas de tempo.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {(Object.keys(VIEW_CONFIG) as ViewMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                viewMode === mode
-                  ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-900/30'
-                  : 'bg-slate-800/60 text-slate-300 hover:bg-slate-700/70'
-              }`}
+        <div className="flex flex-wrap items-center gap-2">
+          {projects.length > 1 && (
+            <select
+              className="bg-slate-800/60 text-slate-300 border border-slate-700/50 rounded px-3 py-1.5 text-sm"
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
             >
-              {VIEW_CONFIG[mode].label}
-            </button>
-          ))}
+              <option value="all">Todos os projetos</option>
+              {projects.map(project => (
+                <option key={project.id} value={project.id}>{project.name}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
-      {!hasTasks || headers.length === 0 ? (
+      {noProjects ? (
+        <div className="flex-1 flex items-center justify-center text-slate-400">
+          <p>Nenhum projeto encontrado. Crie um projeto para visualizar o cronograma.</p>
+        </div>
+      ) : viewMode === 'implementation' ? (
+        <ImplementationTimeline projectId={selectedProjectId} />
+      ) : !hasTasks || headers.length === 0 ? (
         <div className="flex-1 flex items-center justify-center text-slate-400">
           <p>Nenhuma tarefa para exibir no cronograma. Adicione tarefas aos seus projetos.</p>
         </div>
