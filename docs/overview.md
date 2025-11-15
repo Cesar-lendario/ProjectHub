@@ -31,6 +31,10 @@ ProjectHub é uma plataforma web multitenant de gestão de projetos orientada a 
 - Histórico de comunicações com clientes (Data Email, Data WhatsApp)
 - Modal de lembrete de tarefas sincronizado com o projeto filtrado na página de tarefas
 - Lembretes considerando apenas tarefas nas colunas **Pendente** e **A Fazer**
+- **Modal de Resumo de Tarefas**: botão "Resumo" que exibe um modal com listagem detalhada das tarefas nos status **Pendente**, **A Fazer** e **Em andamento**
+  - Mostra nome, descrição e data de vencimento de cada tarefa
+  - Agrupado por status com identificação visual por cor
+  - Sincronizado com o projeto atualmente filtrado
  - Paleta de cores unificada por status em todo o sistema (Kanban e cronograma):
    - **Pendente** = vermelho
    - **A Fazer** = roxo
@@ -731,6 +735,12 @@ npm run preview
    - **A Fazer** seja exibido em roxo
    - **Em andamento** seja exibido em azul
    - **Concluído** seja exibido em verde
+- Implementado **Modal de Resumo de Tarefas** (`TaskSummaryModal.tsx`):
+  - Novo botão "Resumo" ao lado de "Lembrete de Tarefas" na página de tarefas
+  - Exibe detalhes completos de cada tarefa (nome, descrição, data de vencimento) agrupados por status
+  - Considera apenas tarefas em **Pendente**, **A Fazer** e **Em andamento**
+  - Ligado ao projeto selecionado no filtro (solicita seleção de projeto se filtro estiver em "Todos")
+  - Interface visual com bordas coloridas por status para identificação rápida
 
 **Gestão de Projetos**
 

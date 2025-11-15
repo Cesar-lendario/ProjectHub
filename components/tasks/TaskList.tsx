@@ -6,6 +6,7 @@ import KanbanColumn from './KanbanColumn';
 import TaskForm from './TaskForm';
 import TaskDetail from './TaskDetail';
 import NotificationSenderModal from './NotificationSenderModal';
+import TaskSummaryModal from './TaskSummaryModal';
 import { PlusIcon } from '../ui/Icons';
 import { GlobalRole } from '../../types';
 import {
@@ -35,6 +36,7 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
   const [taskToEdit, setTaskToEdit] = useState<EnhancedTask | null>(null);
   const [taskToView, setTaskToView] = useState<EnhancedTask | null>(null);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards'); // 'cards' é o padrão
 
   useEffect(() => {
@@ -263,6 +265,12 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
             >
                 Lembrete de Tarefas
             </button>
+            <button
+              onClick={() => setIsSummaryModalOpen(true)}
+              className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 dark:text-slate-100 dark:bg-slate-700/40 dark:hover:bg-slate-700/70 dark:border dark:border-slate-600/60 transition-colors"
+            >
+                Resumo
+            </button>
             <button onClick={() => { setTaskToEdit(null); setIsFormOpen(true); }} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700">
               <PlusIcon className="h-5 w-5" />
               <span>Nova Tarefa</span>
@@ -439,6 +447,11 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
         isOpen={isNotificationModalOpen}
         onClose={() => setIsNotificationModalOpen(false)}
         initialProjectId={filterProjectId !== 'all' ? filterProjectId : undefined}
+      />
+      <TaskSummaryModal
+        isOpen={isSummaryModalOpen}
+        onClose={() => setIsSummaryModalOpen(false)}
+        projectId={filterProjectId !== 'all' ? filterProjectId : undefined}
       />
     </div>
   );
