@@ -20,11 +20,12 @@ interface TimelineGroup {
 }
 
 // Cores para os status das tarefas
+// Concluído = verde, Pendente = vermelho, A Fazer = roxo, Em andamento = azul
 const STATUS_COLORS: Record<TaskStatus, string> = {
-  [TaskStatus.Pending]: '#a855f7', // Roxo
-  [TaskStatus.ToDo]: '#38bdf8',    // Azul
-  [TaskStatus.InProgress]: '#f59e0b', // Amarelo
-  [TaskStatus.Done]: '#10b981',    // Verde
+  [TaskStatus.Pending]: '#ef4444',    // Vermelho
+  [TaskStatus.ToDo]: '#a855f7',       // Roxo
+  [TaskStatus.InProgress]: '#3b82f6', // Azul
+  [TaskStatus.Done]: '#10b981',       // Verde
 };
 
 // Função para gerar meses entre duas datas

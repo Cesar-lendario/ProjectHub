@@ -18,6 +18,8 @@ ProjectHub é uma plataforma web multitenant de gestão de projetos orientada a 
 - Análise de caminho crítico para identificar gargalos
 - Gerenciamento de equipe por projeto (admin, editor, viewer)
 - Controle de orçamento e custos reais
+ - Alternância de visualização de projetos entre **cards** e **lista**
+ - Filtros avançados por **nome da empresa**, **tipo de projeto**, **nome do contato** e **data de início**
 
 ### ✅ Gestão de Tarefas
 - Visualização Kanban com 4 colunas: Pendente, A Fazer, Em Progresso, Concluída
@@ -27,12 +29,26 @@ ProjectHub é uma plataforma web multitenant de gestão de projetos orientada a 
 - Sistema de comentários e anexos por tarefa
 - **Notificações de Cobranças**: modal para envio de lembretes por Email e WhatsApp
 - Histórico de comunicações com clientes (Data Email, Data WhatsApp)
+- Modal de lembrete de tarefas sincronizado com o projeto filtrado na página de tarefas
+- Lembretes considerando apenas tarefas nas colunas **Pendente** e **A Fazer**
+ - Paleta de cores unificada por status em todo o sistema (Kanban e cronograma):
+   - **Pendente** = vermelho
+   - **A Fazer** = roxo
+   - **Em andamento** = azul
+   - **Concluído** = verde
 
 ### 📅 Cronograma
 - Visão de Gantt consolidada por projeto
 - Timeline semanal com scroll horizontal
 - Visualização de dependências e duração de tarefas
+- Ajustes recentes:
+  - Remoção da opção "Todos os Projetos" para evitar ambiguidades
+  - Ordenação de tarefas prioritárias no topo da tabela
+  - Cores das barras do cronograma alinhadas aos status das tarefas (Pendente, A Fazer, Em andamento, Concluído)
 - Cálculo automático de datas de início baseado em prazos
+ - Seleção sempre por **projeto individual** (opção "Todos os projetos" descontinuada para evitar ambiguidades)
+ - Ordenação de tarefas do cronograma priorizando **DOCUMENTOS DA EMPRESA** e **NF/ IDENTIFICAÇÃO ...** no topo da tabela
+ - Cores das barras do cronograma alinhadas aos status das tarefas (Pendente, A Fazer, Em andamento, Concluído)
 
 ### 👥 Gestão de Equipe e Usuários
 - **TeamManagementView**: visualização em cards com estatísticas por membro
@@ -701,6 +717,27 @@ npm run preview
 - ✅ Tarefas aparecem diretamente na coluna "A Fazer" do Kanban
 - ✅ Fluxo de trabalho mais intuitivo para novos projetos
 - ✅ Reduz um passo manual de mover tarefas de "Pendente" para "A Fazer"
+
+### Melhorias na Gestão de Tarefas e Projetos (Nov 2025)
+
+**Gestão de Tarefas**
+
+- Ajustado o `TaskForm` para garantir que o botão de salvar não permaneça travado em estado de "Salvando" ao reabrir o modal de edição
+- Atualizado o `NotificationSenderModal` para:
+  - Considerar apenas tarefas com status **Pendente** e **A Fazer** na composição de e-mails e mensagens de WhatsApp
+  - Sincronizar automaticamente o projeto selecionado com o filtro atual da página de tarefas
+ - Unificada a paleta de cores de status entre **Quadro de Tarefas (Kanban)** e **Cronograma**, garantindo que:
+   - **Pendente** seja exibido em vermelho
+   - **A Fazer** seja exibido em roxo
+   - **Em andamento** seja exibido em azul
+   - **Concluído** seja exibido em verde
+
+**Gestão de Projetos**
+
+- Adicionada alternância de visualização entre **Cards** e **Lista** na página de projetos, reaproveitando as mesmas métricas e ações em ambos os modos
+- Implementados filtros combináveis por **nome da empresa**, **tipo de projeto**, **nome do contato** e **data de início**, aplicados tanto à visão em cards quanto à visão em lista
+ - Ajustado o **ScheduleView** para remover a opção "Todos os Projetos" no cronograma, garantindo que sempre haja um projeto selecionado e evitando combinações ambíguas de datas
+
 
 ### Correção Crítica: Bug do Supabase JS com Emails Longos (Nov 2025)
 

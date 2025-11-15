@@ -435,10 +435,11 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
             onClose={() => setTaskToView(null)}
         />
       )}
-       <NotificationSenderModal 
+      <NotificationSenderModal 
         isOpen={isNotificationModalOpen}
         onClose={() => setIsNotificationModalOpen(false)}
-       />
+        initialProjectId={filterProjectId !== 'all' ? filterProjectId : undefined}
+      />
     </div>
   );
 };

@@ -98,17 +98,25 @@ const ScheduleView: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('implementation');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   
-  // Selecionar o primeiro projeto por padrão
+  // Selecionar sempre um projeto válido por padrão
   useEffect(() => {
-    if (projects.length > 0 && !selectedProjectId) {
+    if (projects.length === 0) {
+      if (selectedProjectId !== '') {
+        setSelectedProjectId('');
+      }
+      return;
+    }
+
+    const exists = projects.some(p => p.id === selectedProjectId);
+    if (!exists) {
       setSelectedProjectId(projects[0].id);
     }
   }, [projects, selectedProjectId]);
 
   // Função para filtrar projetos com base no projeto selecionado
   const filteredProjects = useMemo(() => {
-    if (!selectedProjectId || selectedProjectId === 'all') {
-      return projects;
+    if (!selectedProjectId) {
+      return [];
     }
     return projects.filter(project => project.id === selectedProjectId);
   }, [projects, selectedProjectId]);
@@ -247,7 +255,6 @@ const ScheduleView: React.FC = () => {
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
             >
-              <option value="all">Todos os projetos</option>
               {projects.map(project => (
                 <option key={project.id} value={project.id}>{project.name}</option>
               ))}

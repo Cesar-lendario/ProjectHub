@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Project, TaskStatus } from '../../types';
 import { EmailIcon, WhatsappIcon } from '../ui/Icons';
@@ -10,13 +10,26 @@ import Button from '../ui/Button';
 interface NotificationSenderModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialProjectId?: string;
 }
 
-const NotificationSenderModal: React.FC<NotificationSenderModalProps> = ({ isOpen, onClose }) => {
+const NotificationSenderModal: React.FC<NotificationSenderModalProps> = ({ isOpen, onClose, initialProjectId }) => {
   const { projects, logNotification } = useProjectContext();
-  const [selectedProjectId, setSelectedProjectId] = useState<string>(projects.length > 0 ? projects[0].id : '');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(initialProjectId || (projects.length > 0 ? projects[0].id : ''));
+
   const [isWhatsappPreviewOpen, setIsWhatsappPreviewOpen] = useState(false);
   const [whatsappMessage, setWhatsappMessage] = useState('');
+
+  // Sincronizar o projeto selecionado com o filtro atual da tela sempre que o modal abrir
+  useEffect(() => {
+    if (isOpen) {
+      if (initialProjectId) {
+        setSelectedProjectId(initialProjectId);
+      } else if (projects.length > 0) {
+        setSelectedProjectId(projects[0].id);
+      }
+    }
+  }, [isOpen, initialProjectId, projects]);
 
   const selectedProject = useMemo(() => {
     return projects.find(p => p.id === selectedProjectId);
@@ -24,10 +37,10 @@ const NotificationSenderModal: React.FC<NotificationSenderModalProps> = ({ isOpe
 
   const pendingTasks = useMemo(() => {
     if (!selectedProject) return [];
+    // Considerar apenas tarefas das colunas "Pendente" e "A Fazer" para lembretes
     return selectedProject.tasks.filter(t => 
       t.status === TaskStatus.Pending || 
-      t.status === TaskStatus.ToDo || 
-      t.status === TaskStatus.InProgress
+      t.status === TaskStatus.ToDo
     );
   }, [selectedProject]);
 
@@ -120,7 +133,7 @@ const NotificationSenderModal: React.FC<NotificationSenderModalProps> = ({ isOpe
                     ))
                   ) : (
                     <div className="text-slate-500 dark:text-slate-400 text-center py-4">
-                      ✅ Nenhuma tarefa pendente ou em andamento para este projeto.
+                      ✅ Nenhuma tarefa em "Pendente" ou "A Fazer" para este projeto.
                     </div>
                   )}
                 </div>

@@ -1,8 +1,8 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
-import { Project, ProjectStatus, TaskStatus } from '../../types';
+import { Project, ProjectStatus, TaskStatus, ProjectType } from '../../types';
 import Card from '../ui/Card';
 import { PlusIcon, EditIcon, TrashIcon, UsersIcon, EyeIcon, UploadIcon } from '../ui/Icons';
 import ProjectForm from './ProjectForm';
@@ -100,6 +100,33 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
   const [teamModalProject, setTeamModalProject] = useState<Project | null>(null);
   const [uploadModalProjectId, setUploadModalProjectId] = useState<string | null>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  const [filterName, setFilterName] = useState('');
+  const [filterProjectType, setFilterProjectType] = useState<ProjectType | 'all'>('all');
+  const [filterClientName, setFilterClientName] = useState('');
+  const [filterStartDate, setFilterStartDate] = useState('');
+
+  const filteredProjects = useMemo(() => {
+    return projects.filter(project => {
+      const matchesName = filterName
+        ? project.name.toLowerCase().includes(filterName.toLowerCase())
+        : true;
+
+      const matchesType = filterProjectType === 'all'
+        ? true
+        : project.projectType === filterProjectType;
+
+      const matchesClientName = filterClientName
+        ? (project.clientName || '').toLowerCase().includes(filterClientName.toLowerCase())
+        : true;
+
+      const matchesStartDate = filterStartDate
+        ? project.startDate === filterStartDate
+        : true;
+
+      return matchesName && matchesType && matchesClientName && matchesStartDate;
+    });
+  }, [projects, filterName, filterProjectType, filterClientName, filterStartDate]);
 
   const handleProjectSelect = (projectId: string) => {
     setGlobalProjectFilter(projectId);
@@ -159,30 +186,159 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
         duration={3000}
       />
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-4">
         <div>
             <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Projetos</h1>
             <p className="mt-1 text-slate-600 dark:text-slate-300">Acompanhe todos os seus projetos em um só lugar.</p>
         </div>
-        <button onClick={() => { setProjectToEdit(null); setIsFormOpen(true); }} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700">
-          <PlusIcon className="h-5 w-5" />
-          <span>Novo Projeto</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'cards' 
+                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
+            >
+              Cartões
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'list' 
+                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
+            >
+              Lista
+            </button>
+          </div>
+          <button onClick={() => { setProjectToEdit(null); setIsFormOpen(true); }} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700">
+            <PlusIcon className="h-5 w-5" />
+            <span>Novo Projeto</span>
+          </button>
+        </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map(project => (
-          <ProjectCard 
-            key={project.id} 
-            project={project} 
-            onSelect={() => handleProjectSelect(project.id)}
-            onEdit={() => handleEdit(project)}
-            onDelete={() => handleDelete(project.id)}
-            onManageTeam={() => setTeamModalProject(project)}
-            onUploadFile={() => setUploadModalProjectId(project.id)}
+
+      {/* Filtros */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Nome da Empresa</label>
+          <input
+            type="text"
+            value={filterName}
+            onChange={(e) => setFilterName(e.target.value)}
+            placeholder="Buscar por empresa..."
+            className="w-full border border-slate-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-900/60 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
           />
-        ))}
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Tipo de Projeto</label>
+          <select
+            value={filterProjectType}
+            onChange={(e) => setFilterProjectType(e.target.value as ProjectType | 'all')}
+            className="w-full border border-slate-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-900/60 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="all">Todos os tipos</option>
+            {Object.values(ProjectType).map(type => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Nome do Contato</label>
+          <input
+            type="text"
+            value={filterClientName}
+            onChange={(e) => setFilterClientName(e.target.value)}
+            placeholder="Buscar por contato..."
+            className="w-full border border-slate-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-900/60 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Data de Início</label>
+          <input
+            type="date"
+            value={filterStartDate}
+            onChange={(e) => setFilterStartDate(e.target.value)}
+            className="w-full border border-slate-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-900/60 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
       </div>
-       {projects.length === 0 && <p className="text-center py-10 text-slate-500 dark:text-slate-400">Nenhum projeto foi criado ainda.</p>}
+
+      {filteredProjects.length === 0 && (
+        <p className="text-center py-10 text-slate-500 dark:text-slate-400">Nenhum projeto foi criado ainda.</p>
+      )}
+
+      {filteredProjects.length > 0 && viewMode === 'cards' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map(project => (
+            <ProjectCard 
+              key={project.id} 
+              project={project} 
+              onSelect={() => handleProjectSelect(project.id)}
+              onEdit={() => handleEdit(project)}
+              onDelete={() => handleDelete(project.id)}
+              onManageTeam={() => setTeamModalProject(project)}
+              onUploadFile={() => setUploadModalProjectId(project.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      {filteredProjects.length > 0 && viewMode === 'list' && (
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
+          <div className="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-b border-slate-200 dark:border-slate-600">
+            <h2 className="text-lg font-medium text-slate-800 dark:text-slate-100">Lista de Projetos</h2>
+          </div>
+          <div className="divide-y divide-slate-200 dark:divide-slate-700">
+            {filteredProjects.map(project => {
+              const totalTasks = project.tasks.length;
+              const completedTasks = project.tasks.filter(t => t.status === TaskStatus.Done).length;
+              const baseProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+              const progress = project.status === ProjectStatus.Completed ? 100 : baseProgress;
+
+              return (
+                <div
+                  key={project.id}
+                  className="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors cursor-pointer"
+                  onClick={() => handleProjectSelect(project.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">{project.name}</h3>
+                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                        {project.projectType}
+                      </span>
+                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                        {project.status}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 line-clamp-1">{project.description}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                      <span>Início: {new Date(project.startDate).toLocaleDateString('pt-BR')}</span>
+                      <span>Fim: {new Date(project.endDate).toLocaleDateString('pt-BR')}</span>
+                      <span>Tarefas: {completedTasks}/{totalTasks}</span>
+                      <span>Progresso: {Math.round(progress)}%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 sm:ml-auto" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => setUploadModalProjectId(project.id)} title="Upload de Arquivo" className="p-2 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/20 rounded-full transition-colors">
+                      <UploadIcon className="h-5 w-5" />
+                    </button>
+                    <button onClick={() => setTeamModalProject(project)} title="Gerenciar Equipe" className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 rounded-full transition-colors">
+                      <UsersIcon className="h-5 w-5" />
+                    </button>
+                    <button onClick={() => handleEdit(project)} title="Editar Projeto" className="p-2 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/20 rounded-full transition-colors">
+                      <EditIcon className="h-5 w-5" />
+                    </button>
+                    <button onClick={() => handleDelete(project.id)} title="Excluir Projeto" className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 rounded-full transition-colors">
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <ProjectForm 
         isOpen={isFormOpen}

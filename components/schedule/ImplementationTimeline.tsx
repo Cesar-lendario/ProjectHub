@@ -1,21 +1,22 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Card from '../ui/Card';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Task, TaskStatus, Project } from '../../types';
 
-// Cores para os status das tarefas
-const STATUS_COLORS: Record<string, string> = {
-  'planejamento': 'bg-green-500',
-  'execucao': 'bg-red-500',
-  'concluido': 'bg-blue-500 text-white',
-  'pendente': 'bg-yellow-400',
-  'default': 'bg-gray-300'
+// Cores para os status das tarefas no cronograma
+// Concluído = verde, Pendente = vermelho, A Fazer = roxo, Em andamento = azul
+const STATUS_COLORS: Record<TaskStatus | 'default', string> = {
+  [TaskStatus.Done]: 'bg-green-500',
+  [TaskStatus.Pending]: 'bg-red-500',
+  [TaskStatus.ToDo]: 'bg-purple-500',
+  [TaskStatus.InProgress]: 'bg-blue-500',
+  default: 'bg-gray-300',
 };
 
 interface TimelineCell {
   year: number;
   month: number;
-  status?: string;
+  status?: TaskStatus;
 }
 
 interface TimelineRow {
@@ -33,6 +34,13 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
   const [selectedProject, setSelectedProject] = useState<string>(projectId || '');
   const [startYear, setStartYear] = useState<number>(new Date().getFullYear());
   const [endYear, setEndYear] = useState<number>(new Date().getFullYear() + 1);
+
+  // Sincronizar o projeto selecionado com o projectId vindo de fora (ScheduleView)
+  useEffect(() => {
+    if (projectId) {
+      setSelectedProject(projectId);
+    }
+  }, [projectId]);
 
   // Gerar meses para o período selecionado
   const months = useMemo(() => {
@@ -63,35 +71,32 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
     return projects.find(p => p.id === selectedProject) || null;
   }, [projects, selectedProject]);
 
-  // Mapear status das tarefas para cores
-  const mapTaskStatusToColor = (status: TaskStatus): string => {
-    switch (status) {
-      case TaskStatus.Pending:
-        return 'planejamento';
-      case TaskStatus.ToDo:
-        return 'planejamento';
-      case TaskStatus.InProgress:
-        return 'execucao';
-      case TaskStatus.Done:
-        return 'concluido';
-      default:
-        return 'default';
-    }
-  };
-
   // Dados do cronograma
   const timelineData = useMemo(() => {
     if (!selectedProjectData || !selectedProjectData.tasks || selectedProjectData.tasks.length === 0) {
       return [];
     }
 
-    // Calcular o mês de início do projeto
-    const projectStartDate = new Date(selectedProjectData.startDate);
-    const projectStartMonth = projectStartDate.getMonth();
-    const projectStartYear = projectStartDate.getFullYear();
-    
-    // Criar linhas do cronograma com base nas tarefas reais do projeto
-    const rows: TimelineRow[] = selectedProjectData.tasks.map(task => {
+    // Definir tarefas prioritárias que devem aparecer no topo da tabela
+    const PRIORITY_TASKS = [
+      'DOCUMENTOS DA EMPRESA',
+      'NF/ IDENTIFICAÇÃO',
+    ];
+
+    // Criar linhas do cronograma com base nas tarefas reais do projeto,
+    // aplicando ordenação para trazer as tarefas prioritárias para o topo
+    const orderedTasks = [...selectedProjectData.tasks].sort((a, b) => {
+      const aIndex = PRIORITY_TASKS.findIndex(name => a.name.toUpperCase().startsWith(name));
+      const bIndex = PRIORITY_TASKS.findIndex(name => b.name.toUpperCase().startsWith(name));
+
+      const aPriority = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex;
+      const bPriority = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex;
+
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      return 0; // mantém ordem relativa original para demais tarefas
+    });
+
+    const rows: TimelineRow[] = orderedTasks.map(task => {
       // Calcular data de início e fim da tarefa
       const taskDueDate = new Date(task.dueDate);
       const taskEndMonth = taskDueDate.getMonth();
@@ -112,7 +117,7 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
           return {
             year: monthData.year,
             month: monthData.month,
-            status: mapTaskStatusToColor(task.status)
+            status: task.status,
           };
         }
         
@@ -253,11 +258,7 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
                       cell.status ? STATUS_COLORS[cell.status] : ''
                     }`}
                   >
-                    {cell.status === 'concluido' ? (
-                      <span className="text-white">&nbsp;</span>
-                    ) : (
-                      <span>&nbsp;</span>
-                    )}
+                    <span>&nbsp;</span>
                   </td>
                 ))}
               </tr>
@@ -269,17 +270,19 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
       
       <div className="mt-4 flex flex-wrap gap-4">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-500"></div>
-          <span className="text-sm">Planejamento</span>
+          <div className="w-4 h-4 bg-red-500" />
+          <span className="text-sm">Pendente</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-500"></div>
-          <span className="text-sm">Execução</span>
+          <div className="w-4 h-4 bg-purple-500" />
+          <span className="text-sm">A Fazer</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 flex items-center justify-center">
-            <span className="text-white text-xs">C</span>
-          </div>
+          <div className="w-4 h-4 bg-blue-500" />
+          <span className="text-sm">Em andamento</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-green-500" />
           <span className="text-sm">Concluído</span>
         </div>
       </div>

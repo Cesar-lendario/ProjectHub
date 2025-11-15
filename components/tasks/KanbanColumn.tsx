@@ -19,12 +19,36 @@ interface KanbanColumnProps {
 
 const getStatusAppearance = (status: TaskStatus) => {
     switch (status) {
-        case TaskStatus.Pending: return { bg: 'bg-purple-200 dark:bg-purple-500/20', text: 'text-purple-800 dark:text-purple-200', border: 'border-purple-400 dark:border-purple-500/40' };
-        case TaskStatus.ToDo: return { bg: 'bg-slate-200 dark:bg-slate-500/20', text: 'text-slate-800 dark:text-slate-200', border: 'border-slate-400 dark:border-slate-500/40' };
-        case TaskStatus.InProgress: return { bg: 'bg-yellow-200 dark:bg-amber-500/20', text: 'text-yellow-800 dark:text-amber-200', border: 'border-yellow-400 dark:border-amber-500/40' };
-        case TaskStatus.Done: return { bg: 'bg-green-200 dark:bg-emerald-500/20', text: 'text-green-800 dark:text-emerald-200', border: 'border-green-400 dark:border-emerald-500/40' };
+        // Pendente = vermelho
+        case TaskStatus.Pending:
+            return {
+                bg: 'bg-red-200 dark:bg-red-500/20',
+                text: 'text-red-800 dark:text-red-200',
+                border: 'border-red-400 dark:border-red-500/40',
+            };
+        // A Fazer = roxo
+        case TaskStatus.ToDo:
+            return {
+                bg: 'bg-purple-200 dark:bg-purple-500/20',
+                text: 'text-purple-800 dark:text-purple-200',
+                border: 'border-purple-400 dark:border-purple-500/40',
+            };
+        // Em andamento = azul
+        case TaskStatus.InProgress:
+            return {
+                bg: 'bg-blue-200 dark:bg-blue-500/20',
+                text: 'text-blue-800 dark:text-blue-200',
+                border: 'border-blue-400 dark:border-blue-500/40',
+            };
+        // Concluído = verde
+        case TaskStatus.Done:
+            return {
+                bg: 'bg-green-200 dark:bg-emerald-500/20',
+                text: 'text-green-800 dark:text-emerald-200',
+                border: 'border-green-400 dark:border-emerald-500/40',
+            };
     }
-}
+};
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onEditTask, onDeleteTask, onViewTask, canEditTask }) => {
     const { bg, text, border } = getStatusAppearance(status);

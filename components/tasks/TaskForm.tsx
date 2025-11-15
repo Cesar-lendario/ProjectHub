@@ -33,6 +33,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Sempre resetar estado de loading ao abrir o modal ou trocar a tarefa em edição
+    setIsLoading(false);
+
     if (taskToEdit) {
       setName(taskToEdit.name);
       setDescription(taskToEdit.description);
