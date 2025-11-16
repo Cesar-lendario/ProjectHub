@@ -44,7 +44,6 @@ const getProjectBadgeStyle = (projectName: string) => {
 };
 
 const KanbanCard: React.FC<KanbanCardProps> = ({ task, onEdit, onDelete, onView, canEdit }) => {
-    const isOverdue = new Date(task.dueDate) < new Date() && task.status !== TaskStatus.Done;
     const projectBadge = getProjectBadgeStyle(task.projectName);
     // Desativando a funcionalidade de drag and drop
     // Mantendo as variáveis para não quebrar o código
@@ -124,8 +123,8 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, onEdit, onDelete, onView,
                 </span>
             </div>
              <div className="mt-3 text-xs font-medium flex justify-end">
-                <span className={`px-2 py-1 rounded-full ${isOverdue ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-200'}`}>
-                   Vence em: {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-200">
+                   Início: {new Date(task.dueDate).toLocaleDateString('pt-BR')}
                 </span>
             </div>
         </Card>

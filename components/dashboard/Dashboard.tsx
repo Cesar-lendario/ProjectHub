@@ -19,7 +19,7 @@ const Dashboard: React.FC = () => {
   const allTasks = projects.flatMap(p => p.tasks);
   const totalTasks = allTasks.length;
   const completedTasks = allTasks.filter(t => t.status === TaskStatus.Done).length;
-  const overdueTasks = allTasks.filter(t => new Date(t.dueDate) < new Date() && t.status !== TaskStatus.Done).length;
+  const inProgressTasks = allTasks.filter(t => t.status === TaskStatus.InProgress).length;
 
   return (
     <div className="space-y-6">
@@ -45,10 +45,10 @@ const Dashboard: React.FC = () => {
             change={`${completedTasks} concluídas`}
         />
          <KpiCard 
-            title="Tarefas Atrasadas" 
-            value={overdueTasks} 
+            title="Tarefas em Andamento" 
+            value={inProgressTasks} 
             icon={AlertCircleIcon} 
-            iconColorClass="text-red-500" 
+            iconColorClass="text-blue-500" 
         />
         <KpiCard 
             title="Membros da Equipe" 

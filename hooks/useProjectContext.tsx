@@ -300,19 +300,28 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       setLoading(true);
       
-      await TasksService.update(taskData.id, {
-        name: taskData.name,
-        description: taskData.description,
-        status: unmapTaskStatus(taskData.status),
-        priority: unmapTaskPriority(taskData.priority),
-        due_date: taskData.dueDate,
-        assignee_id: taskData.assignee_id || null,
-        duration: taskData.duration,
-        dependencies: taskData.dependencies,
+      // Buscar a tarefa anterior para verificar se o status mudou
+      let finalTaskData = { ...taskData };
+      const previousTask = projects.flatMap(p => p.tasks).find(t => t.id === taskData.id);
+      
+      // Se o status mudou, atualizar a data de início para hoje
+      if (previousTask && previousTask.status !== taskData.status) {
+        finalTaskData.dueDate = new Date().toISOString().split('T')[0];
+      }
+      
+      await TasksService.update(finalTaskData.id, {
+        name: finalTaskData.name,
+        description: finalTaskData.description,
+        status: unmapTaskStatus(finalTaskData.status),
+        priority: unmapTaskPriority(finalTaskData.priority),
+        due_date: finalTaskData.dueDate,
+        assignee_id: finalTaskData.assignee_id || null,
+        duration: finalTaskData.duration,
+        dependencies: finalTaskData.dependencies,
       });
 
-      const assignee = users.find(u => u.id === taskData.assignee_id) || null;
-      const consistentTaskData = { ...taskData, assignee };
+      const assignee = users.find(u => u.id === finalTaskData.assignee_id) || null;
+      const consistentTaskData = { ...finalTaskData, assignee };
 
       setProjects(prev => prev.map(p => {
         if (p.id === consistentTaskData.project_id) {
@@ -326,7 +335,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     } finally {
       setLoading(false);
     }
-  }, [users]);
+  }, [users, projects]);
 
   const deleteTask = useCallback(async (taskId: string) => {
     try {

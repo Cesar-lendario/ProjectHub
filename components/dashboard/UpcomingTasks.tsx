@@ -8,26 +8,7 @@ interface UpcomingTaskItemProps {
 }
 
 const UpcomingTaskItem: React.FC<UpcomingTaskItemProps> = ({ task }) => {
-    const isOverdue = new Date(task.dueDate) < new Date() && task.status !== TaskStatus.Done;
-    const dueDate = new Date(task.dueDate);
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    
-    const diffTime = dueDateOnly.getTime() - todayDateOnly.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    let dateText;
-    if (isOverdue) {
-        dateText = `Atrasada há ${Math.abs(diffDays)} dia(s)`;
-    } else if (diffDays === 0) {
-        dateText = 'Vence hoje';
-    } else if (diffDays === 1) {
-        dateText = 'Vence amanhã';
-    } else {
-        dateText = `Vence em ${diffDays} dias`;
-    }
+    const startDate = new Date(task.dueDate).toLocaleDateString('pt-BR');
 
     return (
         <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/30 rounded-lg hover:bg-slate-100 dark:bg-slate-700/50 transition-colors">
@@ -39,8 +20,8 @@ const UpcomingTaskItem: React.FC<UpcomingTaskItemProps> = ({ task }) => {
                 {task.assignee && (
                     <img src={task.assignee.avatar} alt={task.assignee.name} className="w-7 h-7 rounded-full mr-3" title={task.assignee.name} />
                 )}
-                <span className={`text-xs font-medium px-2 py-1 rounded-full ${isOverdue ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-                    {dateText}
+                <span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-200">
+                    Início: {startDate}
                 </span>
             </div>
         </div>

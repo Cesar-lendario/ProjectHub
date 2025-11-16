@@ -61,7 +61,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name || !projectId || !dueDate) {
-        alert("Por favor, preencha os campos obrigatórios: Nome da Tarefa, Projeto e Data de Vencimento.");
+        alert("Por favor, preencha os campos obrigatórios: Nome da Tarefa, Projeto e Data de Início.");
         return;
     }
     
@@ -139,7 +139,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
         {/* Row 2: Data e Duração */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
-            label="Data de Vencimento"
+            label="Data de Início"
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}

@@ -62,7 +62,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, isOpen, onClose }) => {
                 </div>
                  <div>
                     <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">
-                      Data de Vencimento
+                      Data de Início
                     </p>
                     <p className="mt-1 text-base font-medium text-slate-900 dark:text-white">
                       {new Date(task.dueDate).toLocaleDateString('pt-BR')}

@@ -69,7 +69,7 @@ const TaskSummaryModal: React.FC<TaskSummaryModalProps> = ({ isOpen, onClose, pr
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{task.description}</p>
                   )}
                   <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                    Vence em: {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                    Início: {new Date(task.dueDate).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
               ))}
@@ -92,7 +92,7 @@ const TaskSummaryModal: React.FC<TaskSummaryModalProps> = ({ isOpen, onClose, pr
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{task.description}</p>
                   )}
                   <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                    Vence em: {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                    Início: {new Date(task.dueDate).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
               ))}
@@ -115,7 +115,7 @@ const TaskSummaryModal: React.FC<TaskSummaryModalProps> = ({ isOpen, onClose, pr
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{task.description}</p>
                   )}
                   <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                    Vence em: {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                    Início: {new Date(task.dueDate).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
               ))}
