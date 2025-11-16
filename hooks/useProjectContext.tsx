@@ -719,15 +719,22 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   const setBulkPermissions = useCallback((role: GlobalRole, selection: PermissionAction | 'todos' | 'nenhum') => {
+    // Módulos que são apenas de visualização (sem funcionalidade de edição)
+    const VIEW_ONLY_MODULES = ['dashboard', 'schedule', 'reports', 'notifications'];
+    
     setRolePermissions(prev => {
       const updated = { ...prev[role] };
       PERMISSION_MODULES.forEach(module => {
+        const isViewOnly = VIEW_ONLY_MODULES.includes(module.id);
+        
         if (selection === 'todos') {
-          updated[module.id] = ['visualizar', 'editar'];
+          // Para módulos VIEW_ONLY, adiciona apenas visualizar
+          updated[module.id] = isViewOnly ? ['visualizar'] : ['visualizar', 'editar'];
         } else if (selection === 'nenhum') {
           updated[module.id] = [];
         } else if (selection === 'editar') {
-          updated[module.id] = ['visualizar', 'editar'];
+          // Para módulos VIEW_ONLY, adiciona apenas visualizar
+          updated[module.id] = isViewOnly ? ['visualizar'] : ['visualizar', 'editar'];
         } else if (selection === 'visualizar') {
           updated[module.id] = ['visualizar'];
         }

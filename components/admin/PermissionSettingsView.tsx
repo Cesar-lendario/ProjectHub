@@ -6,6 +6,9 @@ import { PERMISSION_MODULES } from '../../constants';
 
 const ACTIONS: PermissionAction[] = ['visualizar', 'editar'];
 
+// Módulos que são apenas de visualização (sem funcionalidade de edição)
+const VIEW_ONLY_MODULES = ['dashboard', 'schedule', 'reports', 'notifications'];
+
 const PermissionSettingsView: React.FC = () => {
   const {
     rolePermissions,
@@ -37,12 +40,19 @@ const PermissionSettingsView: React.FC = () => {
     return current.includes(action);
   };
 
+  const canEdit = (moduleId: string) => {
+    return !VIEW_ONLY_MODULES.includes(moduleId);
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Configuração de Permissões</h1>
         <p className="mt-1 text-slate-600 dark:text-slate-300">
           Defina quais módulos cada perfil pode visualizar ou editar. Marcando &ldquo;Editar&rdquo; o sistema atribui automaticamente a permissão de visualização.
+        </p>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <strong>Nota:</strong> Módulos como Dashboard, Cronograma, Relatórios e Histórico de Cobranças são apenas de visualização (não possuem funcionalidade de edição).
         </p>
       </div>
 
@@ -111,12 +121,16 @@ const PermissionSettingsView: React.FC = () => {
                   <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200 font-medium">{module.label}</td>
                   {ACTIONS.map(action => (
                     <td key={action} className="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                        checked={isChecked(module.id, action)}
-                        onChange={() => handleCheckboxChange(module.id, action)}
-                      />
+                      {action === 'editar' && !canEdit(module.id) ? (
+                        <span className="text-xs text-slate-400 dark:text-slate-500">N/A</span>
+                      ) : (
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                          checked={isChecked(module.id, action)}
+                          onChange={() => handleCheckboxChange(module.id, action)}
+                        />
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -124,13 +138,6 @@ const PermissionSettingsView: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </Card>
-
-      <Card className="bg-indigo-50 border border-indigo-100 text-indigo-800 text-sm">
-        <p>
-          Todas as alterações são aplicadas imediatamente. Se futuramente conectarmos a um backend, basta
-          persistir o objeto <code>rolePermissions</code> retornado pelo contexto.
-        </p>
       </Card>
     </div>
   );
