@@ -70,12 +70,14 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
   }, [projects, user.id]);
 
   const stats = useMemo(() => {
-    const completed = userTasks.filter(t => t.status === TaskStatus.Done).length;
-    const overdue = userTasks.filter(t => new Date(t.dueDate) < new Date() && t.status !== TaskStatus.Done).length;
+    const pending = userTasks.filter(t => t.status === TaskStatus.Pending).length;
+    const toDo = userTasks.filter(t => t.status === TaskStatus.ToDo).length;
+    const inProgress = userTasks.filter(t => t.status === TaskStatus.InProgress).length;
     return {
         total: userTasks.length,
-        completed,
-        overdue,
+        pending,
+        toDo,
+        inProgress,
     };
   }, [userTasks]);
 
@@ -286,7 +288,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
         </div>
 
         {/* Estatísticas */}
-        <div className="border-t border-slate-200 bg-slate-50 dark:bg-slate-700/30 grid grid-cols-1 divide-y divide-slate-200 sm:grid-cols-3 sm:divide-y-0 sm:divide-x">
+        <div className="border-t border-slate-200 bg-slate-50 dark:bg-slate-700/30 grid grid-cols-1 divide-y divide-slate-200 sm:grid-cols-2 lg:grid-cols-4 sm:divide-y-0 sm:divide-x">
           <div className="px-6 py-5 text-center">
             <div className="flex items-center justify-center">
               <div className="flex-shrink-0">
@@ -301,23 +303,34 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
           <div className="px-6 py-5 text-center">
             <div className="flex items-center justify-center">
               <div className="flex-shrink-0">
-                <CheckSquareIcon className="h-8 w-8 text-green-600" />
+                <CheckSquareIcon className="h-8 w-8 text-red-600" />
               </div>
             </div>
             <div className="mt-2">
-              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">{stats.completed}</p>
-              <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">Tarefas Concluídas</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">{stats.pending}</p>
+              <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">Tarefas Pendentes</p>
             </div>
           </div>
           <div className="px-6 py-5 text-center">
             <div className="flex items-center justify-center">
               <div className="flex-shrink-0">
-                <AlertCircleIcon className="h-8 w-8 text-red-600" />
+                <TasksIcon className="h-8 w-8 text-slate-600" />
               </div>
             </div>
             <div className="mt-2">
-              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">{stats.overdue}</p>
-              <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">Tarefas Atrasadas</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">{stats.toDo}</p>
+              <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">Tarefas A Fazer</p>
+            </div>
+          </div>
+          <div className="px-6 py-5 text-center">
+            <div className="flex items-center justify-center">
+              <div className="flex-shrink-0">
+                <AlertCircleIcon className="h-8 w-8 text-orange-600" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">{stats.inProgress}</p>
+              <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">Tarefas Em Andamento</p>
             </div>
           </div>
         </div>
