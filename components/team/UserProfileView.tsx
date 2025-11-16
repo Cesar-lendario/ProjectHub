@@ -44,7 +44,7 @@ const StatItem: React.FC<{ icon: React.ElementType; value: number; label: string
 );
 
 const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelete, isAdmin }) => {
-  const { projects, changeUserRole, profile } = useProjectContext();
+  const { projects, changeUserRole, profile, updateUser } = useProjectContext();
   const { updatePassword } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -131,8 +131,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onEdit, onDelet
       }
 
       changeUserRole(user.id, selectedRole);
-      // Aqui você também pode salvar o email e avatar editados
-      // updateUser({ ...user, email: editedEmail, avatar: finalAvatarUrl });
+      // Salvar email e avatar editados no contexto do projeto
+      await updateUser({ ...user, email: editedEmail, avatar: finalAvatarUrl });
       
       setAvatarFile(null);
       setAvatarPreview(null);
