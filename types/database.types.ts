@@ -1,5 +1,5 @@
 // Tipos gerados baseados nas tabelas do Supabase
-// Database: ProjectHub
+// Database: TaskMeet
 
 export interface Database {
   public: {

@@ -47,7 +47,7 @@ const NotificationSenderModal: React.FC<NotificationSenderModalProps> = ({ isOpe
   const generateEmailBody = () => {
     if (!selectedProject) return '';
     const taskList = pendingTasks.map(task => `- ${task.name} (Início: ${new Date(task.dueDate).toLocaleDateString('pt-BR')})`).join('\n');
-    return encodeURIComponent(`Olá ${selectedProject.clientName || 'Contato'},\n\nEste é um lembrete amigável sobre as seguintes tarefas pendentes para a empresa "${selectedProject.name}":\n\n${taskList}\n\nAtenciosamente,\nEquipe ProjectHub`);
+    return encodeURIComponent(`Olá ${selectedProject.clientName || 'Contato'},\n\nEste é um lembrete amigável sobre as seguintes tarefas pendentes para a empresa "${selectedProject.name}":\n\n${taskList}\n\nAtenciosamente,\nEquipe TaskMeet`);
   };
 
   const generateWhatsappMessage = () => {

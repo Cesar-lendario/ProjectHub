@@ -2,7 +2,7 @@
 
 ## 📋 Visão Geral
 
-O ProjectHub agora possui suporte completo para **modo escuro** e **modo claro**, permitindo que os usuários escolham o tema que melhor se adapta às suas preferências e ambiente de trabalho.
+O TaskMeet agora possui suporte completo para **modo escuro** e **modo claro**, permitindo que os usuários escolham o tema que melhor se adapta às suas preferências e ambiente de trabalho.
 
 ## ✨ Funcionalidades
 
@@ -186,7 +186,7 @@ className="hover:shadow-lg dark:hover:shadow-slate-900/70"
 
 ### Para Usuários
 
-1. Faça login no ProjectHub
+1. Faça login no TaskMeet
 2. Localize o botão de toggle no canto superior direito do header (ao lado do seu perfil)
 3. Clique no ícone:
    - **☀️ (Sol)**: Ativa o modo claro

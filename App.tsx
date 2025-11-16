@@ -138,7 +138,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header 
-          title={viewTitles[currentView] || 'ProjectHub'} 
+          title={viewTitles[currentView] || 'TaskMeet'} 
           onMenuClick={() => setSidebarOpen(true)} 
           onGoToProfile={handleGoToProfile}
           onGoToSettings={handleGoToSettings}

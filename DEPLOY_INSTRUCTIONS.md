@@ -1,4 +1,4 @@
-# 🚀 Instruções de Deploy - ProjectHub
+# 🚀 Instruções de Deploy - TaskMeet
 
 ## 📦 Pasta `dist/` Pronta para Deploy
 
@@ -199,7 +199,7 @@ As chaves do Supabase e Gemini já estão incluídas no build. Certifique-se de 
 - Telefone: 3550-9000
 - Chat: Disponível no painel
 
-### ProjectHub
+### TaskMeet
 - Para problemas com a aplicação, verifique os logs no console
 - Para problemas com Supabase, acesse o Dashboard
 
@@ -207,6 +207,6 @@ As chaves do Supabase e Gemini já estão incluídas no build. Certifique-se de 
 
 ## 🎉 Deploy Concluído!
 
-Após seguir todos os passos, seu ProjectHub estará no ar e pronto para uso!
+Após seguir todos os passos, seu TaskMeet estará no ar e pronto para uso!
 
 **Boa sorte com seu deploy! 🚀**

@@ -40,7 +40,7 @@ const LoginPage: React.FC = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 transition-colors">
       <div className="w-full max-w-md">
-        <h1 className="text-center text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">ProjectHub</h1>
+        <h1 className="text-center text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">TaskMeet</h1>
         <p className="text-center text-slate-600 dark:text-slate-300 mb-6">Gerenciamento Profissional de Projetos</p>
         <Card>
           <h2 className="text-xl font-bold text-center text-slate-900 dark:text-slate-50 mb-6">

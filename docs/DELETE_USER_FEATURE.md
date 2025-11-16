@@ -383,5 +383,5 @@ const impactAnalysis = useMemo(() => {
 
 ## 🎉 Conclusão
 
-A funcionalidade de exclusão de usuários foi implementada seguindo as melhores práticas de UX e segurança, oferecendo uma experiência profissional e confiável para administradores gerenciarem a equipe do ProjectHub.
+A funcionalidade de exclusão de usuários foi implementada seguindo as melhores práticas de UX e segurança, oferecendo uma experiência profissional e confiável para administradores gerenciarem a equipe do TaskMeet.
 

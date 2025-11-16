@@ -131,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetVi
       >
         <div className={`flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 dark:border-slate-700/50 ${isCollapsed ? 'px-2' : 'px-4'}`}>
           <span className={`text-xl font-bold text-slate-800 dark:text-slate-50 transition-all duration-300 ${isCollapsed ? 'lg:opacity-0 lg:w-0 lg:overflow-hidden' : ''}`}>
-            ProjectHub
+            TaskMeet
           </span>
           <div className="flex items-center gap-2">
             <button

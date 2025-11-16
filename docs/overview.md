@@ -1,6 +1,6 @@
 ## Visão Geral
 
-ProjectHub é uma plataforma web multitenant de gestão de projetos orientada a equipes distribuídas. O aplicativo consolida planejamento, execução e monitoramento em um único painel, oferecendo visão integrada de projetos, tarefas, cronograma, comunicação e colaboração da equipe. O fluxo principal passa pelo provedor de contexto de projetos (`useProjectContext`), que centraliza o estado compartilhado da aplicação e implementa todas as operações CRUD.
+TaskMeet é uma plataforma web multitenant de gestão de projetos orientada a equipes distribuídas. O aplicativo consolida planejamento, execução e monitoramento em um único painel, oferecendo visão integrada de projetos, tarefas, cronograma, comunicação e colaboração da equipe. O fluxo principal passa pelo provedor de contexto de projetos (`useProjectContext`), que centraliza o estado compartilhado da aplicação e implementa todas as operações CRUD.
 
 ## Principais Funcionalidades
 
@@ -308,7 +308,7 @@ Utilitários e funções auxiliares:
 
 ## Estrutura do Banco de Dados
 
-O ProjectHub utiliza o Supabase PostgreSQL com as seguintes tabelas:
+O TaskMeet utiliza o Supabase PostgreSQL com as seguintes tabelas:
 
 ### Tabelas Principais
 

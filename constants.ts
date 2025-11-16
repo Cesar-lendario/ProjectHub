@@ -3,11 +3,11 @@ import { User, Project, Task, TaskStatus, TaskPriority, ProjectStatus, Attachmen
 // Fix: Added the required 'role' property to each user object to match the 'User' type.
 export const USERS: User[] = [
   { id: 'user-1', name: 'Cesar A Bressiani', email: 'cat@caterg.com.br', avatar: 'https://i.pravatar.cc/150?u=cesar', function: 'Diretor de Operações', role: GlobalRole.Admin },
-  { id: 'user-2', name: 'Alice', email: 'alice@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=alice', function: 'Gerente de Projetos', role: GlobalRole.Supervisor },
-  { id: 'user-3', name: 'Bob', email: 'bob@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=bob', function: 'Designer UI/UX', role: GlobalRole.Engineer },
-  { id: 'user-4', name: 'Charlie', email: 'charlie@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=charlie', function: 'Desenvolvedor Frontend', role: GlobalRole.Engineer },
-  { id: 'user-5', name: 'Diana', email: 'diana@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=diana', function: 'Desenvolvedora Backend', role: GlobalRole.Engineer },
-  { id: 'user-6', name: 'Ethan', email: 'ethan@projecthub.com', avatar: 'https://i.pravatar.cc/150?u=ethan', function: 'Engenheiro de QA', role: GlobalRole.Engineer },
+  { id: 'user-2', name: 'Alice', email: 'alice@taskmeet.com', avatar: 'https://i.pravatar.cc/150?u=alice', function: 'Gerente de Projetos', role: GlobalRole.Supervisor },
+  { id: 'user-3', name: 'Bob', email: 'bob@taskmeet.com', avatar: 'https://i.pravatar.cc/150?u=bob', function: 'Designer UI/UX', role: GlobalRole.Engineer },
+  { id: 'user-4', name: 'Charlie', email: 'charlie@taskmeet.com', avatar: 'https://i.pravatar.cc/150?u=charlie', function: 'Desenvolvedor Frontend', role: GlobalRole.Engineer },
+  { id: 'user-5', name: 'Diana', email: 'diana@taskmeet.com', avatar: 'https://i.pravatar.cc/150?u=diana', function: 'Desenvolvedora Backend', role: GlobalRole.Engineer },
+  { id: 'user-6', name: 'Ethan', email: 'ethan@taskmeet.com', avatar: 'https://i.pravatar.cc/150?u=ethan', function: 'Engenheiro de QA', role: GlobalRole.Engineer },
 ];
 
 const MOCK_FILES: Attachment[] = [

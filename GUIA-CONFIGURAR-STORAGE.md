@@ -48,7 +48,7 @@ Após executar o script, você deve ver na parte inferior do SQL Editor uma tabe
 
 ### **Passo 4: Testar o Upload**
 
-1. Volte para a aplicação ProjectHub
+1. Volte para a aplicação TaskMeet
 2. Vá para a página de **Projetos**
 3. Clique no botão **⬆️ Upload** de qualquer projeto
 4. Selecione um arquivo

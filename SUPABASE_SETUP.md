@@ -1,6 +1,6 @@
-# Configuração do Supabase para ProjectHub
+# Configuração do Supabase para TaskMeet
 
-Este guia explica como configurar o banco de dados e storage do Supabase para o ProjectHub.
+Este guia explica como configurar o banco de dados e storage do Supabase para o TaskMeet.
 
 ## ✅ Credenciais Configuradas
 
