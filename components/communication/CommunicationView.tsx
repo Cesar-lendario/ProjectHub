@@ -25,6 +25,17 @@ const CommunicationView: React.FC = () => {
             .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     }, [messages, activeChannel]);
 
+    // Contar mensagens não lidas por canal (excluindo as do próprio usuário)
+    const unreadCountByChannel = useMemo(() => {
+        const counts: { [key: string]: number } = {};
+        messages.forEach(msg => {
+            if (!msg.isRead && msg.sender_id !== profile?.id) {
+                counts[msg.channel] = (counts[msg.channel] || 0) + 1;
+            }
+        });
+        return counts;
+    }, [messages, profile?.id]);
+
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [activeChannelMessages]);
@@ -49,20 +60,28 @@ const CommunicationView: React.FC = () => {
                 <div className="w-1/4 bg-slate-900/40 overflow-y-auto p-5">
                     <h3 className="font-semibold text-slate-300 uppercase tracking-wide text-xs mb-4">Canais</h3>
                     <ul className="space-y-3">
-                        {channels.map(channel => (
-                            <li key={channel.id}>
-                                <button
-                                    onClick={() => setActiveChannel(channel.id)}
-                                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
-                                        activeChannel === channel.id
-                                            ? 'bg-indigo-500/20 text-indigo-100 border-indigo-400/60 shadow-lg shadow-indigo-500/20'
-                                            : 'text-slate-300 border-transparent hover:bg-slate-800/70 hover:text-white'
-                                    }`}
-                                >
-                                    {channel.name}
-                                </button>
-                            </li>
-                        ))}
+                        {channels.map(channel => {
+                            const unreadCount = unreadCountByChannel[channel.id] || 0;
+                            return (
+                                <li key={channel.id}>
+                                    <button
+                                        onClick={() => setActiveChannel(channel.id)}
+                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all border flex items-center justify-between ${
+                                            activeChannel === channel.id
+                                                ? 'bg-indigo-500/20 text-indigo-100 border-indigo-400/60 shadow-lg shadow-indigo-500/20'
+                                                : 'text-slate-300 border-transparent hover:bg-slate-800/70 hover:text-white'
+                                        }`}
+                                    >
+                                        <span>{channel.name}</span>
+                                        {unreadCount > 0 && (
+                                            <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                                                {unreadCount > 99 ? '99+' : unreadCount}
+                                            </span>
+                                        )}
+                                    </button>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
                 <div className="w-3/4 flex flex-col bg-slate-900/30">
