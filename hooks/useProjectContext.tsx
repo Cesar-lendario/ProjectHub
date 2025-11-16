@@ -44,6 +44,7 @@ interface ProjectContextType {
   addFile: (projectId: string, file: File) => Promise<void>;
   deleteFile: (fileId: string, projectId: string) => Promise<void>;
   addMessage: (messageData: Omit<Message, 'id' | 'sender' | 'isRead'>) => Promise<void>;
+  markMessagesAsRead: (channel: string, userId: string) => void;
   logNotification: (projectId: string, type: 'email' | 'whatsapp') => Promise<void>;
   refreshData: () => Promise<void>;
 }
@@ -686,6 +687,16 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [users]);
 
+  const markMessagesAsRead = useCallback((channel: string, userId: string) => {
+    setMessages(prev => prev.map(msg => {
+      // Marcar como lida apenas mensagens do canal especificado que não são do próprio usuário
+      if (msg.channel === channel && msg.sender_id !== userId && !msg.isRead) {
+        return { ...msg, isRead: true };
+      }
+      return msg;
+    }));
+  }, []);
+
   const logNotification = useCallback(async (projectId: string, type: 'email' | 'whatsapp') => {
     try {
       if (type === 'email') {
@@ -813,6 +824,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     addFile,
     deleteFile,
     addMessage,
+    markMessagesAsRead,
     logNotification,
     refreshData,
   };

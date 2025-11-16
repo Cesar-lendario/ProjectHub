@@ -6,7 +6,7 @@ import ChatMessage from './ChatMessage';
 import MessageInput from './MessageInput';
 
 const CommunicationView: React.FC = () => {
-    const { projects, messages } = useProjectContext();
+    const { projects, messages, markMessagesAsRead } = useProjectContext();
     const { profile } = useAuth(); // Use authenticated user
     const [activeChannel, setActiveChannel] = useState('#geral');
     const chatEndRef = useRef<HTMLDivElement>(null);
@@ -39,6 +39,13 @@ const CommunicationView: React.FC = () => {
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [activeChannelMessages]);
+
+    // Marcar mensagens como lidas quando o usuário visualizar um canal
+    useEffect(() => {
+        if (profile?.id && activeChannel) {
+            markMessagesAsRead(activeChannel, profile.id);
+        }
+    }, [activeChannel, profile?.id, markMessagesAsRead]);
 
     if (!profile) {
         return (
