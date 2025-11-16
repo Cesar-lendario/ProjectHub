@@ -846,3 +846,115 @@ Adicionados logs completos para facilitar depuração:
 - Reportar o bug para o time do Supabase
 - Atualizar para versão mais recente do `@supabase/supabase-js` quando disponível
 
+### Melhorias de UX e Comunicação (Nov 2025)
+
+**Sistema de Notificações de Mensagens Não Lidas**
+
+Implementado sistema completo de notificações para mensagens de comunicação:
+
+1. **Ícone de Notificação no Header** (`Header.tsx`):
+   - Badge vermelho pulsante com contador de mensagens não lidas
+   - Exibe número até 99+ mensagens
+   - Clique navega diretamente para a página de Comunicação
+   - Tooltip informativo com quantidade de mensagens
+   - Integrado com `useProjectContext` para contagem em tempo real
+
+2. **Badges por Canal** (`CommunicationView.tsx`):
+   - Indicadores vermelhos ao lado de cada canal/projeto com mensagens não lidas
+   - Contador específico por canal (ex: "# SPACE [3]")
+   - Facilita identificação rápida de qual projeto tem mensagens novas
+   - Atualização dinâmica conforme mensagens são lidas
+
+3. **Marcação Automática de Leitura**:
+   - Mensagens marcadas como lidas automaticamente ao visualizar um canal
+   - **Persistência no banco de dados** via `MessagesService.markChannelAsRead`
+   - Badges desaparecem instantaneamente ao abrir o canal
+   - Estado mantido após recarregar a página
+   - Exclui automaticamente as próprias mensagens do usuário (não conta como não lida)
+
+4. **Avatar Dinâmico em Mensagens** (`ChatMessage.tsx`):
+   - Avatares atualizados em tempo real nas mensagens
+   - Busca avatar do contexto de usuários para sempre mostrar a versão mais recente
+   - Ao trocar avatar no perfil, todas as mensagens antigas mostram o novo avatar
+
+**Arquivos modificados**:
+- `components/layout/Header.tsx`: adicionado ícone de notificação com badge
+- `components/communication/CommunicationView.tsx`: badges por canal e auto-read
+- `components/communication/ChatMessage.tsx`: avatar dinâmico
+- `hooks/useProjectContext.tsx`: função `markMessagesAsRead` assíncrona
+- `services/api/messages.service.ts`: método `markChannelAsRead` com persistência
+- `App.tsx`: função `handleGoToCommunication` para navegação
+
+**Configuração SQL necessária no Supabase**:
+```sql
+-- Garantir coluna is_read existe
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT false;
+
+-- Políticas RLS para permitir atualização de mensagens
+CREATE POLICY "Users can mark messages as read" ON messages
+FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+
+-- Índice para performance
+CREATE INDEX idx_messages_is_read ON messages(channel, is_read, sender_id);
+```
+
+**Melhorias Visuais na Interface**
+
+1. **Reordenação do Sidebar** (`Sidebar.tsx`):
+   - Ordem otimizada para fluxo de trabalho intuitivo:
+     1. Dashboard
+     2. Projetos
+     3. Tarefas
+     4. Cronograma
+     5. Equipe
+     6. Comunicação (movida para 6º para melhor acesso)
+     7. Arquivos
+     8. Relatórios
+     9. Histórico de Cobranças
+
+2. **Lista de Projetos** (`ProjectList.tsx`):
+   - Progresso em **negrito** na visualização em lista para destaque visual
+   - Exemplo: "Tarefas: 10/15  **Progresso: 67%**"
+
+3. **Navegação de Histórico de Cobranças** (`NotificationLogTable.tsx`):
+   - Clicar em uma linha da tabela navega diretamente para as tarefas do projeto
+   - Aplica filtro automático pelo projeto selecionado
+   - Props `setCurrentView` e `setGlobalProjectFilter` para navegação integrada
+
+4. **Lista de Tarefas com Cores** (`TaskList.tsx`):
+   - **Títulos de status coloridos** na visualização em lista:
+     - Pendente: vermelho (`text-red-600 dark:text-red-400`)
+     - A Fazer: roxo (`text-purple-600 dark:text-purple-400`)
+     - Em andamento: azul (`text-blue-600 dark:text-blue-400`)
+     - Concluído: verde (`text-green-600 dark:text-green-400`)
+   - **Bordas laterais coloridas** em cada linha de tarefa (4px) e no cabeçalho de status
+   - Compatível com modo claro e escuro
+   - Identificação visual instantânea do status
+
+**Melhorias no Perfil do Usuário**
+
+1. **Correção do Upload de Avatar** (`UserProfileView.tsx`):
+   - **PROBLEMA**: Avatar não estava sendo salvo no banco de dados
+   - **CAUSA**: Linha de `updateUser` estava comentada após o upload
+   - **SOLUÇÃO**: Ativado `updateUser({ ...user, email: editedEmail, avatar: finalAvatarUrl })`
+   - Avatar agora persiste corretamente após upload
+   - Integração com `useProjectContext.updateUser`
+
+2. **Estatísticas do Perfil Atualizadas**:
+   - **ANTES**: Tarefas Atribuídas, Concluídas, Atrasadas
+   - **DEPOIS**: Grid de 4 cards responsivo:
+     1. **Tarefas Atribuídas** (azul): total de tarefas do usuário
+     2. **Tarefas Pendentes** (vermelho): status `Pending`
+     3. **Tarefas A Fazer** (cinza): status `ToDo`
+     4. **Tarefas Em Andamento** (laranja): status `InProgress`
+   - Layout responsivo: 1 coluna (mobile), 2 colunas (tablet), 4 colunas (desktop)
+   - Estatísticas mais úteis e alinhadas com o fluxo de trabalho real
+
+**Resultados**:
+- ✅ Usuários nunca perdem mensagens não lidas
+- ✅ Identificação instantânea de qual projeto tem mensagens novas
+- ✅ Navegação otimizada e intuitiva
+- ✅ Visual consistente com cores em toda a aplicação
+- ✅ Avatares sempre atualizados em tempo real
+- ✅ Estatísticas de perfil mais relevantes
+
