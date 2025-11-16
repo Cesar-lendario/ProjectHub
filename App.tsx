@@ -105,7 +105,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
       case 'communication': return <CommunicationView />;
       case 'admin': return <UserManagementView />;
       case 'permissions': return <PermissionSettingsView />;
-      case 'notifications': return <NotificationLogTable />;
+      case 'notifications': return <NotificationLogTable setCurrentView={setCurrentView} setGlobalProjectFilter={setGlobalProjectFilter} />;
       default: return <Dashboard />;
     }
   };

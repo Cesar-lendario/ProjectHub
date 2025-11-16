@@ -3,7 +3,12 @@ import { useProjectContext } from '../../hooks/useProjectContext';
 import { TaskStatus } from '../../types';
 import Card from '../ui/Card';
 
-const NotificationLogTable: React.FC = () => {
+interface NotificationLogTableProps {
+  setCurrentView: (view: string) => void;
+  setGlobalProjectFilter: (projectId: string) => void;
+}
+
+const NotificationLogTable: React.FC<NotificationLogTableProps> = ({ setCurrentView, setGlobalProjectFilter }) => {
   const { projects } = useProjectContext();
 
   const formatDate = (dateString?: string) => {
@@ -13,6 +18,11 @@ const NotificationLogTable: React.FC = () => {
       month: '2-digit',
       year: 'numeric',
     });
+  };
+
+  const handleRowClick = (projectId: string) => {
+    setGlobalProjectFilter(projectId);
+    setCurrentView('tasks');
   };
 
   return (
@@ -39,7 +49,11 @@ const NotificationLogTable: React.FC = () => {
               ).length;
 
               return (
-                <tr key={project.id} className="hover:bg-slate-800/70 transition-colors">
+                <tr 
+                  key={project.id} 
+                  onClick={() => handleRowClick(project.id)}
+                  className="hover:bg-slate-800/70 transition-colors cursor-pointer"
+                >
                   <td className="px-5 py-3 whitespace-nowrap text-sm font-semibold text-slate-100">{project.name || 'N/A'}</td>
                   <td className="px-5 py-3 whitespace-nowrap text-sm text-slate-300">{project.clientName || 'N/A'}</td>
                   <td className="px-5 py-3 whitespace-nowrap text-sm text-slate-300">{project.projectType}</td>
