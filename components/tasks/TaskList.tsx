@@ -349,6 +349,14 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
               'Concluído': 'text-green-600 dark:text-green-400'
             };
             
+            // Mapear bordas laterais coloridas para cada status
+            const statusBorders: { [key: string]: string } = {
+              'Pendente': 'border-l-4 border-red-500',
+              'A Fazer': 'border-l-4 border-purple-500',
+              'Em andamento': 'border-l-4 border-blue-500',
+              'Concluído': 'border-l-4 border-green-500'
+            };
+            
             return (
               <div key={status} className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
                 <div className="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-b border-slate-200 dark:border-slate-600">
@@ -360,7 +368,7 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
                   {tasks.map(task => (
                     <div 
                       key={task.id} 
-                      className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                      className={`px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer ${statusBorders[status] || ''}`}
                       onClick={() => handleViewTask(task)}
                     >
                       <div className="flex items-center justify-between">
