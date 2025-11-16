@@ -341,10 +341,18 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
             const tasks = tasksByStatus[status] ?? [];
             if (tasks.length === 0) return null;
             
+            // Mapear cores para cada status (modo claro e escuro)
+            const statusColors: { [key: string]: string } = {
+              'Pendente': 'text-red-600 dark:text-red-400',
+              'A Fazer': 'text-purple-600 dark:text-purple-400',
+              'Em andamento': 'text-blue-600 dark:text-blue-400',
+              'Concluído': 'text-green-600 dark:text-green-400'
+            };
+            
             return (
               <div key={status} className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
                 <div className="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-b border-slate-200 dark:border-slate-600">
-                  <h3 className="text-lg font-medium text-slate-800 dark:text-slate-100">
+                  <h3 className={`text-lg font-semibold ${statusColors[status] || 'text-slate-800 dark:text-slate-100'}`}>
                     {status} <span className="ml-2 text-sm text-slate-500 dark:text-slate-400">({tasks.length})</span>
                   </h3>
                 </div>
