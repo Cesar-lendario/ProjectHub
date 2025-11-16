@@ -38,7 +38,7 @@ export const MessagesService = {
   async create(message: MessageInsert) {
     const { data, error } = await supabase
       .from('messages')
-      .insert(message)
+      .insert(message as any)
       .select()
       .single();
 
@@ -50,7 +50,7 @@ export const MessagesService = {
   async markAsRead(id: string) {
     const { error } = await supabase
       .from('messages')
-      .update({ is_read: true })
+      .update({ is_read: true } as any)
       .eq('id', id);
 
     if (error) throw error;
@@ -60,7 +60,7 @@ export const MessagesService = {
   async markChannelAsRead(channel: string, userId: string) {
     const { error } = await supabase
       .from('messages')
-      .update({ is_read: true })
+      .update({ is_read: true } as any)
       .eq('channel', channel)
       .neq('sender_id', userId);
 

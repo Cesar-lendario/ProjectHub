@@ -43,7 +43,15 @@ const CommunicationView: React.FC = () => {
     // Marcar mensagens como lidas quando o usuário visualizar um canal
     useEffect(() => {
         if (profile?.id && activeChannel) {
-            markMessagesAsRead(activeChannel, profile.id);
+            // Chamada assíncrona para marcar mensagens como lidas
+            const markAsRead = async () => {
+                try {
+                    await markMessagesAsRead(activeChannel, profile.id);
+                } catch (error) {
+                    console.error('Erro ao marcar mensagens como lidas:', error);
+                }
+            };
+            markAsRead();
         }
     }, [activeChannel, profile?.id, markMessagesAsRead]);
 
