@@ -1,5 +1,6 @@
 import React from 'react';
 import { Message, User } from '../../types';
+import { useProjectContext } from '../../hooks/useProjectContext';
 
 interface ChatMessageProps {
     message: Message;
@@ -14,19 +15,24 @@ const formatTime = (timestamp: string) => {
 };
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, currentUser }) => {
-    const isCurrentUser = message.sender.id === currentUser.id;
+    const { users } = useProjectContext();
+    const isCurrentUser = message.sender?.id === currentUser.id;
+    
+    // Buscar avatar atualizado do usuário no contexto
+    const updatedUser = users.find(u => u.id === message.sender_id);
+    const avatarUrl = updatedUser?.avatar || message.sender?.avatar || 'https://via.placeholder.com/150';
 
     return (
         <div className={`flex items-start gap-4 ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
             <img 
-                src={message.sender.avatar} 
-                alt={message.sender.name} 
-                className="w-9 h-9 rounded-full flex-shrink-0 ring-2 ring-slate-800/60"
+                src={avatarUrl} 
+                alt={message.sender?.name || 'Usuário'} 
+                className="w-9 h-9 rounded-full flex-shrink-0 ring-2 ring-slate-800/60 object-cover"
             />
             <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
                 <div className={`px-4 py-3 rounded-2xl max-w-xl shadow-lg backdrop-blur-sm ${isCurrentUser ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white' : 'bg-slate-800/80 text-slate-100 border border-slate-700/40'}`}>
                     <p className={`font-semibold text-xs uppercase tracking-wide mb-2 ${isCurrentUser ? 'text-indigo-100/80' : 'text-slate-300/90'}`}>
-                        {message.sender.name}
+                        {updatedUser?.name || message.sender?.name || 'Usuário'}
                     </p>
                     <p className="text-sm leading-relaxed">{message.content}</p>
                 </div>
