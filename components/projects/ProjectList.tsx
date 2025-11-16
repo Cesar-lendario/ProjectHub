@@ -316,7 +316,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
                       <span>Início: {new Date(project.startDate).toLocaleDateString('pt-BR')}</span>
                       <span>Fim: {new Date(project.endDate).toLocaleDateString('pt-BR')}</span>
                       <span>Tarefas: {completedTasks}/{totalTasks}</span>
-                      <span>Progresso: {Math.round(progress)}%</span>
+                      <span className="font-bold">Progresso: {Math.round(progress)}%</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 sm:ml-auto" onClick={e => e.stopPropagation()}>
