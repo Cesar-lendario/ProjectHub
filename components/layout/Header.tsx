@@ -1,20 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MenuIcon, ChevronDownIcon } from '../ui/Icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
+import { useProjectContext } from '../../hooks/useProjectContext';
 
 interface HeaderProps {
   title: string;
   onMenuClick: () => void;
   onGoToProfile: () => void;
   onGoToSettings: () => void;
+  onGoToCommunication: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ title, onMenuClick, onGoToProfile, onGoToSettings }) => {
+const Header: React.FC<HeaderProps> = ({ title, onMenuClick, onGoToProfile, onGoToSettings, onGoToCommunication }) => {
   const { profile, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { messages } = useProjectContext();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Contar mensagens não lidas (excluindo as do próprio usuário)
+  const unreadCount = useMemo(() => {
+    return messages.filter(msg => !msg.isRead && msg.sender_id !== profile?.id).length;
+  }, [messages, profile?.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -65,6 +73,24 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick, onGoToProfile, onGo
             </svg>
           )}
         </button>
+
+        {/* Botão de notificações de mensagens */}
+        <button
+          onClick={onGoToCommunication}
+          className="relative p-2 rounded-lg text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white transition-all"
+          title={unreadCount > 0 ? `${unreadCount} mensagem(ns) não lida(s)` : 'Comunicação'}
+          aria-label="Notificações de mensagens"
+        >
+          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full border-2 border-white dark:border-slate-800 animate-pulse">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </button>
+
         {profile && (
           <div className="relative" ref={dropdownRef}>
             <button 

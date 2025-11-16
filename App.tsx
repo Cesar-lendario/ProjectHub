@@ -121,6 +121,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
     setCurrentView('permissions');
   };
 
+  const handleGoToCommunication = () => {
+    setCurrentView('communication');
+  };
+
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors">
       <Sidebar 
@@ -138,6 +142,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
           onMenuClick={() => setSidebarOpen(true)} 
           onGoToProfile={handleGoToProfile}
           onGoToSettings={handleGoToSettings}
+          onGoToCommunication={handleGoToCommunication}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-transparent transition-colors">
           <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-300">Carregando...</div>}>
