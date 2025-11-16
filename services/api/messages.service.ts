@@ -56,12 +56,13 @@ export const MessagesService = {
     if (error) throw error;
   },
 
-  // Marcar todas as mensagens de um canal como lidas
-  async markChannelAsRead(channel: string) {
+  // Marcar todas as mensagens de um canal como lidas (excluindo as do próprio usuário)
+  async markChannelAsRead(channel: string, userId: string) {
     const { error } = await supabase
       .from('messages')
       .update({ is_read: true })
-      .eq('channel', channel);
+      .eq('channel', channel)
+      .neq('sender_id', userId);
 
     if (error) throw error;
   },

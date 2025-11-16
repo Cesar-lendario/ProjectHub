@@ -44,7 +44,7 @@ interface ProjectContextType {
   addFile: (projectId: string, file: File) => Promise<void>;
   deleteFile: (fileId: string, projectId: string) => Promise<void>;
   addMessage: (messageData: Omit<Message, 'id' | 'sender' | 'isRead'>) => Promise<void>;
-  markMessagesAsRead: (channel: string, userId: string) => void;
+  markMessagesAsRead: (channel: string, userId: string) => Promise<void>;
   logNotification: (projectId: string, type: 'email' | 'whatsapp') => Promise<void>;
   refreshData: () => Promise<void>;
 }
@@ -687,14 +687,22 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [users]);
 
-  const markMessagesAsRead = useCallback((channel: string, userId: string) => {
-    setMessages(prev => prev.map(msg => {
-      // Marcar como lida apenas mensagens do canal especificado que não são do próprio usuário
-      if (msg.channel === channel && msg.sender_id !== userId && !msg.isRead) {
-        return { ...msg, isRead: true };
-      }
-      return msg;
-    }));
+  const markMessagesAsRead = useCallback(async (channel: string, userId: string) => {
+    try {
+      // Persistir no banco de dados
+      await MessagesService.markChannelAsRead(channel, userId);
+      
+      // Atualizar estado local
+      setMessages(prev => prev.map(msg => {
+        // Marcar como lida apenas mensagens do canal especificado que não são do próprio usuário
+        if (msg.channel === channel && msg.sender_id !== userId && !msg.isRead) {
+          return { ...msg, isRead: true };
+        }
+        return msg;
+      }));
+    } catch (error) {
+      console.error('Erro ao marcar mensagens como lidas:', error);
+    }
   }, []);
 
   const logNotification = useCallback(async (projectId: string, type: 'email' | 'whatsapp') => {
