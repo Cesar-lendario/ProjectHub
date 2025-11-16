@@ -82,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick, onGoToProfile, onGo
             
             {isDropdownOpen && (
               <div 
-                className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-slate-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-slate-700 focus:outline-none"
+                className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-slate-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-slate-700 focus:outline-none z-50"
                 role="menu"
                 aria-orientation="vertical"
                 aria-labelledby="user-menu-button"
