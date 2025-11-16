@@ -30,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick, onGoToProfile, onGo
   }, []);
 
   return (
-    <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 transition-colors shadow-sm dark:shadow-black/20">
+    <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 transition-colors shadow-sm dark:shadow-black/20 sticky top-0 z-40">
       <div className="flex items-center">
         <button
           onClick={onMenuClick}
@@ -82,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick, onGoToProfile, onGo
             
             {isDropdownOpen && (
               <div 
-                className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-slate-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-slate-700 focus:outline-none z-50"
+                className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-slate-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-slate-700 focus:outline-none z-[9999]"
                 role="menu"
                 aria-orientation="vertical"
                 aria-labelledby="user-menu-button"
