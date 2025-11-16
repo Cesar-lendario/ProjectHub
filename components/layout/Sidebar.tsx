@@ -79,9 +79,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetVi
     { icon: CheckSquareIcon, label: 'Tarefas', view: 'tasks' },
     { icon: CalendarDaysIcon, label: 'Cronograma', view: 'schedule' },
     { icon: UsersIcon, label: 'Equipe', view: 'team' },
+    { icon: ChatBubbleIcon, label: 'Comunicação', view: 'communication' },
     { icon: DocumentTextIcon, label: 'Arquivos', view: 'files' },
     { icon: FolderIcon, label: 'Relatórios', view: 'reports' },
-    { icon: ChatBubbleIcon, label: 'Comunicação', view: 'communication' },
     { icon: EmailIcon, label: 'Histórico de Cobranças', view: 'notifications' },
   ];
   
