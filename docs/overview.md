@@ -1450,3 +1450,244 @@ const MyModal: React.FC<Props> = ({ isOpen, onClose }) => {
 - ✅ ESC para fechar → Funciona
 - ✅ Click no backdrop → Fecha o modal
 - ✅ Abrir múltiplos modais sequencialmente → Cada um com estado limpo
+
+### Correção: Campos Resetando Durante Edição de Tarefas (Nov 2025)
+
+**Problema identificado**: Ao editar uma tarefa no `TaskForm`, os campos do formulário eram resetados durante a digitação, forçando o usuário a fechar e reabrir o modal para conseguir salvar as alterações.
+
+**Sintomas**:
+- ❌ Campos resetavam enquanto o usuário digitava
+- ❌ Valores antigos sobrescreviam o que estava sendo digitado
+- ❌ Usuário precisava fechar e reabrir modal para salvar
+- ❌ Experiência de edição extremamente frustrante
+
+**Causa raiz**:
+
+O `useEffect` no `TaskForm` tinha dependências problemáticas que causavam re-sincronizações constantes:
+
+```typescript
+// ❌ ANTES - Problema
+useEffect(() => {
+  // Sincronizar campos com taskToEdit
+  if (taskToEdit) {
+    setName(taskToEdit.name);
+    // ... outros campos ...
+  }
+}, [taskToEdit, isOpen, projects, initialProjectId]); // Muitas dependências!
+```
+
+**Problemas**:
+1. **Dependência em objeto completo** (`taskToEdit`): Qualquer mudança no objeto (mesmo sem mudar a tarefa) causava re-render
+2. **Dependências extras** (`projects`, `initialProjectId`): Causavam re-renders desnecessários
+3. **Sem controle de transição**: Não diferenciava entre "modal abrindo" e "usuario digitando"
+4. **Sobrescrita de campos**: A cada re-render, os campos eram resetados com valores antigos
+
+**Solução implementada**:
+
+Usar `useRef` para rastrear transições de estado e sincronizar campos **apenas quando necessário**:
+
+```typescript
+// ✅ DEPOIS - Solução
+const wasOpenRef = useRef(false);
+const lastTaskIdRef = useRef<string | null>(null);
+
+useEffect(() => {
+  const justOpened = isOpen && !wasOpenRef.current;
+  const taskChanged = taskToEdit?.id !== lastTaskIdRef.current;
+  
+  // Atualizar refs
+  wasOpenRef.current = isOpen;
+  lastTaskIdRef.current = taskToEdit?.id || null;
+  
+  // Sincronizar APENAS quando:
+  // 1. Modal acabou de abrir (transição fechado → aberto)
+  // 2. OU a tarefa em edição mudou (Tarefa A → Tarefa B)
+  if (justOpened || taskChanged) {
+    console.log('[TaskForm] Sincronizando campos:', { justOpened, taskChanged });
+    // ... sincronizar campos ...
+  }
+}, [isOpen, taskToEdit?.id, initialProjectId, projects]);
+```
+
+**Melhorias implementadas**:
+1. **Refs de controle**:
+   - `wasOpenRef`: Rastreia se modal estava aberto no render anterior
+   - `lastTaskIdRef`: Rastreia ID da tarefa anterior (não o objeto inteiro)
+
+2. **Detecção precisa de transições**:
+   - `justOpened`: Detecta quando modal **transiciona** de fechado para aberto
+   - `taskChanged`: Detecta quando tarefa **muda** (compara IDs, não objetos)
+
+3. **Dependências otimizadas**:
+   - Usa `taskToEdit?.id` em vez do objeto completo
+   - Evita re-renders por mudanças irrelevantes no objeto
+
+4. **Logs para debug**:
+   - Console mostra quando e por que campos são sincronizados
+   - Facilita troubleshooting de problemas futuros
+
+**Arquivo modificado**:
+- `components/tasks/TaskForm.tsx`: Refatorado `useEffect` e adicionado refs de controle
+
+**Resultados**:
+- ✅ Campos **nunca mais** resetam durante digitação
+- ✅ Edição fluida e sem interrupções
+- ✅ Não precisa mais fechar/reabrir modal
+- ✅ Performance melhorada (menos re-renders)
+- ✅ Experiência de usuário profissional
+
+**Testes realizados**:
+- ✅ Editar nome de tarefa → Digitação fluida
+- ✅ Alterar descrição → Sem resets
+- ✅ Mudar data, prioridade, status → Tudo funciona
+- ✅ Abrir para editar múltiplas tarefas seguidas → Campos corretos
+- ✅ Criar nova tarefa após editar → Formulário limpo
+
+### Cronograma por Dias do Mês (Nov 2025)
+
+**Implementação**: Modificação completa do cronograma (`ImplementationTimeline`) de visualização mensal para visualização diária, permitindo ver o progresso das tarefas dia a dia.
+
+**Motivação**: A visualização mensal era muito abstrata e não permitia ver exatamente em quais dias do mês cada tarefa estava programada. Com a visualização diária, o time consegue planejar melhor e identificar rapidamente sobreposições de tarefas.
+
+**Funcionalidades implementadas**:
+
+1. **Visualização por Dias do Mês**:
+   - Exibição de todos os dias do mês selecionado (1 a 28/29/30/31)
+   - Cada coluna representa um dia específico
+   - Cálculo preciso de quais dias cada tarefa ocupa
+
+2. **Cabeçalho Duplo**:
+   - **Linha 1**: Nome do mês e ano completos (ex: "novembro de 2025")
+   - **Linha 2**: Dias do mês com inicial do dia da semana
+     - Formato: "1 D" (dia 1, Domingo), "2 S" (dia 2, Segunda), etc.
+     - Iniciais: D, S, T, Q, Q, S, S
+
+3. **Destaque de Finais de Semana**:
+   - Sábados e domingos com cor diferenciada no cabeçalho
+   - Células de finais de semana com fundo cinza claro/escuro
+   - Facilita identificação visual de dias não úteis
+
+4. **Seletores de Navegação**:
+   - **Seletor de Mês**: Todos os 12 meses do ano (janeiro a dezembro)
+   - **Seletor de Ano**: 5 anos (ano atual -2 até +2)
+   - Navegação fácil entre diferentes períodos
+
+5. **Cores de Status por Dia** (mantidas):
+   - 🔴 **Vermelho**: Pendente
+   - 🟣 **Roxo**: A Fazer
+   - 🔵 **Azul**: Em andamento
+   - 🟢 **Verde**: Concluído
+
+6. **Tooltip Informativo**:
+   - Ao passar o mouse sobre um dia colorido
+   - Exibe: "Nome da Tarefa - DD/MM/YYYY"
+   - Facilita identificação rápida
+
+7. **Legenda Atualizada**:
+   - Mantidas todas as cores de status
+   - Adicionado indicador de "Final de semana"
+   - Posicionamento claro e visível
+
+**Cálculo de Tarefas**:
+
+```typescript
+// Para cada tarefa, calcular data de início e fim
+const taskDueDate = new Date(task.dueDate);
+const taskStartDate = new Date(task.dueDate);
+taskStartDate.setDate(taskStartDate.getDate() - (task.duration - 1));
+
+// Para cada dia do mês
+days.forEach(day => {
+  // Verificar se o dia está dentro do período da tarefa
+  if (day.date >= taskStartDate && day.date <= taskDueDate) {
+    // Colorir célula com cor do status
+  }
+});
+```
+
+**Interface Atualizada**:
+
+```
+┌──────────────────┬───────────── novembro de 2025 ──────────────┐
+│     TAREFAS      │  1  │  2  │  3  │  4  │  5  │ ... │ 30 │
+│                  │  D  │  S  │  T  │  Q  │  Q  │ ... │  D  │
+├──────────────────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+│ Documentos       │ 🔴  │ 🔴  │     │     │     │     │     │
+│ Homologação      │     │     │ 🟣  │ 🟣  │ 🔵  │     │     │
+│ Implantação      │     │     │     │     │     │ ... │ 🟢  │
+└──────────────────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+```
+
+**Arquivo modificado**:
+- `components/schedule/ImplementationTimeline.tsx`: Refatorado completamente para visualização diária
+
+**Mudanças técnicas**:
+
+1. **Interface `TimelineCell`**:
+```typescript
+// Antes
+interface TimelineCell {
+  year: number;
+  month: number;
+  status?: TaskStatus;
+}
+
+// Depois
+interface TimelineCell {
+  day: number;
+  date: Date;
+  status?: TaskStatus;
+}
+```
+
+2. **Estado do componente**:
+```typescript
+// Antes
+const [startYear, setStartYear] = useState<number>(...);
+const [endYear, setEndYear] = useState<number>(...);
+
+// Depois
+const [selectedMonth, setSelectedMonth] = useState<number>(...);
+const [selectedYear, setSelectedYear] = useState<number>(...);
+```
+
+3. **Geração de timeline**:
+```typescript
+// Antes: gerar meses entre startYear e endYear
+const months = useMemo(() => {
+  // ... gerar lista de meses ...
+}, [startYear, endYear]);
+
+// Depois: gerar dias do mês selecionado
+const days = useMemo(() => {
+  const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+  return Array.from({ length: daysInMonth }, (_, i) => ({
+    day: i + 1,
+    date: new Date(selectedYear, selectedMonth, i + 1)
+  }));
+}, [selectedYear, selectedMonth]);
+```
+
+**Casos de uso**:
+- Ver exatamente em quais dias cada tarefa acontece
+- Identificar sobreposição de tarefas em dias específicos
+- Planejar considerando finais de semana
+- Verificar carga de trabalho diária
+- Acompanhar progresso dia a dia
+
+**Benefícios**:
+- ✅ **Granularidade**: Visualização precisa por dia
+- ✅ **Planejamento**: Identificação de dias sobrecarregados
+- ✅ **Clareza**: Cada dia é uma coluna clara
+- ✅ **Navegação**: Fácil mudar de mês/ano
+- ✅ **Contexto**: Dias da semana visíveis
+- ✅ **Finais de semana**: Destacados visualmente
+- ✅ **Tooltip**: Informação detalhada ao passar mouse
+- ✅ **Responsivo**: Scroll horizontal quando necessário
+
+**Resultados**:
+- ✅ Cronograma muito mais útil e informativo
+- ✅ Equipe consegue planejar melhor o mês
+- ✅ Identificação rápida de conflitos de agenda
+- ✅ Melhor compreensão de prazos e durações
+- ✅ Interface moderna e profissional
