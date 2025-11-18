@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verificar Roles no Banco</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Verificando Roles...</h1>
+    <pre id="output">Carregando...</pre>
+    
+    <script>
+        const supabaseUrl = 'https://siujbzskkmjxipcablao.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpdWpienNra21qeGlwY2FibGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MTUyNjgsImV4cCI6MjA3ODM5MTI2OH0.TVJ_7RHPOQhZBQkykHcZOzCF5MQj7pIY-_rxxJ9XqGI';
+        const { createClient } = supabase;
+        const client = createClient(supabaseUrl, supabaseKey);
+        
+        async function checkRoles() {
+            try {
+                const { data, error } = await client
+                    .from('users')
+                    .select('id, name, role')
+                    .order('created_at', { ascending: true });
+                
+                if (error) {
+                    document.getElementById('output').textContent = 'ERRO: ' + JSON.stringify(error, null, 2);
+                    return;
+                }
+                
+                document.getElementById('output').textContent = 
+                    'USUÁRIOS NO BANCO:\n\n' + 
+                    JSON.stringify(data, null, 2) + 
+                    '\n\n' +
+                    'Roles encontrados:\n' +
+                    [...new Set(data.map(u => u.role))].join(', ');
+                    
+            } catch (err) {
+                document.getElementById('output').textContent = 'ERRO: ' + err.message;
+            }
+        }
+        
+        checkRoles();
+    </script>
+</body>
+</html>

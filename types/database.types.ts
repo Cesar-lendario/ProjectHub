@@ -211,6 +211,38 @@ export interface Database {
           created_at?: string;
         };
       };
+      user_invites: {
+        Row: {
+          id: string;
+          email: string;
+          name: string;
+          role: 'supervisor' | 'engineer';
+          status: 'pending' | 'accepted' | 'expired';
+          invited_by: string | null;
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          name: string;
+          role: 'supervisor' | 'engineer';
+          status?: 'pending' | 'accepted' | 'expired';
+          invited_by?: string | null;
+          expires_at: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          name?: string;
+          role?: 'supervisor' | 'engineer';
+          status?: 'pending' | 'accepted' | 'expired';
+          invited_by?: string | null;
+          expires_at?: string;
+          created_at?: string;
+        };
+      };
       users: {
         Row: {
           id: string;

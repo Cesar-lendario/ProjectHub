@@ -28,7 +28,19 @@ const App: React.FC = () => (
 );
 
 const AppContent: React.FC = () => {
-  const { session, loading } = useAuth();
+  const { session, loading, signOut } = useAuth();
+  
+  // Verificar se há um token de convite na URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasInvite = urlParams.has('invite');
+  
+  // Se há um convite e está logado, fazer logout automático
+  React.useEffect(() => {
+    if (hasInvite && session) {
+      console.log('Convite detectado com sessão ativa. Fazendo logout...');
+      signOut();
+    }
+  }, [hasInvite, session, signOut]);
   
   if (loading) {
     return (
@@ -41,7 +53,8 @@ const AppContent: React.FC = () => {
     );
   }
 
-  if (!session) {
+  // Forçar LoginPage se há convite na URL ou não há sessão
+  if (!session || hasInvite) {
     return <LoginPage />;
   }
   

@@ -64,6 +64,18 @@ TaskMeet é uma plataforma web multitenant de gestão de projetos orientada a eq
   - **Supervisor**: acesso a relatórios e gestão de equipe
   - **Engineer**: acesso básico a projetos e tarefas
 - Permissões por projeto (admin, editor, viewer)
+- **Sistema de Convites** (`InviteMemberModal`):
+  - Primeiro usuário cadastrado torna-se automaticamente **Administrador**
+  - Cadastros subsequentes **apenas via convite** enviado pelo administrador
+  - Modal de convite integrado na página de Equipe (botão "+ Novo Membro")
+  - Geração de links únicos de convite válidos por **7 dias**
+  - Envio de convites via email (link `mailto:` pronto para uso)
+  - Pré-preenchimento automático de dados (nome, email, perfil) no cadastro
+  - Logout automático ao acessar link de convite (para processar o cadastro)
+  - Validação de expiração e status do convite
+  - Marcação automática de convite como "aceito" após cadastro bem-sucedido
+  - Tabela `user_invites` no Supabase com RLS policies
+  - Roles pré-definidos pelo admin: **Supervisor** ou **Engenheiro**
 - **Exclusão Profissional de Usuários** (`DeleteUserModal`):
   - Análise de impacto (projetos e tarefas afetadas)
   - Reatribuição de tarefas para outro usuário
@@ -380,6 +392,16 @@ O TaskMeet utiliza o Supabase PostgreSQL com as seguintes tabelas:
 - `content` (text): Conteúdo da mensagem
 - `is_read` (boolean): Status de leitura
 - `created_at` (timestamp)
+
+#### `user_invites`
+- `id` (uuid, PK): Identificador único (usado como token de convite)
+- `email` (text): Email do convidado
+- `name` (text): Nome do convidado
+- `role` (enum): Perfil pré-definido (`'supervisor'` ou `'engineer'`)
+- `status` (enum): Status do convite (`'pending'`, `'accepted'`, `'expired'`)
+- `invited_by` (uuid, FK, nullable): Quem enviou o convite (referência a `users.id`)
+- `expires_at` (timestamp): Data de expiração (7 dias após criação)
+- `created_at` (timestamp): Data de criação
 
 ### Relacionamentos
 
@@ -953,8 +975,119 @@ CREATE INDEX idx_messages_is_read ON messages(channel, is_read, sender_id);
 **Resultados**:
 - ✅ Usuários nunca perdem mensagens não lidas
 - ✅ Identificação instantânea de qual projeto tem mensagens novas
-- ✅ Navegação otimizada e intuitiva
-- ✅ Visual consistente com cores em toda a aplicação
-- ✅ Avatares sempre atualizados em tempo real
-- ✅ Estatísticas de perfil mais relevantes
 
+### Sistema de Convites e Gestão de Acesso (Nov 2025)
+
+**Implementação**: Sistema completo de controle de acesso com convites por email e lógica de primeiro administrador.
+
+**Motivação**: Melhorar a segurança e controlar o acesso à aplicação, evitando cadastros abertos e não autorizados.
+
+**Funcionalidades implementadas**:
+
+1. **Lógica de Primeiro Administrador** (`LoginPage.tsx`):
+   - O primeiro usuário a se cadastrar torna-se automaticamente **Administrador**
+   - Sistema detecta ausência de admins na tabela `users`
+   - Cadastro direto bloqueado automaticamente após criação do primeiro admin
+   - Mensagem clara para usuários: "Novos cadastros só podem ser feitos via convite do administrador"
+
+2. **Modal de Convite de Membros** (`InviteMemberModal.tsx`):
+   - Integrado na página de Equipe (botão "+ Novo Membro")
+   - Campos: Nome, Email, Perfil (Supervisor ou Engenheiro)
+   - Geração automática de token único (UUID)
+   - Data de expiração: 7 dias após criação
+   - Link de convite: `http://localhost:3000/?invite=TOKEN`
+   - Botão "Copiar Link" para facilitar compartilhamento
+   - Link `mailto:` pronto para envio por email
+
+3. **Tabela `user_invites`** (Supabase):
+   - Campos: `id` (token), `email`, `name`, `role`, `status`, `invited_by`, `expires_at`, `created_at`
+   - Status possíveis: `'pending'`, `'accepted'`, `'expired'`
+   - RLS Policies configuradas:
+     - SELECT: público (permite validação de tokens)
+     - INSERT: apenas admins
+     - UPDATE: permitido (para marcar como aceito)
+   - Índices para performance em buscas por email e status
+
+4. **Processamento de Convites** (`LoginPage.tsx`):
+   - Detecção automática do parâmetro `?invite=TOKEN` na URL
+   - Validação completa:
+     - Token existe no banco
+     - Status = 'pending'
+     - Data de expiração válida
+   - Pré-preenchimento automático de campos:
+     - Nome (desabilitado)
+     - Email (desabilitado)
+     - Perfil (desabilitado, definido pelo admin)
+   - Usuário cria apenas a senha
+   - Marcação automática do convite como 'accepted'
+
+5. **Logout Automático ao Acessar Convite** (`App.tsx`):
+   - Sistema detecta `?invite=` na URL
+   - Se há sessão ativa, faz logout automático
+   - Força exibição da `LoginPage` para processar o convite
+   - Evita confusão de contas e garante fluxo correto
+
+6. **Serviço de Convites** (`InvitesService`):
+   - `create()`: cria novo convite no banco
+   - `getById()`: busca convite por token
+   - `markAccepted()`: atualiza status para 'accepted'
+   - Tratamento robusto de erros (ex: token não encontrado)
+
+7. **Correção de Permissões RLS** (`supabase_fix_admin_permissions.sql`):
+   - Policy UPDATE atualizada para permitir admins editarem qualquer usuário
+   - Policy DELETE já permitia admins excluírem usuários
+   - Correção crítica: admins agora podem reatribuir tarefas durante exclusão
+
+**Componentes criados/modificados**:
+- `components/team/InviteMemberModal.tsx`: modal de convite (novo)
+- `components/team/TeamManagementView.tsx`: integração do modal
+- `components/auth/LoginPage.tsx`: lógica de primeiro admin e processamento de convites
+- `components/ui/Icons.tsx`: ícones `UserIcon` e `UserPlusIcon`
+- `App.tsx`: logout automático ao detectar convite
+- `services/api/invites.service.ts`: CRUD de convites (novo)
+- `services/api/index.ts`: export de `InvitesService` e `InviteRow`
+- `types/database.types.ts`: tipos da tabela `user_invites`
+
+**Scripts SQL necessários**:
+- `supabase_create_invites_table.sql`: criação da tabela e RLS policies
+- `supabase_fix_admin_permissions.sql`: correção de permissões de UPDATE
+
+**Fluxo completo**:
+1. Admin acessa página Equipe → clica "+ Novo Membro"
+2. Preenche nome, email e seleciona perfil (Supervisor/Engenheiro)
+3. Clica "Gerar Convite" → sistema cria registro no banco
+4. Admin copia link ou envia por email (botão "Enviar por E-mail")
+5. Convidado recebe email e clica no link
+6. Se convidado está logado, sistema faz logout automático
+7. Tela de cadastro exibe mensagem: "Você foi convidado(a)..."
+8. Campos pré-preenchidos e bloqueados (nome, email, perfil)
+9. Convidado cria senha e clica "Cadastrar"
+10. Sistema marca convite como 'accepted'
+11. Email de confirmação enviado (Supabase Auth)
+12. Convidado confirma email e pode fazer login
+
+**Validações de segurança**:
+- Apenas admins podem criar convites
+- Convites expiram em 7 dias
+- Token único e não reutilizável
+- Status verificado antes do uso
+- Cadastro direto bloqueado após criação do admin
+- Logout forçado ao processar convite (evita confusão de contas)
+
+**Mensagens de erro amigáveis**:
+- "Convite inválido ou expirado"
+- "Este convite já foi utilizado ou expirou"
+- "Este convite expirou"
+- "Novos cadastros só podem ser feitos via convite do administrador"
+
+**Resultados**:
+- Controle total de acesso à aplicação
+- Apenas um administrador por sistema
+- Cadastros apenas via convite autorizado
+- Perfis pré-definidos pelo admin
+- Expiração automática de convites
+- Fluxo de cadastro simplificado e seguro
+- UX clara com mensagens informativas
+
+**Arquivos de documentação**:
+- `docs/overview.md`: atualizado com sistema de convites (este documento)

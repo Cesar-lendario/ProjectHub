@@ -6,6 +6,7 @@ import TeamView from './TeamView';
 import UserProfileView from './UserProfileView';
 import TeamForm from './TeamForm';
 import DeleteUserModal from './DeleteUserModal';
+import InviteMemberModal from './InviteMemberModal';
 
 const TeamManagementView: React.FC = () => {
     const { users, projects, addUser, updateUser, deleteUser, focusedUserId, setFocusedUserId } = useProjectContext();
@@ -16,6 +17,7 @@ const TeamManagementView: React.FC = () => {
     const [userToEdit, setUserToEdit] = useState<User | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
     const isGlobalAdmin = profile?.role === GlobalRole.Admin;
 
@@ -31,8 +33,10 @@ const TeamManagementView: React.FC = () => {
     };
 
     const handleNewUser = () => {
-        setUserToEdit(null);
-        setIsFormOpen(true);
+        // Apenas admins podem convidar novos usuários
+        if (isGlobalAdmin) {
+            setIsInviteModalOpen(true);
+        }
     };
 
     const handleEditUser = (user: User) => {
@@ -163,6 +167,10 @@ const TeamManagementView: React.FC = () => {
                 user={userToDelete}
                 projects={projects}
                 users={users}
+            />
+            <InviteMemberModal
+                isOpen={isInviteModalOpen}
+                onClose={() => setIsInviteModalOpen(false)}
             />
         </div>
     );
