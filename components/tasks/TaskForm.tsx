@@ -41,15 +41,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
     const justOpened = isOpen && !wasOpenRef.current;
     const taskChanged = taskToEdit?.id !== lastTaskIdRef.current;
     
-    // Atualizar refs
-    wasOpenRef.current = isOpen;
-    lastTaskIdRef.current = taskToEdit?.id || null;
-    
     // Só sincronizar campos quando:
     // 1. Modal acabou de abrir (transição de fechado para aberto)
     // 2. OU a tarefa em edição mudou
     if (justOpened || taskChanged) {
       console.log('[TaskForm] Sincronizando campos:', { justOpened, taskChanged, taskId: taskToEdit?.id });
+      
+      // Atualizar refs APENAS quando sincronizamos
+      wasOpenRef.current = isOpen;
+      lastTaskIdRef.current = taskToEdit?.id || null;
+      
       setIsLoading(false);
 
       if (taskToEdit) {
@@ -72,6 +73,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
         setStatus(TaskStatus.Pending);
         setDuration(1);
       }
+    }
+    
+    // Atualizar wasOpenRef quando modal fecha
+    if (!isOpen && wasOpenRef.current) {
+      wasOpenRef.current = false;
     }
   }, [isOpen, taskToEdit?.id, initialProjectId, projects]);
   
