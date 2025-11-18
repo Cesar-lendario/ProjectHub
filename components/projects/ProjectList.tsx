@@ -4,11 +4,12 @@ import React, { useState, useMemo } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Project, ProjectStatus, TaskStatus, ProjectType } from '../../types';
 import Card from '../ui/Card';
-import { PlusIcon, EditIcon, TrashIcon, UsersIcon, EyeIcon, UploadIcon } from '../ui/Icons';
+import { PlusIcon, EditIcon, TrashIcon, UsersIcon, EyeIcon, UploadIcon, DocumentTextIcon } from '../ui/Icons';
 import ProjectForm from './ProjectForm';
 import TeamManagementModal from '../team/TeamManagementModal';
 import FileUpload from '../files/FileUpload';
 import SuccessToast from '../ui/SuccessToast';
+import ProjectConditionModal from '../tasks/ProjectConditionModal';
 
 interface ProjectListProps {
   setCurrentView: (view: string) => void;
@@ -22,7 +23,8 @@ const ProjectCard: React.FC<{
   onDelete: () => void;
   onManageTeam: () => void;
   onUploadFile: () => void;
-}> = ({ project, onSelect, onEdit, onDelete, onManageTeam, onUploadFile }) => {
+  onOpenCondition: () => void;
+}> = ({ project, onSelect, onEdit, onDelete, onManageTeam, onUploadFile, onOpenCondition }) => {
   const totalTasks = project.tasks.length;
   const completedTasks = project.tasks.filter(t => t.status === TaskStatus.Done).length;
   const baseProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
@@ -77,6 +79,9 @@ const ProjectCard: React.FC<{
           <button onClick={onUploadFile} title="Upload de Arquivo" className="p-2 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/20 rounded-full transition-colors">
             <UploadIcon className="h-5 w-5"/>
           </button>
+          <button onClick={onOpenCondition} title="Condição do Projeto / Anotações" className="p-2 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/20 rounded-full transition-colors">
+            <DocumentTextIcon className="h-5 w-5"/>
+          </button>
           <button onClick={onManageTeam} title="Gerenciar Equipe" className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 rounded-full transition-colors">
             <UsersIcon className="h-5 w-5"/>
           </button>
@@ -99,6 +104,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
   const [teamModalProject, setTeamModalProject] = useState<Project | null>(null);
   const [uploadModalProjectId, setUploadModalProjectId] = useState<string | null>(null);
+  const [conditionModalProjectId, setConditionModalProjectId] = useState<string | null>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const [filterName, setFilterName] = useState('');
@@ -107,25 +113,43 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
   const [filterStartDate, setFilterStartDate] = useState('');
 
   const filteredProjects = useMemo(() => {
-    return projects.filter(project => {
-      const matchesName = filterName
-        ? project.name.toLowerCase().includes(filterName.toLowerCase())
-        : true;
+    return projects
+      .filter(project => {
+        const matchesName = filterName
+          ? project.name.toLowerCase().includes(filterName.toLowerCase())
+          : true;
 
-      const matchesType = filterProjectType === 'all'
-        ? true
-        : project.projectType === filterProjectType;
+        const matchesType = filterProjectType === 'all'
+          ? true
+          : project.projectType === filterProjectType;
 
-      const matchesClientName = filterClientName
-        ? (project.clientName || '').toLowerCase().includes(filterClientName.toLowerCase())
-        : true;
+        const matchesClientName = filterClientName
+          ? (project.clientName || '').toLowerCase().includes(filterClientName.toLowerCase())
+          : true;
 
-      const matchesStartDate = filterStartDate
-        ? project.startDate === filterStartDate
-        : true;
+        const matchesStartDate = filterStartDate
+          ? project.startDate === filterStartDate
+          : true;
 
-      return matchesName && matchesType && matchesClientName && matchesStartDate;
-    });
+        return matchesName && matchesType && matchesClientName && matchesStartDate;
+      })
+      .sort((a, b) => {
+        // Calcular progresso de cada projeto
+        const progressA = a.status === ProjectStatus.Completed 
+          ? 100 
+          : a.tasks.length > 0 
+            ? (a.tasks.filter(t => t.status === TaskStatus.Done).length / a.tasks.length) * 100 
+            : 0;
+        
+        const progressB = b.status === ProjectStatus.Completed 
+          ? 100 
+          : b.tasks.length > 0 
+            ? (b.tasks.filter(t => t.status === TaskStatus.Done).length / b.tasks.length) * 100 
+            : 0;
+        
+        // Ordenar do menos concluído ao mais concluído (crescente)
+        return progressA - progressB;
+      });
   }, [projects, filterName, filterProjectType, filterClientName, filterStartDate]);
 
   const handleProjectSelect = (projectId: string) => {
@@ -278,6 +302,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
               onDelete={() => handleDelete(project.id)}
               onManageTeam={() => setTeamModalProject(project)}
               onUploadFile={() => setUploadModalProjectId(project.id)}
+              onOpenCondition={() => setConditionModalProjectId(project.id)}
             />
           ))}
         </div>
@@ -323,6 +348,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
                     <button onClick={() => setUploadModalProjectId(project.id)} title="Upload de Arquivo" className="p-2 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/20 rounded-full transition-colors">
                       <UploadIcon className="h-5 w-5" />
                     </button>
+                    <button onClick={() => setConditionModalProjectId(project.id)} title="Condição do Projeto / Anotações" className="p-2 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/20 rounded-full transition-colors">
+                      <DocumentTextIcon className="h-5 w-5" />
+                    </button>
                     <button onClick={() => setTeamModalProject(project)} title="Gerenciar Equipe" className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 rounded-full transition-colors">
                       <UsersIcon className="h-5 w-5" />
                     </button>
@@ -359,6 +387,12 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
         onClose={() => setUploadModalProjectId(null)}
         onUpload={handleUploadFile}
         preSelectedProjectId={uploadModalProjectId || undefined}
+      />
+      
+      <ProjectConditionModal 
+        isOpen={!!conditionModalProjectId}
+        onClose={() => setConditionModalProjectId(null)}
+        projectId={conditionModalProjectId || undefined}
       />
     </div>
   );

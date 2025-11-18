@@ -272,6 +272,29 @@ export interface Database {
           created_at?: string;
         };
       };
+      project_notes: {
+        Row: {
+          id: string;
+          project_id: string;
+          note_text: string;
+          created_at: string;
+          created_by: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          note_text: string;
+          created_at?: string;
+          created_by: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          note_text?: string;
+          created_at?: string;
+          created_by?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;

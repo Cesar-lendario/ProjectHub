@@ -7,6 +7,7 @@ import TaskForm from './TaskForm';
 import TaskDetail from './TaskDetail';
 import NotificationSenderModal from './NotificationSenderModal';
 import TaskSummaryModal from './TaskSummaryModal';
+import ProjectConditionModal from './ProjectConditionModal';
 import { PlusIcon } from '../ui/Icons';
 import { GlobalRole } from '../../types';
 import {
@@ -37,6 +38,7 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
   const [taskToView, setTaskToView] = useState<EnhancedTask | null>(null);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+  const [isConditionModalOpen, setIsConditionModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards'); // 'cards' é o padrão
 
   useEffect(() => {
@@ -266,6 +268,12 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
                 Lembrete de Tarefas
             </button>
             <button
+              onClick={() => setIsConditionModalOpen(true)}
+              className="px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-100 rounded-lg hover:bg-emerald-200 dark:text-emerald-200 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:border dark:border-emerald-500/30 transition-colors"
+            >
+                Condição Atual
+            </button>
+            <button
               onClick={() => setIsSummaryModalOpen(true)}
               className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 dark:text-slate-100 dark:bg-slate-700/40 dark:hover:bg-slate-700/70 dark:border dark:border-slate-600/60 transition-colors"
             >
@@ -467,6 +475,11 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
       <TaskSummaryModal
         isOpen={isSummaryModalOpen}
         onClose={() => setIsSummaryModalOpen(false)}
+        projectId={filterProjectId !== 'all' ? filterProjectId : undefined}
+      />
+      <ProjectConditionModal
+        isOpen={isConditionModalOpen}
+        onClose={() => setIsConditionModalOpen(false)}
         projectId={filterProjectId !== 'all' ? filterProjectId : undefined}
       />
     </div>

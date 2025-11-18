@@ -1091,3 +1091,115 @@ CREATE INDEX idx_messages_is_read ON messages(channel, is_read, sender_id);
 
 **Arquivos de documentação**:
 - `docs/overview.md`: atualizado com sistema de convites (este documento)
+
+### Sistema de Anotações do Projeto (Nov 2025)
+
+**Implementação**: Sistema completo de anotações por projeto com histórico temporal para rastreamento de condições, decisões e progresso.
+
+**Motivação**: Permitir que a equipe registre o estágio atual de cada projeto, observações importantes, decisões tomadas e atualizações de status de forma organizada e rastreável ao longo do tempo.
+
+**Funcionalidades implementadas**:
+
+1. **Ícone de Anotações nos Cards de Projeto** (`ProjectList.tsx`):
+   - Novo ícone 📄 (DocumentTextIcon) adicionado aos cards de projeto
+   - Posicionado entre "Upload" e "Gerenciar Equipe"
+   - Cor: amarelo âmbar (hover: amber-600)
+   - Tooltip: "Condição do Projeto / Anotações"
+   - Disponível tanto na visualização em **cards** quanto em **lista**
+
+2. **Modal de Anotações do Projeto** (`ProjectConditionModal.tsx`):
+   - Interface completa para gerenciar anotações de projeto
+   - Seletor de projeto (pré-selecionado ao abrir via card)
+   - Campo de texto para nova anotação com placeholder descritivo
+   - Histórico de anotações em ordem cronológica reversa (mais recente primeiro)
+   - Informações por anotação:
+     - Nome do usuário que criou
+     - Data e hora de criação (formato DD/MM/YYYY HH:MM)
+     - Texto completo da anotação
+   - Suporte a texto multilinha preservando formatação
+
+3. **Tabela `project_notes`** (Supabase):
+   - Estrutura:
+     - `id` (uuid, PK): Identificador único
+     - `project_id` (uuid, FK): Referência ao projeto
+     - `note_text` (text): Conteúdo da anotação
+     - `created_at` (timestamp): Data de criação
+     - `created_by` (uuid, FK): Usuário que criou
+   - Índices para performance:
+     - `idx_project_notes_project_id`: busca por projeto
+     - `idx_project_notes_created_at`: ordenação por data
+     - `idx_project_notes_project_created`: busca composta
+   - RLS Policies:
+     - SELECT: todos os usuários autenticados podem visualizar
+     - INSERT: usuários autenticados podem criar (validação de `created_by`)
+     - UPDATE: usuários podem editar suas próprias anotações
+     - DELETE: admins podem deletar qualquer anotação, usuários podem deletar as próprias
+
+4. **Tratamento de Erros e Logs** (`ProjectConditionModal.tsx`):
+   - Logs detalhados no console para debug:
+     - `[ProjectConditionModal] Carregando notas para projeto: [ID]`
+     - `[ProjectConditionModal] Encontradas X notas`
+     - `[ProjectConditionModal] Erro na query de notas: [ERRO]`
+   - Mensagens de erro específicas:
+     - "A tabela de anotações não existe no banco de dados. Execute o script SQL de criação."
+     - "Sem permissão para acessar as anotações. Verifique as políticas RLS no Supabase."
+     - `Erro ao carregar anotações: [mensagem]`
+   - Loading state com spinner enquanto carrega anotações
+   - Mensagem amigável quando não há anotações: "Nenhuma anotação registrada ainda"
+
+5. **Scripts SQL** (Supabase):
+   - `supabase_create_project_notes.sql`: criação da tabela com políticas RLS completas
+   - `supabase_allow_select_notes.sql`: permite leitura para usuários autenticados
+   - `supabase_setup_project_notes_complete.sql`: script consolidado com:
+     - Criação da tabela
+     - Índices para performance
+     - Todas as políticas RLS (SELECT, INSERT, UPDATE, DELETE)
+     - Comentários de documentação
+     - Queries de verificação
+
+6. **Documentação** (`INSTRUCOES_CORRIGIR_ANOTACOES.md`):
+   - Guia passo a passo para configurar a tabela no Supabase
+   - Instruções para debug via console do navegador
+   - Troubleshooting de problemas comuns
+   - Verificação de resultados esperados
+
+**Arquivos criados/modificados**:
+- `components/tasks/ProjectConditionModal.tsx`: modal de anotações (já existia, melhorado)
+- `components/projects/ProjectList.tsx`: ícone e integração do modal
+- `components/ui/Icons.tsx`: import de `DocumentTextIcon`
+- `supabase_setup_project_notes_complete.sql`: script SQL consolidado
+- `INSTRUCOES_CORRIGIR_ANOTACOES.md`: documentação de setup
+
+**Fluxo de uso**:
+1. Usuário acessa página de Projetos
+2. Clica no ícone 📄 (Anotações) em um card de projeto
+3. Modal abre com o projeto pré-selecionado
+4. Histórico de anotações é carregado automaticamente
+5. Usuário digita nova anotação no campo de texto
+6. Clica "+ Adicionar Anotação"
+7. Anotação é salva no banco com autor e timestamp
+8. Lista é atualizada instantaneamente
+9. Modal pode ser fechado a qualquer momento
+
+**Casos de uso**:
+- Registrar estágio atual da homologação (aguardando documentos, em análise, aprovado)
+- Anotar decisões técnicas tomadas (mudança de prazo, adição de requisito)
+- Documentar comunicações importantes com cliente
+- Rastrear evolução do projeto ao longo do tempo
+- Facilitar handoff entre membros da equipe
+
+**Validações de segurança**:
+- Apenas usuários autenticados podem criar anotações
+- Campo `created_by` validado contra usuário autenticado no banco
+- RLS garante isolamento entre projetos
+- Admins podem deletar qualquer anotação (moderação)
+- Usuários normais só podem deletar suas próprias anotações
+
+**Resultados**:
+- ✅ Histórico completo e rastreável de condições do projeto
+- ✅ Melhor comunicação entre membros da equipe
+- ✅ Facilita handoff e onboarding em projetos em andamento
+- ✅ Documentação automática de decisões e mudanças
+- ✅ Interface intuitiva e de fácil acesso
+- ✅ Logs detalhados para troubleshooting
+- ✅ Tratamento robusto de erros com mensagens claras
