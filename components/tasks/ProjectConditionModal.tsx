@@ -20,7 +20,7 @@ interface ProjectNote {
 
 const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, onClose, projectId }) => {
   const { projects, profile } = useProjectContext();
-  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || '');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [newNote, setNewNote] = useState('');
   const [notes, setNotes] = useState<ProjectNote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +28,22 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
   const [error, setError] = useState<string>('');
   const isMountedRef = useRef(true);
   const loadingControllerRef = useRef<AbortController | null>(null);
+
+  // Inicializar projeto selecionado quando modal abre
+  useEffect(() => {
+    if (isOpen) {
+      // Se projectId foi passado e é válido, usar ele
+      if (projectId && projectId !== 'all') {
+        setSelectedProjectId(projectId);
+      } else if (projects.length > 0) {
+        // Caso contrário, selecionar primeiro projeto da lista
+        setSelectedProjectId(projects[0].id);
+      } else {
+        // Se não há projetos, limpar seleção
+        setSelectedProjectId('');
+      }
+    }
+  }, [isOpen, projectId, projects]);
 
   // Resetar estados quando modal fecha
   useEffect(() => {
@@ -42,6 +58,7 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
       setIsSaving(false);
       setError('');
       setNewNote('');
+      setNotes([]);
     }
   }, [isOpen]);
 
@@ -50,7 +67,13 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
     isMountedRef.current = true;
     
     if (isOpen && selectedProjectId && selectedProjectId !== 'all') {
+      console.log('[ProjectConditionModal] Iniciando carregamento para projeto:', selectedProjectId);
       loadProjectNotes();
+    } else if (isOpen && (!selectedProjectId || selectedProjectId === 'all')) {
+      // Se não há projeto válido, garantir que loading está desativado
+      console.log('[ProjectConditionModal] Nenhum projeto válido selecionado, desativando loading');
+      setIsLoading(false);
+      setNotes([]);
     }
     
     return () => {
@@ -63,12 +86,7 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
     };
   }, [isOpen, selectedProjectId]);
 
-  // Atualizar projeto selecionado quando projectId prop mudar
-  useEffect(() => {
-    if (projectId && projectId !== 'all') {
-      setSelectedProjectId(projectId);
-    }
-  }, [projectId]);
+  // Não precisa mais deste useEffect, foi movido para o de inicialização
 
   const loadProjectNotes = async () => {
     // Cancelar carregamento anterior se existir
