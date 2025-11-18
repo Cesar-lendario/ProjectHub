@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { Task, TaskPriority, TaskStatus } from '../../types';
 import Modal from '../ui/Modal';
@@ -31,32 +31,56 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
   const [status, setStatus] = useState<TaskStatus>(TaskStatus.Pending);
   const [duration, setDuration] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Refs para rastrear estado anterior
+  const wasOpenRef = useRef(false);
+  const lastTaskIdRef = useRef<string | null>(null);
 
+  // Sincronizar campos apenas quando modal abre ou tarefa muda
   useEffect(() => {
-    // Sempre resetar estado de loading ao abrir o modal ou trocar a tarefa em edição
-    setIsLoading(false);
+    const justOpened = isOpen && !wasOpenRef.current;
+    const taskChanged = taskToEdit?.id !== lastTaskIdRef.current;
+    
+    // Atualizar refs
+    wasOpenRef.current = isOpen;
+    lastTaskIdRef.current = taskToEdit?.id || null;
+    
+    // Só sincronizar campos quando:
+    // 1. Modal acabou de abrir (transição de fechado para aberto)
+    // 2. OU a tarefa em edição mudou
+    if (justOpened || taskChanged) {
+      console.log('[TaskForm] Sincronizando campos:', { justOpened, taskChanged, taskId: taskToEdit?.id });
+      setIsLoading(false);
 
-    if (taskToEdit) {
-      setName(taskToEdit.name);
-      setDescription(taskToEdit.description);
-      setProjectId(taskToEdit.project_id);
-      setAssigneeId(taskToEdit.assignee?.id || null);
-      setDueDate(taskToEdit.dueDate);
-      setPriority(taskToEdit.priority);
-      setStatus(taskToEdit.status);
-      setDuration(taskToEdit.duration);
-    } else {
-      // Reset form
-      setName('');
-      setDescription('');
-      setProjectId(initialProjectId || (projects.length > 0 ? projects[0].id : ''));
-      setAssigneeId(null);
-      setDueDate(new Date().toISOString().split('T')[0]);
-      setPriority(TaskPriority.Medium);
-      setStatus(TaskStatus.Pending);
-      setDuration(1);
+      if (taskToEdit) {
+        setName(taskToEdit.name);
+        setDescription(taskToEdit.description);
+        setProjectId(taskToEdit.project_id);
+        setAssigneeId(taskToEdit.assignee?.id || null);
+        setDueDate(taskToEdit.dueDate);
+        setPriority(taskToEdit.priority);
+        setStatus(taskToEdit.status);
+        setDuration(taskToEdit.duration);
+      } else {
+        // Reset form para nova tarefa
+        setName('');
+        setDescription('');
+        setProjectId(initialProjectId || (projects.length > 0 ? projects[0].id : ''));
+        setAssigneeId(null);
+        setDueDate(new Date().toISOString().split('T')[0]);
+        setPriority(TaskPriority.Medium);
+        setStatus(TaskStatus.Pending);
+        setDuration(1);
+      }
     }
-  }, [taskToEdit, isOpen, projects, initialProjectId]);
+  }, [isOpen, taskToEdit?.id, initialProjectId, projects]);
+  
+  // Reset loading quando modal fecha
+  useEffect(() => {
+    if (!isOpen) {
+      setIsLoading(false);
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
