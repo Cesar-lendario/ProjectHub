@@ -14,8 +14,8 @@ const STATUS_COLORS: Record<TaskStatus | 'default', string> = {
 };
 
 interface TimelineCell {
-  year: number;
-  month: number;
+  day: number;
+  date: Date;
   status?: TaskStatus;
 }
 
@@ -32,8 +32,9 @@ interface ImplementationTimelineProps {
 const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ projectId }) => {
   const { projects } = useProjectContext();
   const [selectedProject, setSelectedProject] = useState<string>(projectId || '');
-  const [startYear, setStartYear] = useState<number>(new Date().getFullYear());
-  const [endYear, setEndYear] = useState<number>(new Date().getFullYear() + 1);
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
 
   // Sincronizar o projeto selecionado com o projectId vindo de fora (ScheduleView)
   useEffect(() => {
@@ -42,25 +43,32 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
     }
   }, [projectId]);
 
-  // Gerar meses para o período selecionado
-  const months = useMemo(() => {
-    const result: { year: number; month: number }[] = [];
+  // Gerar dias do mês selecionado
+  const days = useMemo(() => {
+    const result: { day: number; date: Date }[] = [];
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
     
-    for (let year = startYear; year <= endYear; year++) {
-      const startMonth = year === startYear ? 0 : 0;
-      const endMonth = year === endYear ? 11 : 11;
-      
-      for (let month = startMonth; month <= endMonth; month++) {
-        result.push({ year, month });
-      }
+    for (let day = 1; day <= daysInMonth; day++) {
+      result.push({
+        day,
+        date: new Date(selectedYear, selectedMonth, day)
+      });
     }
     
     return result;
-  }, [startYear, endYear]);
+  }, [selectedYear, selectedMonth]);
 
   // Formatar nome do mês
-  const formatMonth = (month: number): string => {
-    return new Date(2000, month, 1).toLocaleDateString('pt-BR', { month: 'short' });
+  const formatMonthYear = (): string => {
+    return new Date(selectedYear, selectedMonth, 1).toLocaleDateString('pt-BR', {
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+  
+  // Obter nome do dia da semana (abreviado)
+  const getDayOfWeek = (date: Date): string => {
+    return date.toLocaleDateString('pt-BR', { weekday: 'narrow' });
   };
 
   // Obter o projeto selecionado
@@ -99,31 +107,29 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
     const rows: TimelineRow[] = orderedTasks.map(task => {
       // Calcular data de início e fim da tarefa
       const taskDueDate = new Date(task.dueDate);
-      const taskEndMonth = taskDueDate.getMonth();
-      const taskEndYear = taskDueDate.getFullYear();
+      taskDueDate.setHours(23, 59, 59, 999);
       
       // Calcular data de início com base na duração
-      const taskStartDate = new Date(taskDueDate);
+      const taskStartDate = new Date(task.dueDate);
       taskStartDate.setDate(taskStartDate.getDate() - (task.duration - 1));
-      const taskStartMonth = taskStartDate.getMonth();
-      const taskStartYear = taskStartDate.getFullYear();
+      taskStartDate.setHours(0, 0, 0, 0);
       
-      const cells: TimelineCell[] = months.map((monthData, index) => {
-        const currentDate = new Date(monthData.year, monthData.month, 15); // meio do mês
-        const taskStart = new Date(taskStartYear, taskStartMonth, 1);
-        const taskEnd = new Date(taskEndYear, taskEndMonth, 28); // final aproximado do mês
+      const cells: TimelineCell[] = days.map((dayData) => {
+        const currentDate = new Date(dayData.date);
+        currentDate.setHours(12, 0, 0, 0); // meio do dia
         
-        if (currentDate >= taskStart && currentDate <= taskEnd) {
+        // Verificar se o dia atual está dentro do período da tarefa
+        if (currentDate >= taskStartDate && currentDate <= taskDueDate) {
           return {
-            year: monthData.year,
-            month: monthData.month,
+            day: dayData.day,
+            date: dayData.date,
             status: task.status,
           };
         }
         
         return {
-          year: monthData.year,
-          month: monthData.month
+          day: dayData.day,
+          date: dayData.date
         };
       });
       
@@ -135,23 +141,34 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
     });
     
     return rows;
-  }, [months, selectedProjectData, startYear]);
+  }, [days, selectedProjectData, selectedYear, selectedMonth]);
 
-  // Agrupar meses por ano para o cabeçalho
-  const yearGroups = useMemo(() => {
-    const groups: { year: number; count: number }[] = [];
+  // Semanas do mês para agrupamento visual
+  const weekGroups = useMemo(() => {
+    const groups: { week: number; days: number[] }[] = [];
+    let currentWeek = 1;
+    let currentGroup: number[] = [];
     
-    months.forEach(month => {
-      const existingGroup = groups.find(group => group.year === month.year);
-      if (existingGroup) {
-        existingGroup.count++;
+    days.forEach((day, index) => {
+      const dayOfWeek = new Date(selectedYear, selectedMonth, day.day).getDay();
+      
+      // Se é domingo (0) e não é o primeiro dia, começar nova semana
+      if (dayOfWeek === 0 && currentGroup.length > 0) {
+        groups.push({ week: currentWeek, days: currentGroup });
+        currentWeek++;
+        currentGroup = [day.day];
       } else {
-        groups.push({ year: month.year, count: 1 });
+        currentGroup.push(day.day);
       }
     });
     
+    // Adicionar última semana
+    if (currentGroup.length > 0) {
+      groups.push({ week: currentWeek, days: currentGroup });
+    }
+    
     return groups;
-  }, [months]);
+  }, [days, selectedYear, selectedMonth]);
 
   return (
     <Card className="overflow-hidden">
@@ -177,20 +194,22 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
           
           <select
             className="bg-indigo-600 text-white border border-indigo-400 rounded px-3 py-1 text-sm font-medium"
-            value={startYear}
-            onChange={(e) => setStartYear(parseInt(e.target.value))}
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
           >
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
-              <option key={year} value={year} className="bg-white text-slate-800">{year}</option>
+            {Array.from({ length: 12 }, (_, i) => i).map(month => (
+              <option key={month} value={month} className="bg-white text-slate-800">
+                {new Date(2000, month, 1).toLocaleDateString('pt-BR', { month: 'long' })}
+              </option>
             ))}
           </select>
           
           <select
             className="bg-indigo-600 text-white border border-indigo-400 rounded px-3 py-1 text-sm font-medium"
-            value={endYear}
-            onChange={(e) => setEndYear(parseInt(e.target.value))}
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
           >
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 1 + i).map(year => (
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
               <option key={year} value={year} className="bg-white text-slate-800">{year}</option>
             ))}
           </select>
@@ -218,31 +237,34 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
           <table className="min-w-full border-collapse">
           <thead>
             <tr>
-              <th className="bg-yellow-300 dark:bg-yellow-600 border border-slate-300 dark:border-slate-600 px-4 py-2 text-left font-bold text-slate-900 dark:text-white">
+              <th className="bg-yellow-300 dark:bg-yellow-600 border border-slate-300 dark:border-slate-600 px-4 py-2 text-left font-bold text-slate-900 dark:text-white" rowSpan={2}>
                 TAREFAS
               </th>
-              {yearGroups.map((group, index) => (
-                <th 
-                  key={`year-${group.year}`}
-                  colSpan={group.count}
-                  className="bg-yellow-300 dark:bg-yellow-600 border border-slate-300 dark:border-slate-600 text-center py-1 font-bold text-slate-900 dark:text-white"
-                >
-                  {group.year}
-                </th>
-              ))}
+              <th 
+                colSpan={days.length}
+                className="bg-yellow-300 dark:bg-yellow-600 border border-slate-300 dark:border-slate-600 text-center py-1 font-bold text-slate-900 dark:text-white capitalize"
+              >
+                {formatMonthYear()}
+              </th>
             </tr>
             <tr>
-              <th className="bg-yellow-300 dark:bg-yellow-600 border border-slate-300 dark:border-slate-600 px-4 py-2 text-left font-bold text-slate-900 dark:text-white">
-                PRAZOS
-              </th>
-              {months.map((month, index) => (
-                <th 
-                  key={`month-${month.year}-${month.month}`}
-                  className="bg-yellow-300 dark:bg-yellow-600 border border-slate-300 dark:border-slate-600 text-center py-1 font-bold w-12 text-slate-900 dark:text-white"
-                >
-                  {formatMonth(month.month)}
-                </th>
-              ))}
+              {days.map((day, index) => {
+                const dayOfWeek = getDayOfWeek(day.date);
+                const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
+                return (
+                  <th 
+                    key={`day-${day.day}`}
+                    className={`border border-slate-300 dark:border-slate-600 text-center py-1 font-bold w-8 text-xs ${
+                      isWeekend 
+                        ? 'bg-yellow-200 dark:bg-yellow-700 text-slate-700 dark:text-slate-300' 
+                        : 'bg-yellow-300 dark:bg-yellow-600 text-slate-900 dark:text-white'
+                    }`}
+                  >
+                    <div>{day.day}</div>
+                    <div className="text-[10px] font-normal">{dayOfWeek}</div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -251,16 +273,20 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
                 <td className="border border-slate-300 dark:border-slate-600 px-4 py-2 font-medium text-white bg-slate-700">
                   {row.name}
                 </td>
-                {row.cells.map((cell, cellIndex) => (
-                  <td 
-                    key={`cell-${row.id}-${cellIndex}`}
-                    className={`border border-slate-300 dark:border-slate-600 p-0 text-center ${
-                      cell.status ? STATUS_COLORS[cell.status] : ''
-                    }`}
-                  >
-                    <span>&nbsp;</span>
-                  </td>
-                ))}
+                {row.cells.map((cell, cellIndex) => {
+                  const isWeekend = cell.date.getDay() === 0 || cell.date.getDay() === 6;
+                  return (
+                    <td 
+                      key={`cell-${row.id}-${cellIndex}`}
+                      className={`border border-slate-300 dark:border-slate-600 p-0 text-center h-8 ${
+                        cell.status ? STATUS_COLORS[cell.status] : (isWeekend ? 'bg-slate-100 dark:bg-slate-800' : '')
+                      }`}
+                      title={cell.status ? `${row.name} - ${cell.date.toLocaleDateString('pt-BR')}` : ''}
+                    >
+                      <span>&nbsp;</span>
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
@@ -268,22 +294,27 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
         )}
       </div>
       
-      <div className="mt-4 flex flex-wrap gap-4">
+      <div className="mt-4 flex flex-wrap gap-4 items-center">
+        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Legenda:</span>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-500" />
+          <div className="w-4 h-4 bg-red-500 border border-slate-300" />
           <span className="text-sm">Pendente</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-purple-500" />
+          <div className="w-4 h-4 bg-purple-500 border border-slate-300" />
           <span className="text-sm">A Fazer</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500" />
+          <div className="w-4 h-4 bg-blue-500 border border-slate-300" />
           <span className="text-sm">Em andamento</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-500" />
+          <div className="w-4 h-4 bg-green-500 border border-slate-300" />
           <span className="text-sm">Concluído</span>
+        </div>
+        <div className="flex items-center gap-2 ml-4">
+          <div className="w-4 h-4 bg-slate-100 dark:bg-slate-800 border border-slate-300" />
+          <span className="text-sm">Final de semana</span>
         </div>
       </div>
     </Card>
