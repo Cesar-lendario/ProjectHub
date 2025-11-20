@@ -51,8 +51,8 @@ const RisksAndOpportunities: React.FC = () => {
   };
 
   return (
-    <Card className="h-full">
-      <div className="flex items-center mb-4">
+    <Card>
+      <div className="flex items-center mb-3">
         <LightbulbIcon className="h-6 w-6 text-yellow-500 mr-2" />
         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-50">Insights com IA</h3>
       </div>

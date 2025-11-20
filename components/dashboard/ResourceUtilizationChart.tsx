@@ -75,7 +75,7 @@ const ResourceUtilizationChart: React.FC = () => {
 
   return (
     <Card>
-      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-50 mb-4">Utilização de Recursos</h3>
+      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-50 mb-3">Utilização de Recursos</h3>
       {!recharts && !error && (
         <div className="flex h-48 items-center justify-center text-sm text-slate-500 dark:text-slate-400">
           Carregando gráfico...
@@ -90,14 +90,14 @@ const ResourceUtilizationChart: React.FC = () => {
         </div>
       )}
       {recharts && totalTasks > 0 && (
-        <recharts.ResponsiveContainer width="100%" height={300}>
+        <recharts.ResponsiveContainer width="100%" height={240}>
           <recharts.PieChart>
             <recharts.Pie
               data={data}
               cx="50%"
               cy="50%"
               labelLine={false}
-              outerRadius={100}
+              outerRadius={80}
               fill="#8884d8"
               dataKey="value"
               nameKey="name"

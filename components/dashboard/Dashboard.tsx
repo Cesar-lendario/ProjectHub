@@ -22,14 +22,14 @@ const Dashboard: React.FC = () => {
   const inProgressTasks = allTasks.filter(t => t.status === TaskStatus.InProgress).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Dashboard</h1>
         <p className="mt-1 text-slate-600 dark:text-slate-300">Visão geral do progresso dos seus projetos.</p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard 
             title="Total de Projetos" 
             value={totalProjects} 
@@ -59,19 +59,19 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <TasksByStatusChart />
-        <div className="space-y-6">
-          <RisksAndOpportunities />
-          <ResourceUtilizationChart />
-        </div>
+        <ResourceUtilizationChart />
       </div>
       
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Second Row */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RecentProjects />
         <UpcomingTasks />
       </div>
+
+      {/* Insights Card - Full Width */}
+      <RisksAndOpportunities />
     </div>
   );
 };

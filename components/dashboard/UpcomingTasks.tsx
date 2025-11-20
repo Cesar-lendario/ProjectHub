@@ -39,7 +39,7 @@ const UpcomingTasks: React.FC = () => {
 
   return (
     <Card>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-50">Próximas Tarefas</h3>
         <button className="text-sm font-medium text-indigo-600 hover:text-indigo-800">
           Ver todas

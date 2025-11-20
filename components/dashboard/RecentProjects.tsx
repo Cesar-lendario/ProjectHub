@@ -13,13 +13,13 @@ const RecentProjects: React.FC = () => {
 
   return (
     <Card>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-50">Projetos Recentes</h3>
         <button className="text-sm font-medium text-indigo-600 hover:text-indigo-800">
           Ver todos
         </button>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {recentProjects.map(project => {
           const progress = project.tasks.length > 0
             ? (project.tasks.filter(t => t.status === TaskStatus.Done).length / project.tasks.length) * 100
