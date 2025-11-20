@@ -3,6 +3,10 @@ import { useProjectContext } from '../../hooks/useProjectContext';
 import { Task, TaskStatus } from '../../types';
 import Card from '../ui/Card';
 
+interface UpcomingTasksProps {
+  onNavigateToTasks?: () => void;
+}
+
 interface UpcomingTaskItemProps {
     task: Task & { projectName: string };
 }
@@ -28,7 +32,7 @@ const UpcomingTaskItem: React.FC<UpcomingTaskItemProps> = ({ task }) => {
     )
 };
 
-const UpcomingTasks: React.FC = () => {
+const UpcomingTasks: React.FC<UpcomingTasksProps> = ({ onNavigateToTasks }) => {
   const { projects } = useProjectContext();
 
   const upcomingTasks = projects
@@ -41,7 +45,10 @@ const UpcomingTasks: React.FC = () => {
     <Card>
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-50">Próximas Tarefas</h3>
-        <button className="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+        <button 
+          onClick={onNavigateToTasks}
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+        >
           Ver todas
         </button>
       </div>

@@ -3,7 +3,11 @@ import { useProjectContext } from '../../hooks/useProjectContext';
 import { TaskStatus } from '../../types';
 import Card from '../ui/Card';
 
-const RecentProjects: React.FC = () => {
+interface RecentProjectsProps {
+  onNavigateToProjects?: () => void;
+}
+
+const RecentProjects: React.FC<RecentProjectsProps> = ({ onNavigateToProjects }) => {
   const { projects } = useProjectContext();
 
   // Sort projects by start date, most recent first, and take the top 5
@@ -15,7 +19,10 @@ const RecentProjects: React.FC = () => {
     <Card>
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-50">Projetos Recentes</h3>
-        <button className="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+        <button 
+          onClick={onNavigateToProjects}
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+        >
           Ver todos
         </button>
       </div>

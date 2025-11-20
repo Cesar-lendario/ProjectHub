@@ -108,7 +108,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
 
   const renderView = () => {
     switch (currentView) {
-      case 'dashboard': return <Dashboard />;
+      case 'dashboard': return <Dashboard onNavigateToProjects={() => setCurrentView('projects')} onNavigateToTasks={() => setCurrentView('tasks')} />;
       case 'projects': return <ProjectList setCurrentView={setCurrentView} setGlobalProjectFilter={setGlobalProjectFilter} />;
       case 'tasks': return <TaskList globalProjectFilter={globalProjectFilter} setGlobalProjectFilter={setGlobalProjectFilter} />;
       case 'schedule': return <ScheduleView />;
@@ -119,7 +119,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
       case 'admin': return <UserManagementView />;
       case 'permissions': return <PermissionSettingsView />;
       case 'notifications': return <NotificationLogTable setCurrentView={setCurrentView} setGlobalProjectFilter={setGlobalProjectFilter} />;
-      default: return <Dashboard />;
+      default: return <Dashboard onNavigateToProjects={() => setCurrentView('projects')} onNavigateToTasks={() => setCurrentView('tasks')} />;
     }
   };
 
