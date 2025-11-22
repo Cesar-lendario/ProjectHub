@@ -130,7 +130,6 @@ export const PERMISSION_MODULES = [
   { id: 'schedule', label: 'Cronograma' },
   { id: 'team', label: 'Equipe' },
   { id: 'files', label: 'Arquivos' },
-  { id: 'reports', label: 'Relatórios' },
   { id: 'communication', label: 'Comunicação' },
   { id: 'notifications', label: 'Histórico de Cobranças' },
 ];

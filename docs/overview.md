@@ -107,6 +107,8 @@ TaskMeet é uma plataforma web multitenant de gestão de projetos orientada a eq
 
 ### 📧 Sistema de Notificações
 - **Histórico de Cobranças** (NotificationLogTable): tabela com Data Email e Data WhatsApp
+  - Novo mecanismo de ordenação por clique em cada cabeçalho, com alternância ascendente/descendente e ícones de seta que indicam a direção ativa
+  - Filtros por empresa, contato e tipo de projeto, além de seletor de tipo de envio (Email ou WhatsApp) com contador de resultados e botão "Limpar Filtros"
 - **Modal de Envio de Lembretes** (NotificationSenderModal):
   - Seleção de projeto
   - Geração automática de mensagens com lista de tarefas ativas
@@ -728,6 +730,22 @@ npm run preview
 - ✅ Rastreabilidade de quem criou cada projeto
 - ✅ Preservação de dados relacionados durante edição
 - ✅ Logs detalhados para facilitar depuração futura
+
+### Correção do Modal de Condição Atual (Nov 2025)
+
+**Problema**: O modal "Anotações do Projeto" (Condição Atual) travava no estado "Carregando anotações..." até que o usuário atualizasse a página ou limpasse o cache.
+
+**Causa raiz**: O `useEffect` que executa `loadProjectNotes` dependia de `selectedProjectId`, mas a função não era memorizada, provocando reexecuções infinitas e bloqueio do carregamento.
+
+**Solução implementada**:
+1. Memorização de `loadProjectNotes` com `useCallback` (dependência de `selectedProjectId`).
+2. Inclusão de `loadProjectNotes` no array de dependências do `useEffect` responsável pelo carregamento ao abrir o modal.
+3. Controle de abort controller e reset de estados para garantir consistência.
+
+**Benefícios**:
+- ✅ O modal carrega corretamente ao abrir, sem precisar limpar cache.
+- ✅ Não há mais loops infinitos de carregamento.
+- ✅ Carregamento permanece cancelável caso o usuário feche o modal antes de finalizar.
 
 ### Alteração no Status Inicial de Tarefas Padrão (Nov 2025)
 

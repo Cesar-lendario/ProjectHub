@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import Modal from '../ui/Modal';
 import { supabase } from '../../services/supabaseClient';
@@ -45,50 +45,8 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
     }
   }, [isOpen, projectId, projects]);
 
-  // Resetar estados quando modal fecha
-  useEffect(() => {
-    if (!isOpen) {
-      // Cancelar qualquer carregamento em andamento
-      if (loadingControllerRef.current) {
-        loadingControllerRef.current.abort();
-        loadingControllerRef.current = null;
-      }
-      // Resetar estados
-      setIsLoading(false);
-      setIsSaving(false);
-      setError('');
-      setNewNote('');
-      setNotes([]);
-    }
-  }, [isOpen]);
-
-  // Carregar notas ao abrir o modal ou mudar de projeto
-  useEffect(() => {
-    isMountedRef.current = true;
-    
-    if (isOpen && selectedProjectId && selectedProjectId !== 'all') {
-      console.log('[ProjectConditionModal] Iniciando carregamento para projeto:', selectedProjectId);
-      loadProjectNotes();
-    } else if (isOpen && (!selectedProjectId || selectedProjectId === 'all')) {
-      // Se não há projeto válido, garantir que loading está desativado
-      console.log('[ProjectConditionModal] Nenhum projeto válido selecionado, desativando loading');
-      setIsLoading(false);
-      setNotes([]);
-    }
-    
-    return () => {
-      isMountedRef.current = false;
-      // Cancelar carregamento se modal for fechado durante a operação
-      if (loadingControllerRef.current) {
-        loadingControllerRef.current.abort();
-        loadingControllerRef.current = null;
-      }
-    };
-  }, [isOpen, selectedProjectId]);
-
-  // Não precisa mais deste useEffect, foi movido para o de inicialização
-
-  const loadProjectNotes = async () => {
+  // Função para carregar notas (usando useCallback para evitar dependências circulares)
+  const loadProjectNotes = useCallback(async () => {
     // Cancelar carregamento anterior se existir
     if (loadingControllerRef.current) {
       loadingControllerRef.current.abort();
@@ -179,7 +137,48 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
       loadingControllerRef.current = null;
       console.log('[ProjectConditionModal] Loading finalizado');
     }
-  };
+  }, [selectedProjectId]); // Dependência: selectedProjectId
+
+  // Resetar estados quando modal fecha
+  useEffect(() => {
+    if (!isOpen) {
+      // Cancelar qualquer carregamento em andamento
+      if (loadingControllerRef.current) {
+        loadingControllerRef.current.abort();
+        loadingControllerRef.current = null;
+      }
+      // Resetar estados
+      setIsLoading(false);
+      setIsSaving(false);
+      setError('');
+      setNewNote('');
+      setNotes([]);
+    }
+  }, [isOpen]);
+
+  // Carregar notas ao abrir o modal ou mudar de projeto
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    if (isOpen && selectedProjectId && selectedProjectId !== 'all') {
+      console.log('[ProjectConditionModal] Iniciando carregamento para projeto:', selectedProjectId);
+      loadProjectNotes();
+    } else if (isOpen && (!selectedProjectId || selectedProjectId === 'all')) {
+      // Se não há projeto válido, garantir que loading está desativado
+      console.log('[ProjectConditionModal] Nenhum projeto válido selecionado, desativando loading');
+      setIsLoading(false);
+      setNotes([]);
+    }
+    
+    return () => {
+      isMountedRef.current = false;
+      // Cancelar carregamento se modal for fechado durante a operação
+      if (loadingControllerRef.current) {
+        loadingControllerRef.current.abort();
+        loadingControllerRef.current = null;
+      }
+    };
+  }, [isOpen, selectedProjectId, loadProjectNotes]);
 
   const handleAddNote = async () => {
     if (!selectedProjectId || selectedProjectId === 'all') {
@@ -203,26 +202,33 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
         created_at: new Date().toISOString(),
       };
 
+      console.log('[ProjectConditionModal] Adicionando nota:', noteData);
+
       const { error } = await (supabase as any)
         .from('project_notes')
         .insert([noteData]);
 
       if (error) throw error;
 
+      console.log('[ProjectConditionModal] Nota adicionada com sucesso');
+
       // Limpar campo e recarregar notas
       setNewNote('');
       await loadProjectNotes();
+      
+      console.log('[ProjectConditionModal] Notas recarregadas');
     } catch (err) {
-      console.error('Erro ao adicionar nota:', err);
+      console.error('[ProjectConditionModal] Erro ao adicionar nota:', err);
       setError(`Erro ao salvar: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
       setIsSaving(false);
+      console.log('[ProjectConditionModal] isSaving resetado para false');
     }
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Anotações do Projeto">
-      <div className="space-y-4">
+      <div className="p-6 space-y-4">
         {/* Seletor de Projeto */}
         <div>
           <label htmlFor="project-select" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">

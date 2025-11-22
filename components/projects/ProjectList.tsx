@@ -16,6 +16,22 @@ interface ProjectListProps {
   setGlobalProjectFilter: (id: string) => void;
 }
 
+const STATUS_COLORS: { [key in ProjectStatus]: string } = {
+  [ProjectStatus.InProgress]: 'bg-blue-100 text-blue-800',
+  [ProjectStatus.OnHold]: 'bg-yellow-100 text-yellow-800',
+  [ProjectStatus.ToDo]: 'bg-red-100 text-red-800',
+  [ProjectStatus.Completed]: 'bg-green-200 text-green-900',
+  [ProjectStatus.Canceled]: 'bg-red-100 text-red-800',
+};
+
+const STATUS_BORDER_COLORS: { [key in ProjectStatus]: string } = {
+  [ProjectStatus.InProgress]: 'border-blue-500/40',
+  [ProjectStatus.OnHold]: 'border-amber-500/40',
+  [ProjectStatus.ToDo]: 'border-red-500/40',
+  [ProjectStatus.Completed]: 'border-emerald-500/40',
+  [ProjectStatus.Canceled]: 'border-rose-500/40',
+};
+
 const ProjectCard: React.FC<{
   project: Project;
   onSelect: () => void;
@@ -30,12 +46,7 @@ const ProjectCard: React.FC<{
   const baseProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   const progress = project.status === ProjectStatus.Completed ? 100 : baseProgress;
 
-  const statusColors: { [key in ProjectStatus]: string } = {
-    [ProjectStatus.InProgress]: 'bg-blue-100 text-blue-800',
-    [ProjectStatus.OnHold]: 'bg-yellow-100 text-yellow-800',
-    [ProjectStatus.Completed]: 'bg-green-100 text-green-800',
-    [ProjectStatus.Canceled]: 'bg-red-100 text-red-800',
-  };
+
   
   return (
     <Card className="flex flex-col cursor-pointer group hover:shadow-xl hover:border-indigo-300 transition-all duration-200" onClick={onSelect}>
@@ -44,7 +55,7 @@ const ProjectCard: React.FC<{
           <h3 className="font-bold text-lg text-slate-800 dark:text-slate-50 group-hover:text-indigo-600 transition-colors">
             {project.name}
           </h3>
-          <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${statusColors[project.status]}`}>
+          <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUS_COLORS[project.status]}`}>
             {project.status}
           </span>
         </div>
@@ -323,7 +334,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
               return (
                 <div
                   key={project.id}
-                  className="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors cursor-pointer"
+                  className={`px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors cursor-pointer border-l-4 ${STATUS_BORDER_COLORS[project.status]}`}
                   onClick={() => handleProjectSelect(project.id)}
                 >
                   <div className="flex-1 min-w-0">
@@ -332,7 +343,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
                       <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
                         {project.projectType}
                       </span>
-                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${STATUS_COLORS[project.status]}`}>
                         {project.status}
                       </span>
                     </div>

@@ -297,24 +297,24 @@ const ImplementationTimeline: React.FC<ImplementationTimelineProps> = ({ project
       <div className="mt-4 flex flex-wrap gap-4 items-center">
         <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Legenda:</span>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-500 border border-slate-300" />
-          <span className="text-sm">Pendente</span>
+          <div className="w-4 h-4 bg-red-500 border border-slate-300 dark:border-slate-600" />
+          <span className="text-sm text-slate-700 dark:text-slate-300">Pendente</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-purple-500 border border-slate-300" />
-          <span className="text-sm">A Fazer</span>
+          <div className="w-4 h-4 bg-purple-500 border border-slate-300 dark:border-slate-600" />
+          <span className="text-sm text-slate-700 dark:text-slate-300">A Fazer</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 border border-slate-300" />
-          <span className="text-sm">Em andamento</span>
+          <div className="w-4 h-4 bg-blue-500 border border-slate-300 dark:border-slate-600" />
+          <span className="text-sm text-slate-700 dark:text-slate-300">Em andamento</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-500 border border-slate-300" />
-          <span className="text-sm">Concluído</span>
+          <div className="w-4 h-4 bg-green-500 border border-slate-300 dark:border-slate-600" />
+          <span className="text-sm text-slate-700 dark:text-slate-300">Concluído</span>
         </div>
         <div className="flex items-center gap-2 ml-4">
-          <div className="w-4 h-4 bg-slate-100 dark:bg-slate-800 border border-slate-300" />
-          <span className="text-sm">Final de semana</span>
+          <div className="w-4 h-4 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600" />
+          <span className="text-sm text-slate-700 dark:text-slate-300">Final de semana</span>
         </div>
       </div>
     </Card>

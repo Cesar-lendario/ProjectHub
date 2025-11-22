@@ -108,11 +108,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
           duration,
           dependencies: taskToEdit?.dependencies || [],
         });
+        // Sucesso - o modal será fechado pelo TaskList
     } catch(error) {
-        console.error(error);
-        alert(error instanceof Error ? error.message : "Could not save task.");
-    } finally {
-        setIsLoading(false);
+        console.error('[TaskForm] Erro ao salvar:', error);
+        alert(error instanceof Error ? error.message : "Não foi possível salvar a tarefa.");
+        setIsLoading(false); // Resetar loading apenas em caso de erro
     }
   };
   

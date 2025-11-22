@@ -11,7 +11,6 @@ const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
 const ProjectList = lazy(() => import('./components/projects/ProjectList'));
 const TaskList = lazy(() => import('./components/tasks/TaskList'));
 const ScheduleView = lazy(() => import('./components/schedule/ScheduleView'));
-const ReportsView = lazy(() => import('./components/reports/ReportsView'));
 const FilesView = lazy(() => import('./components/files/FilesView'));
 const CommunicationView = lazy(() => import('./components/communication/CommunicationView'));
 const TeamManagementView = lazy(() => import('./components/team/TeamManagementView'));
@@ -94,12 +93,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
   
   const viewTitles: { [key: string]: string } = {
     dashboard: 'Dashboard',
-    projects: 'Projetos',
     tasks: 'Tarefas',
     schedule: 'Cronograma',
     team: 'Equipe',
     files: 'Arquivos',
-    reports: 'Relatórios',
     communication: 'Comunicação',
     admin: 'Admin - Usuários',
     permissions: 'Configurações',
@@ -114,7 +111,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
       case 'schedule': return <ScheduleView />;
       case 'team': return <TeamManagementView />;
       case 'files': return <FilesView />;
-      case 'reports': return <ReportsView />;
       case 'communication': return <CommunicationView />;
       case 'admin': return <UserManagementView />;
       case 'permissions': return <PermissionSettingsView />;

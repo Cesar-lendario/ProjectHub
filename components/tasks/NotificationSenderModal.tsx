@@ -46,13 +46,19 @@ const NotificationSenderModal: React.FC<NotificationSenderModalProps> = ({ isOpe
 
   const generateEmailBody = () => {
     if (!selectedProject) return '';
-    const taskList = pendingTasks.map(task => `- ${task.name} (Início: ${new Date(task.dueDate).toLocaleDateString('pt-BR')})`).join('\n');
+    const taskList = pendingTasks.map(task => {
+      const description = task.description ? `\n  ${task.description}` : '';
+      return `- ${task.name}${description}`;
+    }).join('\n\n');
     return encodeURIComponent(`Olá ${selectedProject.clientName || 'Contato'},\n\nEste é um lembrete amigável sobre as seguintes tarefas pendentes para a empresa "${selectedProject.name}":\n\n${taskList}\n\nAtenciosamente,\nEquipe TaskMeet`);
   };
 
   const generateWhatsappMessage = () => {
     if (!selectedProject) return '';
-    const taskList = pendingTasks.map(task => `- *${task.name}* (Início: ${new Date(task.dueDate).toLocaleDateString('pt-BR')})`).join('\n');
+    const taskList = pendingTasks.map(task => {
+      const description = task.description ? `\n  _${task.description}_` : '';
+      return `- *${task.name}*${description}`;
+    }).join('\n\n');
     return `Olá ${selectedProject.clientName || 'Contato'},\n\nLembrete sobre as tarefas pendentes para a empresa *${selectedProject.name}*:\n\n${taskList}\n\nObrigado!`;
   };
 
@@ -123,12 +129,16 @@ const NotificationSenderModal: React.FC<NotificationSenderModalProps> = ({ isOpe
                 <div className="max-h-40 overflow-y-auto border border-slate-200 dark:border-slate-600 rounded-lg p-3 bg-white dark:bg-slate-700/50 space-y-2">
                   {pendingTasks.length > 0 ? (
                     pendingTasks.map(task => (
-                      <div key={task.id} className="flex items-center gap-2 text-sm">
-                        <span className="w-2 h-2 bg-orange-400 rounded-full flex-shrink-0"></span>
-                        <span className="text-slate-800 dark:text-slate-200">{task.name}</span>
-                        <span className="text-slate-500 dark:text-slate-400 text-xs ml-auto">
-                          {new Date(task.dueDate).toLocaleDateString('pt-BR')}
-                        </span>
+                      <div key={task.id} className="flex flex-col gap-1 py-2 border-b border-slate-100 dark:border-slate-600 last:border-0">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-orange-400 rounded-full flex-shrink-0"></span>
+                          <span className="text-slate-800 dark:text-slate-200 font-medium">{task.name}</span>
+                        </div>
+                        {task.description && (
+                          <span className="text-slate-600 dark:text-slate-400 text-xs ml-4">
+                            {task.description}
+                          </span>
+                        )}
                       </div>
                     ))
                   ) : (

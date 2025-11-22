@@ -24,6 +24,7 @@ const UpcomingTaskItem: React.FC<UpcomingTaskItemProps> = ({ task }) => {
                 {task.assignee && (
                     <img src={task.assignee.avatar} alt={task.assignee.name} className="w-7 h-7 rounded-full mr-3" title={task.assignee.name} />
                 )}
+                <span className="text-xs font-semibold px-2 py-1 rounded-full bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-300 mr-2">A Fazer</span>
                 <span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-200">
                     Início: {startDate}
                 </span>
@@ -37,7 +38,7 @@ const UpcomingTasks: React.FC<UpcomingTasksProps> = ({ onNavigateToTasks }) => {
 
   const upcomingTasks = projects
     .flatMap(p => p.tasks.map(t => ({ ...t, projectName: p.name })))
-    .filter(t => t.status !== TaskStatus.Done)
+    .filter(t => t.status === TaskStatus.ToDo)
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
     .slice(0, 5);
 

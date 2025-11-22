@@ -3,6 +3,7 @@ import { useProjectContext } from '../../hooks/useProjectContext';
 import { TaskStatus } from '../../types';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
+import { jsPDF } from 'jspdf';
 
 interface TaskSummaryModalProps {
   isOpen: boolean;
@@ -126,6 +127,57 @@ const TaskSummaryModal: React.FC<TaskSummaryModalProps> = ({ isOpen, onClose, pr
     );
   };
 
+  const handleExportPdf = () => {
+    if (!project || !summary) return;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`Resumo de Tarefas - ${project.name}`, 14, 20);
+    let currentY = 30;
+
+    const ensureSpace = (lines: number = 1) => {
+      if (currentY + lines * 6 > 280) {
+        doc.addPage();
+        currentY = 20;
+      }
+    };
+
+    const sections = [
+      { title: 'Pendente', tasks: summary.pending, color: '#ef4444' },
+      { title: 'A Fazer', tasks: summary.todo, color: '#a855f7' },
+      { title: 'Em andamento', tasks: summary.inProgress, color: '#3b82f6' },
+    ];
+
+    sections.forEach((section) => {
+      if (section.tasks.length === 0) return;
+      ensureSpace(2);
+      doc.setFontSize(12);
+      doc.setTextColor(section.color);
+      doc.text(`${section.title} (${section.tasks.length})`, 14, currentY);
+      currentY += 6;
+      doc.setTextColor('#0f172a');
+      section.tasks.forEach((task) => {
+        ensureSpace(3);
+        doc.setFontSize(10);
+        doc.text(`• ${task.name}`, 16, currentY);
+        currentY += 5;
+        doc.setFontSize(8);
+        doc.text(`   Data: ${new Date(task.dueDate).toLocaleDateString('pt-BR')}`, 16, currentY);
+        currentY += 5;
+        if (task.description) {
+            const wrapped = doc.splitTextToSize(task.description, 168);
+        wrapped.forEach(line => {
+          ensureSpace(1);
+          doc.text(`   ${line}`, 16, currentY);
+          currentY += 5;
+        });
+        }
+        currentY += 4;
+      });
+    });
+
+    doc.save(`resumo-${project.name.replace(/\s+/g, '-')}.pdf`);
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -135,7 +187,10 @@ const TaskSummaryModal: React.FC<TaskSummaryModalProps> = ({ isOpen, onClose, pr
     >
       <div className="p-6 space-y-6">
         {renderContent()}
-        <div className="flex justify-end">
+        <div className="flex justify-between gap-3">
+          <Button type="button" variant="secondary" onClick={handleExportPdf} disabled={!summary}>
+            Gerar PDF
+          </Button>
           <Button type="button" variant="primary" onClick={onClose}>
             Fechar
           </Button>

@@ -76,6 +76,7 @@ export interface Task {
 export enum ProjectStatus {
   InProgress = 'Em Andamento',
   OnHold = 'Em Espera',
+  ToDo = 'A Fazer',
   Completed = 'Concluído',
   Canceled = 'Cancelado',
 }

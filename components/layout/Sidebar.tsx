@@ -81,7 +81,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetVi
     { icon: UsersIcon, label: 'Equipe', view: 'team' },
     { icon: ChatBubbleIcon, label: 'Comunicação', view: 'communication' },
     { icon: DocumentTextIcon, label: 'Arquivos', view: 'files' },
-    { icon: FolderIcon, label: 'Relatórios', view: 'reports' },
     { icon: EmailIcon, label: 'Histórico de Cobranças', view: 'notifications' },
   ];
   

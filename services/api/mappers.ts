@@ -7,6 +7,7 @@ const mapProjectStatus = (status: string): ProjectStatus => {
     'planning': ProjectStatus.InProgress,
     'in_progress': ProjectStatus.InProgress,
     'on_hold': ProjectStatus.OnHold,
+    'todo': ProjectStatus.ToDo,
     'completed': ProjectStatus.Completed,
     'cancelled': ProjectStatus.Canceled,
   };
@@ -129,10 +130,11 @@ export const mapMessage = (dbMessage: any): Message => ({
 
 // Funções inversas - converter tipos da aplicação para Supabase
 
-export const unmapProjectStatus = (status: ProjectStatus): 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled' => {
-  const statusMap: Record<ProjectStatus, 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled'> = {
+export const unmapProjectStatus = (status: ProjectStatus): 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled' | 'todo' => {
+  const statusMap: Record<ProjectStatus, 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled' | 'todo'> = {
     [ProjectStatus.InProgress]: 'in_progress',
     [ProjectStatus.OnHold]: 'on_hold',
+    [ProjectStatus.ToDo]: 'todo',
     [ProjectStatus.Completed]: 'completed',
     [ProjectStatus.Canceled]: 'cancelled',
   };

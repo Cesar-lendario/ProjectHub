@@ -33,10 +33,15 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, isOpen, onClose }) => {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm">
-            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-5 border border-slate-200/80 dark:border-slate-700/60">
-              <p className="text-slate-600 dark:text-slate-200 leading-relaxed">
-                {task.description || 'Nenhuma descrição fornecida.'}
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold mb-3">
+                Descrição
               </p>
+              <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-5 border border-slate-200/80 dark:border-slate-700/60">
+                <p className="text-slate-600 dark:text-slate-200 leading-relaxed">
+                  {task.description || 'Nenhuma descrição fornecida.'}
+                </p>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
