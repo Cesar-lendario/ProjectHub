@@ -70,28 +70,32 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       console.log('🔄 Iniciando carregamento de dados...');
 
-      // Carregar usuários
-      const dbUsers = await UsersService.getAll();
+      // Carregar usuários, projetos e mensagens em paralelo para reduzir o tempo total
+      const [dbUsers, dbProjects, dbMessages] = await Promise.all([
+        UsersService.getAll(),
+        ProjectsService.getAll(),
+        MessagesService.getAll(),
+      ]);
+
       console.log('👥 Usuários carregados:', dbUsers.length);
       const mappedUsers = dbUsers.map(mapUser);
       setUsers(mappedUsers);
 
-      // Carregar projetos com equipes
-      const dbProjects = await ProjectsService.getAll();
       console.log('📁 Projetos carregados do banco:', dbProjects.length);
       console.log('📁 Dados dos projetos:', dbProjects);
-      
+
       // Para cada projeto, carregar tarefas e arquivos
       const projectsWithDetails = await Promise.all(
         dbProjects.map(async (dbProject) => {
           const project = mapProject(dbProject);
-          
-          // Carregar tarefas do projeto
-          const dbTasks = await TasksService.getByProject(project.id);
-          project.tasks = dbTasks.map(mapTask);
 
-          // Carregar arquivos do projeto
-          const dbFiles = await AttachmentsService.getByProject(project.id);
+          // Carregar tarefas e arquivos do projeto em paralelo
+          const [dbTasks, dbFiles] = await Promise.all([
+            TasksService.getByProject(project.id),
+            AttachmentsService.getByProject(project.id),
+          ]);
+
+          project.tasks = dbTasks.map(mapTask);
           project.files = dbFiles.map(mapAttachment);
 
           return project;
@@ -102,8 +106,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.log('✅ Projetos com detalhes:', projectsWithDetails);
       setProjects(projectsWithDetails);
 
-      // Carregar mensagens
-      const dbMessages = await MessagesService.getAll();
       const mappedMessages = dbMessages.map(mapMessage);
       setMessages(mappedMessages);
 

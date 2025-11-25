@@ -20,10 +20,11 @@ TaskMeet é uma plataforma web multitenant de gestão de projetos orientada a eq
 - Controle de orçamento e custos reais
  - Alternância de visualização de projetos entre **cards** e **lista**
  - Filtros avançados por **nome da empresa**, **tipo de projeto**, **nome do contato** e **data de início**
+ - Tabela projects com os campos cliente_email, atualizado_at e created_by
 
 ### ✅ Gestão de Tarefas
 - Visualização Kanban com 4 colunas: Pendente, A Fazer, Em Progresso, Concluída
-- Drag-and-drop para mudança de status (não implementado ainda)
+- Drag-and-drop para mudança de status **foi implementado e posteriormente desativado no código** (estrutura visual permanece, mas sem interatividade de arrastar e soltar)
 - Formulário dinâmico com dependências entre tarefas
 - Atribuição de responsáveis e prioridades (Alta, Média, Baixa)
 - Sistema de comentários e anexos por tarefa
@@ -351,10 +352,12 @@ O TaskMeet utiliza o Supabase PostgreSQL com as seguintes tabelas:
 - `budget` (numeric): Orçamento planejado
 - `actual_cost` (numeric): Custo real
 - `client_name` (text): Nome do cliente
-- `client_email` (text): Email do cliente
+- `cliente_email` (text): Email do cliente (nome real da coluna no banco)
 - `last_email_notification` (timestamp, nullable): Última notificação por email
 - `last_whatsapp_notification` (timestamp, nullable): Última notificação por WhatsApp
-- `created_at`, `updated_at` (timestamp): Datas de criação e atualização
+- `created_at` (timestamp): Data de criação
+- `atualizado_at` (timestamp, nullable): Data de atualização (nome real da coluna no banco)
+- `created_by` / `created_byTraducao` (uuid, nullable): Identificador do usuário criador de acordo com o schema atual do banco
 
 #### `tasks`
 - `id` (uuid, PK): Identificador único da tarefa
