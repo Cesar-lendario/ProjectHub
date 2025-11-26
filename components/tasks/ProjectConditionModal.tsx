@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import Modal from '../ui/Modal';
 import { supabase } from '../../services/supabaseClient';
+import { GlobalRole } from '../../types';
 
 interface ProjectConditionModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
   const [notes, setNotes] = useState<ProjectNote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
   const isMountedRef = useRef(true);
   const loadingControllerRef = useRef<AbortController | null>(null);
@@ -46,7 +48,7 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
   }, [isOpen, projectId, projects]);
 
   // Função para carregar notas (usando useCallback para evitar dependências circulares)
-  const loadProjectNotes = useCallback(async () => {
+  const loadProjectNotes = useCallback(async (showLoading: boolean = true) => {
     // Cancelar carregamento anterior se existir
     if (loadingControllerRef.current) {
       loadingControllerRef.current.abort();
@@ -57,8 +59,21 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
     
     if (!isMountedRef.current) return;
     
-    setIsLoading(true);
+    if (showLoading) {
+      setIsLoading(true);
+    }
     setError('');
+    
+    // Timeout de segurança para evitar travamento
+    const timeoutId = setTimeout(() => {
+      if (isMountedRef.current) {
+        console.warn('[ProjectConditionModal] ⚠️ Timeout ao carregar notas (15s)');
+        if (showLoading) {
+          setIsLoading(false);
+        }
+        loadingControllerRef.current = null;
+      }
+    }, 15000); // 15 segundos
     
     console.log('[ProjectConditionModal] Carregando notas para projeto:', selectedProjectId);
     
@@ -81,36 +96,55 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
         console.log('[ProjectConditionModal] Encontradas', notesData.length, 'notas');
         
         // Verificar se ainda está montado antes de continuar
-        if (!isMountedRef.current) return;
+        if (!isMountedRef.current) {
+          clearTimeout(timeoutId);
+          return;
+        }
         
-        // Buscar nomes dos usuários separadamente
+        // Buscar nomes dos usuários separadamente (com timeout)
         const userIds = [...new Set(notesData.map((n: any) => n.created_by))];
         console.log('[ProjectConditionModal] Buscando usuários:', userIds);
         
-        const { data: usersData, error: usersError } = await (supabase as any)
-          .from('users')
-          .select('id, name')
-          .in('id', userIds);
+        try {
+          const { data: usersData, error: usersError } = await (supabase as any)
+            .from('users')
+            .select('id, name')
+            .in('id', userIds);
 
-        if (usersError) {
-          console.error('[ProjectConditionModal] Erro ao buscar usuários:', usersError);
-        }
-        
-        // Verificar novamente se ainda está montado
-        if (!isMountedRef.current) return;
+          if (usersError) {
+            console.error('[ProjectConditionModal] Erro ao buscar usuários (não crítico):', usersError);
+            // Não lançar erro, apenas usar valores padrão
+          }
+          
+          // Verificar novamente se ainda está montado
+          if (!isMountedRef.current) {
+            clearTimeout(timeoutId);
+            return;
+          }
 
-        const usersMap = new Map(usersData?.map((u: any) => [u.id, u.name]) || []);
+          const usersMap = new Map(usersData?.map((u: any) => [u.id, u.name]) || []);
 
-        const notesWithUserName = notesData.map((note: any) => ({
-          ...note,
-          user_name: usersMap.get(note.created_by) || 'Usuário'
-        }));
+          const notesWithUserName = notesData.map((note: any) => ({
+            ...note,
+            user_name: usersMap.get(note.created_by) || 'Usuário'
+          }));
 
-        console.log('[ProjectConditionModal] Notas com nomes de usuários:', notesWithUserName);
-        
-        // Só atualizar estado se ainda estiver montado
-        if (isMountedRef.current) {
-          setNotes(notesWithUserName);
+          console.log('[ProjectConditionModal] Notas com nomes de usuários:', notesWithUserName);
+          
+          // Só atualizar estado se ainda estiver montado
+          if (isMountedRef.current) {
+            setNotes(notesWithUserName);
+          }
+        } catch (userError) {
+          console.error('[ProjectConditionModal] Erro ao buscar usuários (continuando sem nomes):', userError);
+          // Continuar mesmo sem nomes de usuários
+          if (isMountedRef.current) {
+            const notesWithDefaultNames = notesData.map((note: any) => ({
+              ...note,
+              user_name: 'Usuário'
+            }));
+            setNotes(notesWithDefaultNames);
+          }
         }
       } else {
         console.log('[ProjectConditionModal] Nenhuma nota encontrada');
@@ -118,7 +152,10 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
           setNotes([]);
         }
       }
+      
+      clearTimeout(timeoutId);
     } catch (err: any) {
+      clearTimeout(timeoutId);
       console.error('[ProjectConditionModal] Erro ao carregar notas:', err);
       const errorMessage = err?.message || 'Erro desconhecido';
       
@@ -128,11 +165,16 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
       } else if (errorMessage.includes('permission denied')) {
         setError('Sem permissão para acessar as anotações. Verifique as políticas RLS no Supabase.');
       } else {
-        setError(`Erro ao carregar anotações: ${errorMessage}`);
+        // Não mostrar erro se for recarregamento silencioso
+        if (showLoading) {
+          setError(`Erro ao carregar anotações: ${errorMessage}`);
+        }
       }
     } finally {
       if (isMountedRef.current) {
-        setIsLoading(false);
+        if (showLoading) {
+          setIsLoading(false);
+        }
       }
       loadingControllerRef.current = null;
       console.log('[ProjectConditionModal] Loading finalizado');
@@ -150,6 +192,7 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
       // Resetar estados
       setIsLoading(false);
       setIsSaving(false);
+      setDeletingNoteId(null);
       setError('');
       setNewNote('');
       setNotes([]);
@@ -191,8 +234,20 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
       return;
     }
 
+    // Prevenir múltiplos submits
+    if (isSaving) {
+      console.warn('[ProjectConditionModal] Submit já em andamento, ignorando...');
+      return;
+    }
+
     setIsSaving(true);
     setError('');
+
+    const timeoutId = setTimeout(() => {
+      console.error('[ProjectConditionModal] ⚠️ Timeout ao adicionar nota (30s)');
+      setIsSaving(false);
+      setError('A operação está demorando muito. Por favor, tente novamente.');
+    }, 30000); // 30 segundos de timeout
 
     try {
       const noteData = {
@@ -202,29 +257,131 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
         created_at: new Date().toISOString(),
       };
 
-      console.log('[ProjectConditionModal] Adicionando nota:', noteData);
+      console.log('[ProjectConditionModal] Iniciando adição de nota...', { 
+        projectId: selectedProjectId,
+        noteLength: newNote.trim().length 
+      });
 
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from('project_notes')
-        .insert([noteData]);
+        .insert([noteData])
+        .select();
 
-      if (error) throw error;
+      console.log('[ProjectConditionModal] Resposta do insert:', { data, error });
 
-      console.log('[ProjectConditionModal] Nota adicionada com sucesso');
+      if (error) {
+        console.error('[ProjectConditionModal] Erro do Supabase:', error);
+        throw error;
+      }
 
-      // Limpar campo e recarregar notas
+      clearTimeout(timeoutId);
+      console.log('[ProjectConditionModal] ✅ Nota adicionada com sucesso:', data);
+
+      // Limpar campo imediatamente (otimista)
+      const noteTextToClear = newNote;
       setNewNote('');
-      await loadProjectNotes();
+
+      // Recarregar notas silenciosamente (sem mostrar loading)
+      try {
+        await loadProjectNotes(false);
+        console.log('[ProjectConditionModal] ✅ Notas recarregadas após adição');
+      } catch (reloadError) {
+        console.error('[ProjectConditionModal] Erro ao recarregar notas (não crítico):', reloadError);
+        // Não mostrar erro ao usuário, apenas logar
+        // A nota já foi adicionada, então está OK
+      }
       
-      console.log('[ProjectConditionModal] Notas recarregadas');
     } catch (err) {
-      console.error('[ProjectConditionModal] Erro ao adicionar nota:', err);
-      setError(`Erro ao salvar: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      clearTimeout(timeoutId);
+      console.error('[ProjectConditionModal] ❌ Erro ao adicionar nota:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(`Erro ao salvar: ${errorMessage}`);
     } finally {
       setIsSaving(false);
       console.log('[ProjectConditionModal] isSaving resetado para false');
     }
   };
+
+  const handleDeleteNote = async (noteId: string, noteAuthorId: string) => {
+    // Verificar permissões: admin pode deletar qualquer anotação, usuário só pode deletar suas próprias
+    const isAdmin = profile?.role === GlobalRole.Admin;
+    const isAuthor = profile?.id === noteAuthorId;
+
+    if (!isAdmin && !isAuthor) {
+      setError('Você não tem permissão para excluir esta anotação.');
+      return;
+    }
+
+    // Confirmar exclusão
+    if (!window.confirm('Tem certeza que deseja excluir esta anotação?')) {
+      return;
+    }
+
+    setDeletingNoteId(noteId);
+    setError('');
+
+    try {
+      console.log('[ProjectConditionModal] Excluindo nota:', noteId);
+      console.log('[ProjectConditionModal] Usuário atual:', { id: profile?.id, role: profile?.role });
+      console.log('[ProjectConditionModal] Autor da nota:', noteAuthorId);
+
+      const { data, error } = await (supabase as any)
+        .from('project_notes')
+        .delete()
+        .eq('id', noteId)
+        .select();
+
+      console.log('[ProjectConditionModal] Resposta da exclusão:', { data, error, dataLength: data?.length });
+
+      if (error) {
+        console.error('[ProjectConditionModal] Erro do Supabase:', error);
+        throw error;
+      }
+
+      // Verificar se realmente deletou (data deve conter o registro deletado)
+      // Se data estiver vazio e não houver erro, significa que a RLS bloqueou silenciosamente
+      const wasDeleted = data && data.length > 0;
+      
+      if (!wasDeleted) {
+        console.error('[ProjectConditionModal] ⚠️ EXCLUSÃO BLOQUEADA PELA RLS - nenhum registro foi deletado');
+        console.error('[ProjectConditionModal] Isso geralmente significa que as políticas RLS não permitem a exclusão');
+        console.error('[ProjectConditionModal] Verifique: 1) Se o usuário é admin ou autor da nota, 2) Se as políticas RLS estão corretas');
+        throw new Error('A exclusão foi bloqueada pelas políticas de segurança (RLS). Verifique se você tem permissão para excluir esta anotação ou se as políticas RLS estão configuradas corretamente no Supabase.');
+      }
+
+      console.log('[ProjectConditionModal] ✅ Nota excluída com sucesso:', { deletedCount: data.length, deletedNote: data[0] });
+
+      // Remover a nota da lista localmente (atualização otimista)
+      setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+      
+      // Recarregar notas silenciosamente (sem mostrar loading) para garantir sincronização
+      await loadProjectNotes(false);
+      
+      console.log('[ProjectConditionModal] Notas recarregadas após exclusão (silencioso)');
+    } catch (err: any) {
+      console.error('[ProjectConditionModal] Erro ao excluir nota:', err);
+      
+      // Se houve erro, recarregar para mostrar o estado correto (sem mostrar loading)
+      await loadProjectNotes(false);
+      
+      const errorMessage = err?.message || 'Erro desconhecido';
+      if (errorMessage.includes('permission denied') || errorMessage.includes('new row violates row-level security')) {
+        setError('Você não tem permissão para excluir esta anotação. Verifique as políticas RLS no Supabase.');
+      } else {
+        setError(`Erro ao excluir: ${errorMessage}`);
+      }
+    } finally {
+      setDeletingNoteId(null);
+      console.log('[ProjectConditionModal] deletingNoteId resetado');
+    }
+  };
+
+  const canDeleteNote = useCallback((noteAuthorId: string): boolean => {
+    if (!profile) return false;
+    const isAdmin = profile.role === GlobalRole.Admin;
+    const isAuthor = profile.id === noteAuthorId;
+    return isAdmin || isAuthor;
+  }, [profile]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Anotações do Projeto">
@@ -272,7 +429,14 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
               className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
             />
             <button
-              onClick={handleAddNote}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isSaving && newNote.trim()) {
+                  handleAddNote();
+                }
+              }}
               disabled={isSaving || !newNote.trim()}
               className="mt-2 w-full px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:text-slate-200 dark:disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
             >
@@ -309,21 +473,50 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
                 {notes.map((note) => (
                   <div 
                     key={note.id} 
-                    className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg"
+                    className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg relative group"
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                         {note.user_name}
                       </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                        {new Date(note.created_at).toLocaleString('pt-BR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          {new Date(note.created_at).toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                        {canDeleteNote(note.created_by) && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (deletingNoteId !== note.id && !isLoading) {
+                                handleDeleteNote(note.id, note.created_by);
+                              }
+                            }}
+                            disabled={deletingNoteId === note.id || isLoading || !!deletingNoteId}
+                            className="p-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                            aria-label="Excluir anotação"
+                            title="Excluir anotação"
+                          >
+                            {deletingNoteId === note.id ? (
+                              <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <p className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">
                       {note.note_text}

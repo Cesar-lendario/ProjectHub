@@ -3,9 +3,19 @@
   Header set Cache-Control "no-cache, max-age=0, must-revalidate"
 </FilesMatch>
 
-<FilesMatch "\.(js|css)$">
-  Header set Cache-Control "public, max-age=31536000, immutable"
-</FilesMatch>
+# Cache para arquivos JS/CSS
+# IMPORTANTE: Vite SEMPRE gera arquivos com hash (ex: index-abc123.js)
+# Como o Vite adiciona hash único a cada build, podemos cachear por muito tempo
+# Quando o código mudar, o hash muda, gerando novo nome de arquivo
+# O navegador automaticamente baixará o novo arquivo quando o HTML referenciar o novo hash
+
+<IfModule mod_headers.c>
+  # Arquivos JS/CSS - cache longo (Vite garante versionamento via hash)
+  # Se o hash mudar, o HTML terá nova referência e navegador baixará automaticamente
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -23,8 +33,9 @@
   ExpiresByType image/png "access plus 1 year"
   ExpiresByType image/webp "access plus 1 year"
   ExpiresByType image/svg+xml "access plus 1 year"
-  ExpiresByType text/css "access plus 1 month"
-  ExpiresByType application/javascript "access plus 1 month"
+  # CSS e JS sem hash não devem ser cacheados
+  ExpiresByType text/css "access plus 0 seconds"
+  ExpiresByType application/javascript "access plus 0 seconds"
   ExpiresByType application/json "access plus 1 day"
 </IfModule>
 

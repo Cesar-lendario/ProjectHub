@@ -28,6 +28,21 @@ const App: React.FC = () => (
 
 const AppContent: React.FC = () => {
   const { session, loading, signOut } = useAuth();
+  const [loadingTimeout, setLoadingTimeout] = React.useState(false);
+  
+  // Timeout de segurança: se loading demorar mais de 15 segundos, mostrar erro
+  React.useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => {
+        console.error('[AppContent] ⚠️ Timeout: Loading demorou mais de 15 segundos');
+        setLoadingTimeout(true);
+      }, 15000);
+      
+      return () => clearTimeout(timeout);
+    } else {
+      setLoadingTimeout(false);
+    }
+  }, [loading]);
   
   // Verificar se há um token de convite na URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -41,12 +56,22 @@ const AppContent: React.FC = () => {
     }
   }, [hasInvite, session, signOut]);
   
-  if (loading) {
+  if (loading || loadingTimeout) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400 mx-auto mb-4"></div>
           <p className="text-slate-700 dark:text-slate-200">Carregando...</p>
+          {loadingTimeout && (
+            <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg max-w-md mx-auto">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                ⚠️ Carregamento está demorando mais que o esperado.
+              </p>
+              <p className="text-xs text-yellow-600 dark:text-yellow-300 mt-2">
+                Verifique sua conexão ou recarregue a página (Ctrl+Shift+R)
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );

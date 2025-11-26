@@ -58,7 +58,19 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
       return;
     }
     
+    // Prevenir múltiplos submits
+    if (isLoading) {
+      console.warn('[ProjectForm] Submit já em andamento, ignorando...');
+      return;
+    }
+    
     setIsLoading(true);
+    const timeoutId = setTimeout(() => {
+      console.error('[ProjectForm] ⚠️ Timeout ao salvar projeto (30s)');
+      setIsLoading(false);
+      alert('A operação está demorando muito. Por favor, tente novamente.');
+    }, 30000); // 30 segundos de timeout
+    
     try {
         const projectData = {
             name,
@@ -71,25 +83,31 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
             clientEmail,
         };
 
-        console.log('[ProjectForm] Salvando projeto:', projectData);
+        console.log('[ProjectForm] Iniciando salvamento do projeto...', { 
+          isEdit: !!projectToEdit, 
+          projectId: projectToEdit?.id,
+          name 
+        });
 
         if (projectToEdit) {
             console.log('[ProjectForm] Modo de edição - ID do projeto:', projectToEdit.id);
             const updatedProject = { ...projectToEdit, ...projectData };
             console.log('[ProjectForm] Dados completos para atualização:', updatedProject);
             await onSave(updatedProject);
-            console.log('[ProjectForm] Projeto atualizado com sucesso');
+            console.log('[ProjectForm] ✅ Projeto atualizado com sucesso');
         } else {
             console.log('[ProjectForm] Criando novo projeto');
             await onSave(projectData as Omit<Project, 'id' | 'tasks' | 'team' | 'files'>);
-            console.log('[ProjectForm] Novo projeto criado com sucesso');
+            console.log('[ProjectForm] ✅ Novo projeto criado com sucesso');
         }
         
+        clearTimeout(timeoutId);
         // Resetar loading e fechar modal apenas após sucesso
         setIsLoading(false);
         onClose();
     } catch(error) {
-        console.error("[ProjectForm] Falha ao salvar projeto:", error);
+        clearTimeout(timeoutId);
+        console.error("[ProjectForm] ❌ Falha ao salvar projeto:", error);
         alert(error instanceof Error ? error.message : "Não foi possível salvar o projeto. Verifique o console para mais detalhes.");
         setIsLoading(false);
     }

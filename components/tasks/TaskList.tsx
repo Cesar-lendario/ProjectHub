@@ -189,7 +189,21 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
   };
 
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments'>) => {
+    const timeoutId = setTimeout(() => {
+      console.error('[TaskList] ⚠️ Timeout ao salvar tarefa (30s)');
+      // Fechar modal mesmo em caso de timeout
+      setIsFormOpen(false);
+      setTaskToEdit(null);
+      alert('A operação está demorando muito. Por favor, verifique sua conexão e tente novamente.');
+    }, 30000); // 30 segundos de timeout
+    
     try {
+      console.log('[TaskList] Iniciando salvamento...', { 
+        isEdit: !!taskToEdit, 
+        taskId: taskToEdit?.id,
+        taskData 
+      });
+      
       if (taskToEdit) {
         // Obter o assignee atual da tarefa
         const assignee = projects.flatMap(p => p.tasks).find(t => t.id === taskToEdit.id)?.assignee;
@@ -197,8 +211,12 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
         // Criar o objeto de tarefa atualizado
         const updatedTask = { ...taskToEdit, ...taskData, assignee, assignee_id: taskData.assignee_id };
         
+        console.log('[TaskList] Atualizando tarefa no servidor...', updatedTask.id);
+        
         // Atualizar a tarefa no servidor
         await updateTask(updatedTask);
+        
+        console.log('[TaskList] ✅ Tarefa atualizada no servidor');
         
         // Atualizar o estado local imediatamente para refletir a mudança
         // Isso garante que a tarefa editada seja corretamente refletida antes da ordenação
@@ -223,16 +241,26 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
           return newState;
         });
       } else {
+        console.log('[TaskList] Criando nova tarefa...');
         // Adicionar nova tarefa
         await addTask(taskData);
+        console.log('[TaskList] ✅ Nova tarefa criada');
       }
+      
+      clearTimeout(timeoutId);
+      console.log('[TaskList] Salvamento concluído com sucesso');
     } catch (error) {
-      console.error('Erro ao salvar tarefa:', error);
-      alert('Erro ao salvar tarefa. Por favor, tente novamente.');
+      clearTimeout(timeoutId);
+      console.error('[TaskList] ❌ Erro ao salvar tarefa:', error);
+      alert(error instanceof Error ? error.message : 'Erro ao salvar tarefa. Por favor, tente novamente.');
+      // Não fechar o modal em caso de erro para permitir correção
+      throw error; // Re-throw para que o TaskForm possa tratar
     } finally {
-      // Fechar o formulário e limpar o estado de edição
+      // Sempre fechar o formulário e limpar o estado de edição
+      // Mesmo em caso de erro, fechamos para evitar estado inconsistente
       setIsFormOpen(false);
       setTaskToEdit(null);
+      console.log('[TaskList] Modal fechado e estado limpo');
     }
   };
 
@@ -376,14 +404,14 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
                   {tasks.map(task => (
                     <div 
                       key={task.id} 
-                      className={`px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer ${statusBorders[status] || ''}`}
+                      className={`px-6 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer ${statusBorders[status] || ''}`}
                       onClick={() => handleViewTask(task)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <h4 className="text-base font-medium text-slate-900 dark:text-slate-100 truncate">{task.name}</h4>
-                          <p className="mt-1 text-sm text-indigo-600 dark:text-indigo-400 truncate">{task.projectName}</p>
-                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{task.description}</p>
+                          <p className="mt-0.5 text-sm text-indigo-600 dark:text-indigo-400 truncate">{task.projectName}</p>
+                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{task.description}</p>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="flex items-center">

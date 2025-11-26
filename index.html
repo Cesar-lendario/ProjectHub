@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Meta tags para prevenir cache -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>TaskMeet: Gerenciamento Profissional de Projetos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,20 +16,24 @@
         darkMode: 'class',
       }
     </script>
+  <!-- Importmap removido - Vite já resolve dependências do node_modules -->
+  <!-- Se precisar usar CDN, descomente e ajuste conforme necessário -->
+  <!--
   <script type="importmap">
-{
-  "imports": {
-    "recharts": "https://aistudiocdn.com/recharts@^3.3.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.26.0",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.45.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "marked": "https://aistudiocdn.com/marked@^16.4.1",
-    "uuid": "https://aistudiocdn.com/uuid@^13.0.0"
+  {
+    "imports": {
+      "recharts": "https://aistudiocdn.com/recharts@^3.3.0",
+      "@google/genai": "https://aistudiocdn.com/@google/genai@^1.26.0",
+      "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.45.0",
+      "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+      "react": "https://aistudiocdn.com/react@^19.2.0",
+      "react/": "https://aistudiocdn.com/react@^19.2.0/",
+      "marked": "https://aistudiocdn.com/marked@^16.4.1",
+      "uuid": "https://aistudiocdn.com/uuid@^13.0.0"
+    }
   }
-}
-</script>
+  </script>
+  -->
 </head>
   <body>
     <div id="root"></div>

@@ -64,9 +64,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
         setDuration(taskToEdit.duration);
       } else {
         // Reset form para nova tarefa
+        // Usar projects[0] apenas se projects já estiver carregado
+        const defaultProjectId = initialProjectId || (projects.length > 0 ? projects[0].id : '');
         setName('');
         setDescription('');
-        setProjectId(initialProjectId || (projects.length > 0 ? projects[0].id : ''));
+        setProjectId(defaultProjectId);
         setAssigneeId(null);
         setDueDate(new Date().toISOString().split('T')[0]);
         setPriority(TaskPriority.Medium);
@@ -79,7 +81,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
     if (!isOpen && wasOpenRef.current) {
       wasOpenRef.current = false;
     }
-  }, [isOpen, taskToEdit?.id, initialProjectId, projects]);
+    // Remover 'projects' das dependências para evitar re-renderizações desnecessárias
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, taskToEdit?.id, initialProjectId]);
   
   // Reset loading quando modal fecha
   useEffect(() => {
@@ -95,8 +99,27 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
         return;
     }
     
+    // Prevenir múltiplos submits
+    if (isLoading) {
+      console.warn('[TaskForm] Submit já em andamento, ignorando...');
+      return;
+    }
+    
     setIsLoading(true);
+    const timeoutId = setTimeout(() => {
+      console.error('[TaskForm] ⚠️ Timeout ao salvar tarefa (30s)');
+      setIsLoading(false);
+      alert('A operação está demorando muito. Por favor, tente novamente.');
+    }, 30000); // 30 segundos de timeout
+    
     try {
+        console.log('[TaskForm] Iniciando salvamento da tarefa...', { 
+          isEdit: !!taskToEdit, 
+          taskId: taskToEdit?.id,
+          name,
+          projectId 
+        });
+        
         await onSave({
           name,
           description,
@@ -108,11 +131,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
           duration,
           dependencies: taskToEdit?.dependencies || [],
         });
-        // Sucesso - o modal será fechado pelo TaskList
+        
+        clearTimeout(timeoutId);
+        console.log('[TaskForm] ✅ Tarefa salva com sucesso');
+        
+        // Resetar loading e fechar modal após sucesso
+        setIsLoading(false);
+        // O modal será fechado pelo TaskList, mas garantimos que o loading seja resetado
     } catch(error) {
-        console.error('[TaskForm] Erro ao salvar:', error);
+        clearTimeout(timeoutId);
+        console.error('[TaskForm] ❌ Erro ao salvar tarefa:', error);
         alert(error instanceof Error ? error.message : "Não foi possível salvar a tarefa.");
-        setIsLoading(false); // Resetar loading apenas em caso de erro
+        setIsLoading(false); // Resetar loading em caso de erro
     }
   };
   
