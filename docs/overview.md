@@ -2007,3 +2007,319 @@ useEffect(() => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [condition]); // GOOD!
 ```
+
+### Correções de Produção e Sessão do Supabase (Nov 2025)
+
+**Problema identificado**: Em localhost os dados carregavam normalmente, mas em produção (servidor) o sistema não carregava os dados existentes, mostrando dashboard vazio.
+
+**Sintomas**:
+- ✅ **Localhost**: Todos os dados carregavam corretamente
+- ❌ **Produção**: Dashboard vazio, sem projetos, usuários ou tarefas
+- ❌ Sessão não persistia entre recarregamentos de página
+- ❌ Usuário precisava fazer login toda vez
+
+**Causas raiz identificadas**:
+
+1. **Sessão do Supabase não persistindo**:
+   - Supabase usa `localStorage` para salvar a sessão
+   - Em produção, pode haver problemas de domínio/cookies
+   - Configuração padrão não era suficiente para garantir persistência
+
+2. **Falta de logs detalhados em produção**:
+   - Difícil identificar onde estava falhando
+   - Sem visibilidade do fluxo de autenticação
+   - Sem rastreamento de carregamento de dados
+
+**Soluções implementadas**:
+
+#### 1. Configuração Aprimorada do Cliente Supabase
+
+**Antes (PROBLEMA)**:
+```typescript
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+  // ... outras configs
+});
+```
+
+**Depois (SOLUÇÃO)**:
+```typescript
+const isProduction = window.location.hostname !== 'localhost' && 
+                     window.location.hostname !== '127.0.0.1';
+
+console.log('[Supabase] 🌐 Ambiente:', isProduction ? 'PRODUÇÃO' : 'DESENVOLVIMENTO');
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,        // ✅ Detecta token na URL
+    storage: window.localStorage,     // ✅ Força uso do localStorage
+    storageKey: 'taskmeet-auth-token', // ✅ Chave única
+    flowType: 'pkce',                 // ✅ Fluxo mais seguro
+  },
+  // ... outras configs
+});
+```
+
+**Melhorias**:
+- ✅ `detectSessionInUrl: true` - Detecta e processa token de autenticação na URL
+- ✅ `storage: window.localStorage` - Garante uso explícito do localStorage
+- ✅ `storageKey: 'taskmeet-auth-token'` - Chave customizada para evitar conflitos
+- ✅ `flowType: 'pkce'` - PKCE (Proof Key for Code Exchange) para maior segurança
+
+#### 2. Logs Detalhados para Debug em Produção
+
+**useAuth.tsx** - Logs de autenticação:
+```typescript
+console.log('[useAuth] 🔄 Carregando sessão inicial...');
+console.log('[useAuth] 🌐 Hostname:', window.location.hostname);
+console.log('[useAuth] 🔑 localStorage disponível:', !!window.localStorage);
+console.log('[useAuth] 💾 Token no localStorage:', storedAuth ? '✅ Encontrado' : '❌ Não encontrado');
+```
+
+**useProjectContext.tsx** - Logs de carregamento:
+```typescript
+console.log('🔄 [ProjectContext] Iniciando carregamento de dados...');
+console.log('🔄 [ProjectContext] Profile atual:', profile?.name || 'Sem perfil');
+console.log('👥 [ProjectContext] Usuários carregados:', dbUsers.length);
+console.log('📁 [ProjectContext] Projetos carregados:', dbProjects.length);
+
+if (dbUsers.length === 0) {
+  console.warn('⚠️ [ProjectContext] ATENÇÃO: Nenhum usuário encontrado no banco!');
+}
+```
+
+**Logs de erro detalhados**:
+```typescript
+console.error('❌ [ProjectContext] ERRO ao carregar dados:', err);
+console.error('❌ [ProjectContext] Tipo do erro:', typeof err);
+console.error('❌ [ProjectContext] Mensagem:', err instanceof Error ? err.message : String(err));
+console.error('❌ [ProjectContext] Stack:', err instanceof Error ? err.stack : 'N/A');
+console.error('❌ [ProjectContext] Verifique: 1) Conexão com Supabase 2) Políticas RLS 3) Credenciais');
+```
+
+#### 3. Arquivo .htaccess Incluído no Build
+
+**Problema**: O `.htaccess` não estava sendo copiado para a pasta `dist/` automaticamente.
+
+**Solução**:
+1. Copiar `.htaccess` para a pasta `public/` (Vite copia automaticamente)
+2. Copiar manualmente para `dist/` após cada build
+3. Incluir no processo de deploy
+
+**Conteúdo do .htaccess**:
+```apache
+# Cache control para arquivos com hash
+<FilesMatch "\-[a-zA-Z0-9]{8,}\.(js|css)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+# Rewrite para SPA (Single Page Application)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+```
+
+**Arquivos modificados**:
+- `services/supabaseClient.ts`: configuração aprimorada de autenticação
+- `hooks/useAuth.tsx`: logs detalhados de sessão
+- `hooks/useProjectContext.tsx`: logs detalhados de carregamento
+- `public/.htaccess`: arquivo criado para inclusão automática no build
+- `.htaccess`: copiado manualmente para `dist/` após build
+
+**Processo de deploy atualizado**:
+1. Executar `npm run build`
+2. Copiar `.htaccess` para `dist/`
+3. Fazer upload de **TODA** a pasta `dist/` incluindo:
+   - `.htaccess` (essencial para roteamento!)
+   - `_headers`
+   - `index.html`
+   - `assets/` (todos os arquivos .js e .css)
+
+**Resultados**:
+- ✅ **Sessão persistente**: Login mantido entre recarregamentos
+- ✅ **Dados carregam em produção**: Projetos, usuários e tarefas aparecem
+- ✅ **Logs úteis**: Fácil identificar problemas no Console do navegador
+- ✅ **Roteamento funciona**: SPA funciona corretamente com .htaccess
+- ✅ **Compatibilidade**: Funciona tanto em localhost quanto em produção
+
+**Testes realizados**:
+- ✅ Login em produção → Sessão persiste
+- ✅ Recarregar página → Mantém login
+- ✅ Dashboard carrega dados → Projetos e tarefas aparecem
+- ✅ Navegação entre páginas → Roteamento funciona
+- ✅ Cache de assets → Arquivos com hash cacheados corretamente
+
+**Como verificar no Console do navegador**:
+```
+[Supabase] 🌐 Ambiente: PRODUÇÃO
+[Supabase] 🌐 Hostname: taskmeet.com.br
+[useAuth] 💾 Token no localStorage: ✅ Encontrado
+[ProjectContext] 👥 Usuários carregados: 5
+[ProjectContext] 📁 Projetos carregados: 12
+```
+
+### Correção Final: Modal de Anotações Não Carregava em Produção (Nov 2025)
+
+**Problema identificado**: O modal de anotações do projeto (ícone 📄) abria mas não carregava as anotações, ficando em tela branca ou loading infinito.
+
+**Sintomas**:
+- ✅ **Localhost**: Modal carregava normalmente
+- ❌ **Produção**: Modal abria mas não carregava dados
+- ❌ `selectedProjectId` demorava para ser definido
+- ❌ Delay entre abrir o modal e iniciar o carregamento
+
+**Causa raiz**:
+
+O estado `selectedProjectId` iniciava sempre vazio (`''`), mesmo quando o `projectId` era passado como prop:
+
+```typescript
+// ❌ ANTES - Problema
+const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+// Depois esperava o useEffect para definir o valor
+```
+
+Isso causava um delay desnecessário entre:
+1. Modal abre
+2. useEffect roda
+3. `selectedProjectId` é definido
+4. Outro useEffect detecta mudança
+5. Finalmente inicia carregamento
+
+**Solução implementada**:
+
+#### 1. Inicialização Inteligente do Estado
+
+**Antes (PROBLEMA)**:
+```typescript
+const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, onClose, projectId }) => {
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(''); // ❌ Sempre vazio!
+  // ... resto do código
+```
+
+**Depois (SOLUÇÃO)**:
+```typescript
+const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, onClose, projectId }) => {
+  // ✅ Inicializa com o projectId se fornecido!
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || '');
+  // ... resto do código
+```
+
+#### 2. Lógica de Seleção Aprimorada
+
+**Antes (PROBLEMA)**:
+```typescript
+useEffect(() => {
+  if (!isOpen) return;
+  
+  if (projectId && projectId !== 'all') {
+    setSelectedProjectId(projectId); // Define, mas já deveria estar definido
+    return;
+  }
+  
+  if (projects.length > 0) {
+    setSelectedProjectId(projects[0].id);
+    return;
+  }
+  
+  setSelectedProjectId('');
+}, [isOpen, projectId, projects]);
+```
+
+**Depois (SOLUÇÃO)**:
+```typescript
+useEffect(() => {
+  if (!isOpen) return;
+  
+  // 1º: Prioridade para projectId passado como prop
+  if (projectId && projectId !== 'all') {
+    setSelectedProjectId(projectId);
+    return;
+  }
+  
+  // 2º: Manter o projeto já selecionado (NOVO!)
+  if (selectedProjectId && selectedProjectId !== 'all') {
+    console.log('[DEBUG] ✅ Mantendo selectedProjectId atual:', selectedProjectId);
+    return; // ✅ Não redefine se já está OK!
+  }
+  
+  // 3º: Selecionar primeiro projeto da lista
+  if (projects.length > 0) {
+    setSelectedProjectId(projects[0].id);
+    return;
+  }
+  
+  // 4º: Limpar se não houver projetos
+  setSelectedProjectId('');
+}, [isOpen, projectId, projects]);
+```
+
+**Prioridades de seleção**:
+1. **projectId da prop** (do botão clicado) - prioridade máxima
+2. **selectedProjectId existente** - mantém se já válido
+3. **Primeiro projeto da lista** - fallback padrão
+4. **Vazio** - se não houver projetos
+
+**Arquivo modificado**:
+- `components/tasks/ProjectConditionModal.tsx`: inicialização inteligente
+
+**Benefícios**:
+- ✅ **Carregamento instantâneo**: Estado já inicia correto
+- ✅ **Sem delays**: Não precisa esperar useEffect
+- ✅ **Menos re-renders**: Evita mudanças de estado desnecessárias
+- ✅ **Mais responsivo**: Modal abre e carrega imediatamente
+- ✅ **Lógica mais clara**: Prioridades bem definidas
+
+**Resultados**:
+- ✅ Modal abre e carrega **imediatamente** em produção
+- ✅ Não há mais delay entre abrir e carregar
+- ✅ `selectedProjectId` já está definido desde o início
+- ✅ Menos operações assíncronas desnecessárias
+- ✅ UX muito melhor para o usuário
+
+**Testes realizados**:
+- ✅ Clicar no ícone 📄 de qualquer projeto → Carrega instantâneo
+- ✅ Abrir modal sem projectId → Seleciona primeiro projeto
+- ✅ Mudar de projeto no modal → Carrega novas anotações
+- ✅ Fechar e reabrir modal → Mantém projeto selecionado
+- ✅ Funciona em localhost e produção
+
+**Logs de debug para verificação**:
+```
+[DEBUG] useEffect INICIALIZAR - Estado: { projectIdProp: "abc123..." }
+[DEBUG] ⚡ Definindo selectedProjectId como projectId prop: abc123...
+[DEBUG] ✅ INICIANDO CARREGAMENTO para projeto: abc123...
+[DEBUG] 📊 Query de notas concluída em 0.15s
+[DEBUG] ✅ Encontradas 3 notas
+```
+
+**Lições aprendidas**:
+1. ✅ **Inicialize estados com valores conhecidos** quando possível
+2. ✅ **Evite esperar useEffect** para definir valores que já tem
+3. ✅ **Mantenha estados válidos** em vez de redefini-los
+4. ✅ **Priorize prop sobre estado** quando ambos existem
+5. ✅ **Menos mudanças de estado** = melhor performance
+
+**Padrão recomendado**:
+```typescript
+// ❌ EVITE: Iniciar vazio e esperar useEffect
+const [value, setValue] = useState('');
+useEffect(() => {
+  if (prop) setValue(prop);
+}, [prop]);
+
+// ✅ PREFIRA: Iniciar com valor conhecido
+const [value, setValue] = useState(prop || '');
+useEffect(() => {
+  if (prop) setValue(prop); // Só redefine se mudar
+}, [prop]);
+```
