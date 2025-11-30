@@ -68,7 +68,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setLoading(true);
       setError(null);
 
-      console.log('🔄 Iniciando carregamento de dados...');
+      console.log('🔄 [ProjectContext] Iniciando carregamento de dados...');
+      console.log('🔄 [ProjectContext] Profile atual:', profile?.name || 'Sem perfil');
+      console.log('🔄 [ProjectContext] URL Supabase conectado');
 
       // Carregar usuários, projetos e mensagens em paralelo para reduzir o tempo total
       const [dbUsers, dbProjects, dbMessages] = await Promise.all([
@@ -77,12 +79,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         MessagesService.getAll(),
       ]);
 
-      console.log('👥 Usuários carregados:', dbUsers.length);
+      console.log('👥 [ProjectContext] Usuários carregados:', dbUsers.length);
+      if (dbUsers.length === 0) {
+        console.warn('⚠️ [ProjectContext] ATENÇÃO: Nenhum usuário encontrado no banco!');
+      }
       const mappedUsers = dbUsers.map(mapUser);
       setUsers(mappedUsers);
 
-      console.log('📁 Projetos carregados do banco:', dbProjects.length);
-      console.log('📁 Dados dos projetos:', dbProjects);
+      console.log('📁 [ProjectContext] Projetos carregados do banco:', dbProjects.length);
+      if (dbProjects.length === 0) {
+        console.warn('⚠️ [ProjectContext] ATENÇÃO: Nenhum projeto encontrado no banco!');
+      }
 
       // Para cada projeto, carregar tarefas e arquivos
       const projectsWithDetails = await Promise.all(
@@ -110,12 +117,21 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setMessages(mappedMessages);
 
     } catch (err) {
-      console.error('Erro ao carregar dados:', err);
+      console.error('❌ [ProjectContext] ERRO ao carregar dados:', err);
+      console.error('❌ [ProjectContext] Tipo do erro:', typeof err);
+      console.error('❌ [ProjectContext] Mensagem:', err instanceof Error ? err.message : String(err));
+      console.error('❌ [ProjectContext] Stack:', err instanceof Error ? err.stack : 'N/A');
       setError(err instanceof Error ? err : new Error('Erro desconhecido'));
+      
+      // Alerta visual para debug em produção
+      if (typeof window !== 'undefined') {
+        console.error('❌ [ProjectContext] Verifique: 1) Conexão com Supabase 2) Políticas RLS 3) Credenciais');
+      }
     } finally {
       setLoading(false);
+      console.log('🏁 [ProjectContext] Carregamento finalizado');
     }
-  }, []);
+  }, [profile]);
 
   // Carregar dados na inicialização
   useEffect(() => {
