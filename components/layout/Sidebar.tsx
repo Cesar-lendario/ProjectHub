@@ -6,7 +6,7 @@ import {
   ChartBarIcon,
   FolderIcon,
   CheckSquareIcon,
-  CalendarDaysIcon,
+  ClipboardListIcon,
   UsersIcon,
   DocumentTextIcon,
   ChatBubbleIcon,
@@ -67,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetVi
   const isGlobalAdmin = profile?.role === GlobalRole.Admin;
 
   const handleSetView = (view: string) => {
-    if (view === 'tasks') {
+    if (view === 'tasks' || view === 'checklist') {
       setGlobalProjectFilter('all');
     }
     onSetView(view);
@@ -77,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onSetVi
     { icon: ChartBarIcon, label: 'Dashboard', view: 'dashboard' },
     { icon: FolderIcon, label: 'Projetos', view: 'projects' },
     { icon: CheckSquareIcon, label: 'Tarefas', view: 'tasks' },
-    { icon: CalendarDaysIcon, label: 'Cronograma', view: 'schedule' },
+    { icon: ClipboardListIcon, label: 'Lista de Verificação', view: 'checklist' },
     { icon: UsersIcon, label: 'Equipe', view: 'team' },
     { icon: ChatBubbleIcon, label: 'Comunicação', view: 'communication' },
     { icon: DocumentTextIcon, label: 'Arquivos', view: 'files' },

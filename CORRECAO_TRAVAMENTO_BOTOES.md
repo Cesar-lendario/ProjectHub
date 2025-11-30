@@ -198,3 +198,8 @@ Após as correções:
 - Pode aumentar o timeout de 30s para 60s se necessário
 - Mas 30s é suficiente para a maioria dos casos
 
+
+
+
+
+

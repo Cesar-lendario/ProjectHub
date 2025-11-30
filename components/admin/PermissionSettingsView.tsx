@@ -7,7 +7,7 @@ import { PERMISSION_MODULES } from '../../constants';
 const ACTIONS: PermissionAction[] = ['visualizar', 'editar'];
 
 // Módulos que são apenas de visualização (sem funcionalidade de edição)
-const VIEW_ONLY_MODULES = ['dashboard', 'schedule', 'reports', 'notifications'];
+const VIEW_ONLY_MODULES = ['dashboard', 'reports', 'notifications'];
 
 const PermissionSettingsView: React.FC = () => {
   const {
@@ -52,7 +52,7 @@ const PermissionSettingsView: React.FC = () => {
           Defina quais módulos cada perfil pode visualizar ou editar. Marcando &ldquo;Editar&rdquo; o sistema atribui automaticamente a permissão de visualização.
         </p>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          <strong>Nota:</strong> Módulos como Dashboard, Cronograma, Relatórios e Histórico de Cobranças são apenas de visualização (não possuem funcionalidade de edição).
+          <strong>Nota:</strong> Módulos como Dashboard, Relatórios e Histórico de Cobranças são apenas de visualização (não possuem funcionalidade de edição).
         </p>
       </div>
 

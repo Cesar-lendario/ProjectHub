@@ -663,11 +663,29 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   const addMessage = useCallback(async (messageData: Omit<Message, 'id' | 'sender' | 'isRead'>) => {
+    console.log('[ProjectContext] 📨 addMessage chamado:', {
+      sender_id: messageData.sender_id,
+      channel: messageData.channel,
+      contentLength: messageData.content.length,
+      timestamp: messageData.timestamp,
+      totalUsers: users.length
+    });
+    
     const sender = users.find(u => u.id === messageData.sender_id);
-    if (!sender) throw new Error("Sender not found");
+    
+    if (!sender) {
+      console.error('[ProjectContext] ❌ Sender não encontrado!', {
+        sender_id: messageData.sender_id,
+        availableUserIds: users.map(u => u.id)
+      });
+      throw new Error("Sender not found");
+    }
+    
+    console.log('[ProjectContext] ✅ Sender encontrado:', sender.name);
     
     try {
       setLoading(true);
+      console.log('[ProjectContext] 🔄 Chamando MessagesService.create...');
       
       const dbMessage = await MessagesService.create({
         sender_id: messageData.sender_id,
@@ -675,17 +693,33 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         content: messageData.content,
       });
 
+      console.log('[ProjectContext] ✅ Mensagem criada no DB:', dbMessage.id);
+
       const newMessage: Message = {
         ...mapMessage(dbMessage),
         sender,
       };
 
-      setMessages(prev => [...prev, newMessage]);
+      console.log('[ProjectContext] 📝 Atualizando estado de mensagens...');
+      setMessages(prev => {
+        const updated = [...prev, newMessage];
+        console.log('[ProjectContext] ✅ Mensagens atualizadas:', {
+          antes: prev.length,
+          depois: updated.length
+        });
+        return updated;
+      });
+      
+      console.log('[ProjectContext] ✅ addMessage concluído com sucesso!');
     } catch (err) {
-      console.error('Erro ao adicionar mensagem:', err);
+      console.error('[ProjectContext] ❌ Erro ao adicionar mensagem:', err);
+      if (err instanceof Error) {
+        console.error('[ProjectContext] Detalhes do erro:', err.message, err.stack);
+      }
       throw err;
     } finally {
       setLoading(false);
+      console.log('[ProjectContext] 🏁 addMessage finalizado');
     }
   }, [users]);
 
@@ -741,7 +775,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const setBulkPermissions = useCallback((role: GlobalRole, selection: PermissionAction | 'todos' | 'nenhum') => {
     // Módulos que são apenas de visualização (sem funcionalidade de edição)
-    const VIEW_ONLY_MODULES = ['dashboard', 'schedule', 'reports', 'notifications'];
+    const VIEW_ONLY_MODULES = ['dashboard', 'reports', 'notifications'];
     
     setRolePermissions(prev => {
       const updated = { ...prev[role] };

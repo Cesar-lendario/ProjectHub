@@ -209,3 +209,8 @@ WHERE u.auth_id = auth.uid();
 - [ ] Logs no console verificados
 - [ ] Exclusão funcionando corretamente
 
+
+
+
+
+

@@ -1,6 +1,9 @@
 # Cache control rules for TaskMeet
+# HTML nunca deve ser cacheado
 <FilesMatch "\.html$">
-  Header set Cache-Control "no-cache, max-age=0, must-revalidate"
+  Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+  Header set Pragma "no-cache"
+  Header set Expires "0"
 </FilesMatch>
 
 # Cache para arquivos JS/CSS
@@ -10,10 +13,15 @@
 # O navegador automaticamente baixará o novo arquivo quando o HTML referenciar o novo hash
 
 <IfModule mod_headers.c>
-  # Arquivos JS/CSS - cache longo (Vite garante versionamento via hash)
+  # Arquivos JS/CSS COM HASH - cache longo (Vite garante versionamento via hash)
   # Se o hash mudar, o HTML terá nova referência e navegador baixará automaticamente
-  <FilesMatch "\.(js|css)$">
+  <FilesMatch "\-[a-zA-Z0-9]{8,}\.(js|css)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  
+  # Arquivos JS/CSS SEM HASH - sem cache (para desenvolvimento)
+  <FilesMatch "^(?!.*\-[a-zA-Z0-9]{8,})\.(js|css)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
   </FilesMatch>
 </IfModule>
 <IfModule mod_rewrite.c>

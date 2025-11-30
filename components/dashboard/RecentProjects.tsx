@@ -5,9 +5,10 @@ import Card from '../ui/Card';
 
 interface RecentProjectsProps {
   onNavigateToProjects?: () => void;
+  onNavigateToTasksWithProject?: (projectId: string) => void;
 }
 
-const RecentProjects: React.FC<RecentProjectsProps> = ({ onNavigateToProjects }) => {
+const RecentProjects: React.FC<RecentProjectsProps> = ({ onNavigateToProjects, onNavigateToTasksWithProject }) => {
   const { projects } = useProjectContext();
 
   // Sort projects by start date, most recent first, and take the top 5
@@ -33,13 +34,17 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ onNavigateToProjects })
             : 0;
 
           return (
-            <div key={project.id} className="p-3 bg-slate-50 dark:bg-slate-700/30 rounded-lg hover:bg-slate-100 dark:bg-slate-700/50 transition-colors">
+            <div 
+              key={project.id} 
+              onClick={() => onNavigateToTasksWithProject?.(project.id)}
+              className="p-3 bg-slate-50 dark:bg-slate-700/30 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors cursor-pointer group"
+            >
               <div className="flex justify-between items-center">
-                <p className="font-semibold text-slate-800 dark:text-slate-50 truncate">{project.name}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-50 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{project.name}</p>
                 <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{Math.round(progress)}%</span>
               </div>
-              <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
-                <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
+              <div className="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-1.5 mt-2">
+                <div className="bg-indigo-500 h-1.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
               </div>
             </div>
           );

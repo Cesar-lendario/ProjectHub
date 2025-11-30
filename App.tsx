@@ -10,7 +10,7 @@ import { ProjectProvider, useProjectContext } from './hooks/useProjectContext';
 const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
 const ProjectList = lazy(() => import('./components/projects/ProjectList'));
 const TaskList = lazy(() => import('./components/tasks/TaskList'));
-const ScheduleView = lazy(() => import('./components/schedule/ScheduleView'));
+const ChecklistView = lazy(() => import('./components/tasks/ChecklistView'));
 const FilesView = lazy(() => import('./components/files/FilesView'));
 const CommunicationView = lazy(() => import('./components/communication/CommunicationView'));
 const TeamManagementView = lazy(() => import('./components/team/TeamManagementView'));
@@ -30,16 +30,23 @@ const AppContent: React.FC = () => {
   const { session, loading, signOut } = useAuth();
   const [loadingTimeout, setLoadingTimeout] = React.useState(false);
   
+  console.log('[AppContent] 🔍 Render - loading:', loading, 'session:', !!session);
+  
   // Timeout de segurança: se loading demorar mais de 15 segundos, mostrar erro
   React.useEffect(() => {
     if (loading) {
+      console.log('[AppContent] ⏳ Loading iniciado, configurando timeout de 15s...');
       const timeout = setTimeout(() => {
         console.error('[AppContent] ⚠️ Timeout: Loading demorou mais de 15 segundos');
         setLoadingTimeout(true);
       }, 15000);
       
-      return () => clearTimeout(timeout);
+      return () => {
+        console.log('[AppContent] ✅ Loading finalizado antes do timeout');
+        clearTimeout(timeout);
+      };
     } else {
+      console.log('[AppContent] ℹ️ Loading=false, limpando timeout');
       setLoadingTimeout(false);
     }
   }, [loading]);
@@ -119,7 +126,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
   const viewTitles: { [key: string]: string } = {
     dashboard: 'Dashboard',
     tasks: 'Tarefas',
-    schedule: 'Cronograma',
+    checklist: 'Lista de Verificação',
     team: 'Equipe',
     files: 'Arquivos',
     communication: 'Comunicação',
@@ -130,17 +137,35 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
 
   const renderView = () => {
     switch (currentView) {
-      case 'dashboard': return <Dashboard onNavigateToProjects={() => setCurrentView('projects')} onNavigateToTasks={() => setCurrentView('tasks')} />;
+      case 'dashboard': return (
+        <Dashboard 
+          onNavigateToProjects={() => setCurrentView('projects')} 
+          onNavigateToTasks={() => setCurrentView('tasks')}
+          onNavigateToTasksWithProject={(projectId: string) => {
+            setGlobalProjectFilter(projectId);
+            setCurrentView('tasks');
+          }}
+        />
+      );
       case 'projects': return <ProjectList setCurrentView={setCurrentView} setGlobalProjectFilter={setGlobalProjectFilter} />;
       case 'tasks': return <TaskList globalProjectFilter={globalProjectFilter} setGlobalProjectFilter={setGlobalProjectFilter} />;
-      case 'schedule': return <ScheduleView />;
+      case 'checklist': return <ChecklistView globalProjectFilter={globalProjectFilter} setGlobalProjectFilter={setGlobalProjectFilter} />;
       case 'team': return <TeamManagementView />;
       case 'files': return <FilesView />;
       case 'communication': return <CommunicationView />;
       case 'admin': return <UserManagementView />;
       case 'permissions': return <PermissionSettingsView />;
       case 'notifications': return <NotificationLogTable setCurrentView={setCurrentView} setGlobalProjectFilter={setGlobalProjectFilter} />;
-      default: return <Dashboard onNavigateToProjects={() => setCurrentView('projects')} onNavigateToTasks={() => setCurrentView('tasks')} />;
+      default: return (
+        <Dashboard 
+          onNavigateToProjects={() => setCurrentView('projects')} 
+          onNavigateToTasks={() => setCurrentView('tasks')}
+          onNavigateToTasksWithProject={(projectId: string) => {
+            setGlobalProjectFilter(projectId);
+            setCurrentView('tasks');
+          }}
+        />
+      );
     }
   };
 

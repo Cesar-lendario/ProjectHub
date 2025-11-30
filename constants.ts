@@ -127,7 +127,6 @@ export const PERMISSION_MODULES = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'projects', label: 'Projetos' },
   { id: 'tasks', label: 'Tarefas' },
-  { id: 'schedule', label: 'Cronograma' },
   { id: 'team', label: 'Equipe' },
   { id: 'files', label: 'Arquivos' },
   { id: 'communication', label: 'Comunicação' },

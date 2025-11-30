@@ -25,16 +25,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     let isMounted = true;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let hasCompletedInitialLoad = false; // Flag para evitar múltiplos carregamentos
     
     const loadInitialSession = async () => {
       try {
-        console.log('[useAuth] Carregando sessão inicial...');
+        console.log('[useAuth] 🔄 Carregando sessão inicial...');
+        console.log('[useAuth] 📊 Estado atual - loading:', loading, 'hasCompletedInitialLoad:', hasCompletedInitialLoad);
         setLoading(true);
         
         // Timeout de segurança: se não carregar em 10 segundos, forçar loading = false
         timeoutId = setTimeout(() => {
-          if (isMounted) {
+          if (isMounted && !hasCompletedInitialLoad) {
             console.warn('[useAuth] ⚠️ Timeout ao carregar sessão inicial (10s)');
+            hasCompletedInitialLoad = true;
             setLoading(false);
           }
         }, 10000);
@@ -43,22 +46,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          console.error('[useAuth] Erro ao buscar sessão:', sessionError);
+          console.error('[useAuth] ❌ Erro ao buscar sessão:', sessionError);
           if (isMounted) {
             setSession(null);
             setProfile(null);
+            hasCompletedInitialLoad = true;
             setLoading(false);
           }
           return;
         }
         
-        console.log('[useAuth] Sessão inicial obtida:', initialSession ? 'Sessão encontrada' : 'Sem sessão');
+        console.log('[useAuth] 📝 Sessão inicial obtida:', initialSession ? '✅ Sessão encontrada' : '❌ Sem sessão');
         
         if (isMounted) {
           setSession(initialSession);
           
           if (initialSession?.user) {
             try {
+              console.log('[useAuth] 👤 Buscando perfil do usuário...');
               const { data: userProfile, error } = await supabase
                 .from('users')
                 .select('*')
@@ -66,28 +71,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 .single();
 
               if (error && error.code !== 'PGRST116') {
-                console.error('[useAuth] Erro ao buscar perfil:', error);
+                console.error('[useAuth] ❌ Erro ao buscar perfil:', error);
                 throw error;
               }
               
               if (userProfile) {
+                console.log('[useAuth] ✅ Perfil encontrado:', userProfile.full_name);
                 const mapped = mapUser(userProfile);
                 const authEmail = initialSession.user.email ?? mapped.email;
                 if (isMounted) {
                   setProfile({ ...mapped, email: authEmail });
                 }
               } else {
+                console.log('[useAuth] ⚠️ Perfil não encontrado');
                 if (isMounted) {
                   setProfile(null);
                 }
               }
             } catch (error) {
-              console.error('[useAuth] Erro ao processar perfil:', error);
+              console.error('[useAuth] ❌ Erro ao processar perfil:', error);
               if (isMounted) {
                 setProfile(null);
               }
             }
           } else {
+            console.log('[useAuth] ℹ️ Sem usuário na sessão');
             if (isMounted) {
               setProfile(null);
             }
@@ -95,15 +103,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           
           if (isMounted && timeoutId) {
             clearTimeout(timeoutId);
+            hasCompletedInitialLoad = true;
             setLoading(false);
             console.log('[useAuth] ✅ Carregamento inicial concluído');
           }
         }
       } catch (error) {
-        console.error('[useAuth] Erro crítico ao carregar sessão:', error);
+        console.error('[useAuth] ❌ Erro crítico ao carregar sessão:', error);
         if (isMounted) {
           setSession(null);
           setProfile(null);
+          hasCompletedInitialLoad = true;
           setLoading(false);
         }
       }
@@ -117,17 +127,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       async (_event, session) => {
         if (!isMounted) return;
         
+        // Se já completou o carregamento inicial e for apenas um TOKEN_REFRESHED, ignorar
+        if (hasCompletedInitialLoad && _event === 'TOKEN_REFRESHED') {
+          console.log('[useAuth] ℹ️ TOKEN_REFRESHED ignorado (já carregado)');
+          return;
+        }
+        
         try {
-          console.log('[useAuth] Mudança de estado de autenticação:', _event);
+          console.log('[useAuth] 🔔 Mudança de estado de autenticação:', _event);
+          console.log('[useAuth] 📊 hasCompletedInitialLoad:', hasCompletedInitialLoad);
           
+          // Sempre limpar timeout ao receber evento de autenticação
           if (timeoutId) {
             clearTimeout(timeoutId);
+            timeoutId = null;
           }
           
           setSession(session);
           
           if (session?.user) {
             try {
+              console.log('[useAuth] 👤 Buscando perfil do usuário (onAuthStateChange)...');
               const { data: userProfile, error } = await supabase
                 .from('users')
                 .select('*')
@@ -135,39 +155,46 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 .single();
 
               if (error && error.code !== 'PGRST116') {
-                console.error('[useAuth] Erro ao buscar perfil:', error);
+                console.error('[useAuth] ❌ Erro ao buscar perfil:', error);
                 throw error;
               }
               
               if (userProfile) {
+                console.log('[useAuth] ✅ Perfil encontrado (onAuthStateChange):', userProfile.full_name);
                 const mapped = mapUser(userProfile);
                 const authEmail = session.user.email ?? mapped.email;
                 if (isMounted) {
                   setProfile({ ...mapped, email: authEmail });
                 }
               } else {
+                console.log('[useAuth] ⚠️ Perfil não encontrado (onAuthStateChange)');
                 if (isMounted) {
                   setProfile(null);
                 }
               }
             } catch (error) {
-              console.error('[useAuth] Erro ao processar perfil:', error);
+              console.error('[useAuth] ❌ Erro ao processar perfil:', error);
               if (isMounted) {
                 setProfile(null);
               }
             }
           } else {
+            console.log('[useAuth] ℹ️ Sem usuário na sessão (onAuthStateChange)');
             if (isMounted) {
               setProfile(null);
             }
           }
         } catch (error) {
-          console.error('[useAuth] Erro ao processar mudança de autenticação:', error);
+          console.error('[useAuth] ❌ Erro ao processar mudança de autenticação:', error);
           if (isMounted) {
             setProfile(null);
           }
         } finally {
+          // CRÍTICO: Sempre definir loading=false após processar evento
+          // Isso inclui TOKEN_REFRESHED, SIGNED_IN, SIGNED_OUT, etc.
           if (isMounted) {
+            hasCompletedInitialLoad = true;
+            console.log('[useAuth] ✅ Evento processado, definindo loading=false');
             setLoading(false);
           }
         }

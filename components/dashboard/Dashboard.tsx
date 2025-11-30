@@ -12,9 +12,10 @@ import { FolderIcon, CheckSquareIcon, UsersIcon, AlertCircleIcon } from '../ui/I
 interface DashboardProps {
   onNavigateToProjects?: () => void;
   onNavigateToTasks?: () => void;
+  onNavigateToTasksWithProject?: (projectId: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onNavigateToProjects, onNavigateToTasks }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onNavigateToProjects, onNavigateToTasks, onNavigateToTasksWithProject }) => {
   const { projects, users } = useProjectContext();
   const [isInsightsModalOpen, setIsInsightsModalOpen] = useState(false);
 
@@ -82,8 +83,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToProjects, onNavigateT
       
       {/* Second Row */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <RecentProjects onNavigateToProjects={onNavigateToProjects} />
-        <UpcomingTasks onNavigateToTasks={onNavigateToTasks} />
+        <RecentProjects 
+          onNavigateToProjects={onNavigateToProjects} 
+          onNavigateToTasksWithProject={onNavigateToTasksWithProject}
+        />
+        <UpcomingTasks 
+          onNavigateToTasks={onNavigateToTasks}
+          onNavigateToTasksWithProject={onNavigateToTasksWithProject}
+        />
       </div>
 
       {/* Insights Modal */}

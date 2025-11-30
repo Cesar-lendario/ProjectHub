@@ -67,10 +67,13 @@ const TasksByStatusChart: React.FC = () => {
                 <recharts.XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 12 }} />
                 <recharts.YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
                 <recharts.Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', color: '#e2e8f0' }} />
-                <recharts.Legend wrapperStyle={{ fontSize: '14px' , color: '#e2e8f0'}} />
-                <recharts.Bar dataKey={TaskStatus.Pending} stackId="a" fill="#a855f7" name="Pendente" />
-                <recharts.Bar dataKey={TaskStatus.ToDo} stackId="a" fill="#38bdf8" name="A Fazer" />
-                <recharts.Bar dataKey={TaskStatus.InProgress} stackId="a" fill="#f59e0b" name="Em Andamento" />
+                {/* Legenda removida - informação já está visível no tooltip ao passar o mouse */}
+                {/* Cores alinhadas com a paleta da página de tarefas:
+                    Pendente = vermelho, A Fazer = roxo, Em Andamento = azul, Concluído = verde 
+                    Ordem: Pendente → A Fazer → Em Andamento → Concluído */}
+                <recharts.Bar dataKey={TaskStatus.Pending} stackId="a" fill="#ef4444" name="Pendente" />
+                <recharts.Bar dataKey={TaskStatus.ToDo} stackId="a" fill="#a855f7" name="A Fazer" />
+                <recharts.Bar dataKey={TaskStatus.InProgress} stackId="a" fill="#38bdf8" name="Em Andamento" />
                 <recharts.Bar dataKey={TaskStatus.Done} stackId="a" fill="#10b981" name="Concluído" />
             </recharts.BarChart>
           </recharts.ResponsiveContainer>

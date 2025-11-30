@@ -35,3 +35,8 @@ FROM pg_policies
 WHERE tablename = 'project_notes'
   AND cmd = 'UPDATE';
 
+
+
+
+
+

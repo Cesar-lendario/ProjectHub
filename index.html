@@ -15,6 +15,33 @@
       tailwind.config = {
         darkMode: 'class',
       }
+      
+      // Forçar reload de assets quando detectar problemas de carregamento
+      window.CACHE_VERSION = '2025.11.30.v1';
+      console.log('[Cache] Versão:', window.CACHE_VERSION);
+      
+      // Detectar problemas de carregamento e forçar reload
+      let loadingStartTime = Date.now();
+      let loadingCheckInterval = setInterval(function() {
+        let elapsed = Date.now() - loadingStartTime;
+        // Se demorar mais de 20 segundos para carregar, algo está errado
+        if (elapsed > 20000) {
+          console.warn('[Cache] ⚠️ Carregamento demorou mais de 20s, limpando cache e recarregando...');
+          clearInterval(loadingCheckInterval);
+          // Limpar cache e recarregar (apenas uma vez)
+          if (!sessionStorage.getItem('reload_attempted')) {
+            sessionStorage.setItem('reload_attempted', 'true');
+            window.location.reload(true);
+          }
+        }
+      }, 5000);
+      
+      // Limpar flag quando carregar com sucesso
+      window.addEventListener('load', function() {
+        clearInterval(loadingCheckInterval);
+        sessionStorage.removeItem('reload_attempted');
+        console.log('[Cache] ✅ Página carregada com sucesso');
+      });
     </script>
   <!-- Importmap removido - Vite já resolve dependências do node_modules -->
   <!-- Se precisar usar CDN, descomente e ajuste conforme necessário -->
