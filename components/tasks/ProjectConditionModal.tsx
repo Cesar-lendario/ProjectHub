@@ -317,6 +317,22 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
     }
   }, [isOpen]);
 
+  // Controlar montagem do componente - separado para evitar problemas
+  useEffect(() => {
+    isMountedRef.current = true;
+    console.log('[DEBUG] 🟢 Componente MONTADO');
+    
+    return () => {
+      isMountedRef.current = false;
+      console.log('[DEBUG] 🔴 Componente DESMONTADO');
+      // Cancelar carregamento ao desmontar
+      if (loadingControllerRef.current) {
+        loadingControllerRef.current.abort();
+        loadingControllerRef.current = null;
+      }
+    };
+  }, []); // Executa apenas uma vez na montagem/desmontagem
+
   // Carregar notas ao abrir o modal ou mudar de projeto
   useEffect(() => {
     console.log('[DEBUG] useEffect CARREGAR - Estado:', {
@@ -324,10 +340,15 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
       selectedProjectId,
       lastLoadedProjectId: lastLoadedProjectIdRef.current,
       isLoadingRef: isLoadingRef.current,
+      isMounted: isMountedRef.current,
       timestamp: new Date().toISOString()
     });
     
-    isMountedRef.current = true;
+    // Se modal não está aberto, não fazer nada
+    if (!isOpen) {
+      console.log('[DEBUG] ⏸️ Modal fechado, ignorando carregamento');
+      return;
+    }
     
     // Limpar notas imediatamente quando o projeto muda
     if (selectedProjectId && lastLoadedProjectIdRef.current && lastLoadedProjectIdRef.current !== selectedProjectId) {
@@ -364,19 +385,29 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
     
     if (shouldLoad && loadProjectNotesRef.current) {
       // Adicionar um pequeno delay para evitar carregamentos múltiplos rápidos (debounce)
-      console.log('[DEBUG] ⏳ Agendando carregamento com debounce de 100ms...');
+      console.log('[DEBUG] ⏳ Agendando carregamento com debounce de 50ms...');
       const timeoutId = setTimeout(() => {
-        if (isMountedRef.current && isOpen && selectedProjectId) {
-          console.log('[DEBUG] ✅ INICIANDO CARREGAMENTO para projeto:', selectedProjectId);
-          // Limpar notas antes de carregar novas
-          setNotes([]);
-          if (loadProjectNotesRef.current) {
-            loadProjectNotesRef.current(true);
-          }
-        } else {
-          console.log('[DEBUG] ⏭️ Carregamento cancelado (condições mudaram durante debounce)');
+        // Verificar todas as condições novamente após o debounce
+        if (!isMountedRef.current) {
+          console.log('[DEBUG] ⏭️ Componente desmontado durante debounce');
+          return;
         }
-      }, 100); // Debounce de 100ms
+        if (!isOpen) {
+          console.log('[DEBUG] ⏭️ Modal fechou durante debounce');
+          return;
+        }
+        if (!selectedProjectId || selectedProjectId === 'all') {
+          console.log('[DEBUG] ⏭️ Projeto inválido durante debounce');
+          return;
+        }
+        
+        console.log('[DEBUG] ✅ INICIANDO CARREGAMENTO para projeto:', selectedProjectId);
+        // Limpar notas antes de carregar novas
+        setNotes([]);
+        if (loadProjectNotesRef.current) {
+          loadProjectNotesRef.current(true);
+        }
+      }, 50); // Debounce de 50ms (reduzido de 100ms para carregamento mais rápido)
       
       return () => {
         console.log('[DEBUG] 🧹 Limpando timeout de debounce');
@@ -392,18 +423,7 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
     } else {
       console.log('[DEBUG] ⏸️ Carregamento não necessário (já carregado ou já em andamento)');
     }
-    
-    return () => {
-      console.log('[DEBUG] 🧹 Cleanup do useEffect CARREGAR');
-      isMountedRef.current = false;
-      // Cancelar carregamento se modal for fechado durante a operação
-      if (loadingControllerRef.current) {
-        console.log('[DEBUG] 🛑 Abortando carregamento no cleanup');
-        loadingControllerRef.current.abort();
-        loadingControllerRef.current = null;
-      }
-    };
-  }, [isOpen, selectedProjectId, editingNoteId]); // Adicionado editingNoteId para cancelar edição
+  }, [isOpen, selectedProjectId, editingNoteId]); // editingNoteId para cancelar edição ao trocar projeto
 
   const handleAddNote = async () => {
     if (!selectedProjectId || selectedProjectId === 'all') {
