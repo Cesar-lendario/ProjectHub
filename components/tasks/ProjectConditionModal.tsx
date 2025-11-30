@@ -21,7 +21,8 @@ interface ProjectNote {
 
 const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, onClose, projectId }) => {
   const { projects, profile } = useProjectContext();
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  // Inicializar com o projectId se fornecido, senão vazio
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || '');
   const [newNote, setNewNote] = useState('');
   const [notes, setNotes] = useState<ProjectNote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,10 +63,16 @@ const ProjectConditionModal: React.FC<ProjectConditionModalProps> = ({ isOpen, o
       return;
     }
     
-    // Se projectId foi passado e é válido, usar ele
+    // Se projectId foi passado e é válido, usar ele (prioridade máxima)
     if (projectId && projectId !== 'all') {
       console.log('[DEBUG] ⚡ Definindo selectedProjectId como projectId prop:', projectId);
       setSelectedProjectId(projectId);
+      return;
+    }
+    
+    // Se não tem projectId mas já tem um selecionado, manter
+    if (selectedProjectId && selectedProjectId !== 'all') {
+      console.log('[DEBUG] ✅ Mantendo selectedProjectId atual:', selectedProjectId);
       return;
     }
     
