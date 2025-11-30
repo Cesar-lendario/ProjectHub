@@ -30,7 +30,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const loadInitialSession = async () => {
       try {
         console.log('[useAuth] 🔄 Carregando sessão inicial...');
+        console.log('[useAuth] 🌐 Hostname:', window.location.hostname);
+        console.log('[useAuth] 🔑 localStorage disponível:', !!window.localStorage);
         console.log('[useAuth] 📊 Estado atual - loading:', loading, 'hasCompletedInitialLoad:', hasCompletedInitialLoad);
+        
+        // Verificar se há token no localStorage
+        const storageKey = 'taskmeet-auth-token';
+        const storedAuth = localStorage.getItem(storageKey);
+        console.log('[useAuth] 💾 Token no localStorage:', storedAuth ? '✅ Encontrado' : '❌ Não encontrado');
+        
         setLoading(true);
         
         // Timeout de segurança: se não carregar em 10 segundos, forçar loading = false
