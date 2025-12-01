@@ -186,3 +186,6 @@ Console do navegador (F12):
 **Versão:** 2025.11.30.v1
 **Arquivos Modificados:** 4 (useAuth.tsx, index.html, .htaccess, App.tsx)
 
+
+
+

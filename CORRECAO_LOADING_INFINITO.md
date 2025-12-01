@@ -384,3 +384,6 @@ Após confirmar que está funcionando:
 **Versão:** 2025.11.30.v1
 **Status:** ✅ Correção Implementada - Pronta para Deploy
 
+
+
+
