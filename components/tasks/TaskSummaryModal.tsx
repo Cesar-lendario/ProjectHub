@@ -82,12 +82,12 @@ const TaskSummaryModal: React.FC<TaskSummaryModalProps> = ({ isOpen, onClose, pr
         {summary.todo.length > 0 && (
           <div className="space-y-2">
             <p className="font-semibold">
-              <span className="inline-block w-3 h-3 rounded-full bg-purple-500 mr-2 align-middle" />
+              <span className="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-2 align-middle" />
               A Fazer ({summary.todo.length})
             </p>
             <div className="ml-5 space-y-3">
               {summary.todo.map(task => (
-                <div key={task.id} className="border-l-2 border-purple-500 pl-3 py-1">
+                <div key={task.id} className="border-l-2 border-yellow-500 pl-3 py-1">
                   <p className="font-medium text-slate-800 dark:text-slate-100">{task.name}</p>
                   {task.description && (
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{task.description}</p>
@@ -143,7 +143,7 @@ const TaskSummaryModal: React.FC<TaskSummaryModalProps> = ({ isOpen, onClose, pr
 
     const sections = [
       { title: 'Pendente', tasks: summary.pending, color: '#ef4444' },
-      { title: 'A Fazer', tasks: summary.todo, color: '#a855f7' },
+      { title: 'A Fazer', tasks: summary.todo, color: '#FFD700' },
       { title: 'Em andamento', tasks: summary.inProgress, color: '#3b82f6' },
     ];
 

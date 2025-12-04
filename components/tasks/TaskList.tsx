@@ -40,6 +40,7 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [isConditionModalOpen, setIsConditionModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards'); // 'cards' é o padrão
+  const [activeTab, setActiveTab] = useState<TaskStatus>(TaskStatus.Pending); // Aba ativa no modo lista
 
   useEffect(() => {
     setFilterProjectId(globalProjectFilter);
@@ -120,9 +121,13 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
     [buildColumns, statuses, sortTasksByPriority]
   );
 
-  const [tasksByStatus, setTasksByStatus] = useState<Record<TaskStatus, EnhancedTask[]>>(
-    () => buildColumns(enhancedTasks)
-  );
+  const [tasksByStatus, setTasksByStatus] = useState<Record<TaskStatus, EnhancedTask[]>>(() => {
+    const empty: Record<TaskStatus, EnhancedTask[]> = {} as Record<TaskStatus, EnhancedTask[]>;
+    Object.values(TaskStatus).forEach(status => {
+      empty[status] = [];
+    });
+    return empty;
+  });
 
   const [isDragging, setIsDragging] = useState(false);
 
@@ -131,6 +136,19 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
       setTasksByStatus(prev => mergeColumns(prev, enhancedTasks));
     }
   }, [enhancedTasks, mergeColumns, isDragging]);
+
+  // Quando mudar para modo lista, definir a primeira aba com tarefas como ativa
+  useEffect(() => {
+    if (viewMode === 'list') {
+      const firstStatusWithTasks = statuses.find(status => {
+        const tasks = tasksByStatus[status] ?? [];
+        return tasks.length > 0;
+      });
+      if (firstStatusWithTasks) {
+        setActiveTab(firstStatusWithTasks);
+      }
+    }
+  }, [viewMode, tasksByStatus, statuses]);
 
   // Sensores desativados para remover a funcionalidade de drag and drop
   const sensors = useSensors();
@@ -189,12 +207,19 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
   };
 
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments'>) => {
+    const startTime = Date.now();
     const timeoutId = setTimeout(() => {
-      console.error('[TaskList] ⚠️ Timeout ao salvar tarefa (30s)');
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      console.error('[TaskList] ⚠️ Timeout ao salvar tarefa após', elapsed, 'segundos');
+      
+      // Verificar se é problema de conexão ou servidor
+      const errorMsg = 'A operação está demorando muito. Isso pode indicar:\n\n• Problema de conexão com a internet\n• Servidor sobrecarregado\n• Token de autenticação expirado\n\nPor favor, verifique sua conexão e tente novamente. Se o problema persistir, recarregue a página (Ctrl+Shift+R).';
+      
+      alert(errorMsg);
+      
       // Fechar modal mesmo em caso de timeout
       setIsFormOpen(false);
       setTaskToEdit(null);
-      alert('A operação está demorando muito. Por favor, verifique sua conexão e tente novamente.');
     }, 30000); // 30 segundos de timeout
     
     try {
@@ -252,7 +277,17 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
     } catch (error) {
       clearTimeout(timeoutId);
       console.error('[TaskList] ❌ Erro ao salvar tarefa:', error);
-      alert(error instanceof Error ? error.message : 'Erro ao salvar tarefa. Por favor, tente novamente.');
+      
+      // Tratamento específico para erros de autenticação
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao salvar tarefa. Por favor, tente novamente.';
+      
+      if (errorMessage.includes('Sessão expirada') || errorMessage.includes('expired') || errorMessage.includes('401')) {
+        alert('Sua sessão expirou. A página será recarregada para renovar a autenticação.');
+        window.location.reload();
+        return;
+      }
+      
+      alert(errorMessage);
       // Não fechar o modal em caso de erro para permitir correção
       throw error; // Re-throw para que o TaskForm possa tratar
     } finally {
@@ -372,112 +407,170 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
           </div>
         </DndContext>
       ) : (
-        <div className="space-y-8">
-          {statuses.map(status => {
-            const tasks = tasksByStatus[status] ?? [];
-            if (tasks.length === 0) return null;
-            
-            // Mapear cores para cada status (modo claro e escuro)
-            const statusColors: { [key: string]: string } = {
-              'Pendente': 'text-red-600 dark:text-red-400',
-              'A Fazer': 'text-purple-600 dark:text-purple-400',
-              'Em andamento': 'text-blue-600 dark:text-blue-400',
-              'Concluído': 'text-green-600 dark:text-green-400'
-            };
-            
-            // Mapear bordas laterais coloridas para cada status
-            const statusBorders: { [key: string]: string } = {
-              'Pendente': 'border-l-4 border-red-500',
-              'A Fazer': 'border-l-4 border-purple-500',
-              'Em andamento': 'border-l-4 border-blue-500',
-              'Concluído': 'border-l-4 border-green-500'
-            };
-            
-            return (
-              <div key={status} className="bg-white dark:bg-slate-800 rounded-lg shadow">
-                <div className={`bg-slate-50 dark:bg-slate-700 px-6 py-4 border-b border-slate-200 dark:border-slate-600 ${statusBorders[status] || ''}`}>
-                  <h3 className={`text-lg font-semibold ${statusColors[status] || 'text-slate-800 dark:text-slate-100'}`}>
-                    {status} <span className="ml-2 text-sm text-slate-500 dark:text-slate-400">({tasks.length})</span>
-                  </h3>
-                </div>
-                <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                  {tasks.map(task => (
-                    <div 
-                      key={task.id} 
-                      className={`px-6 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer ${statusBorders[status] || ''}`}
-                      onClick={() => handleViewTask(task)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-base font-medium text-slate-900 dark:text-slate-100 truncate">{task.name}</h4>
-                          <p className="mt-0.5 text-sm text-indigo-600 dark:text-indigo-400 truncate">{task.projectName}</p>
-                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{task.description}</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center">
-                            {task.assignee ? (
-                              <img 
-                                src={task.assignee.avatar} 
-                                alt={task.assignee.name} 
-                                className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-800"
-                                title={task.assignee.name}
-                              />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-slate-500 dark:text-slate-300">
-                                <span className="text-xs font-medium">N/A</span>
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              task.priority === TaskPriority.High ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200' :
-                              task.priority === TaskPriority.Medium ? 'bg-yellow-100 text-yellow-800 dark:bg-amber-500/20 dark:text-amber-200' :
-                              'bg-blue-100 text-blue-800 dark:bg-sky-500/20 dark:text-sky-200'
-                            }`}>
-                              {task.priority}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
-                              {new Date(task.dueDate).toLocaleDateString('pt-BR')}
-                            </span>
-                          </div>
-                          {canEditTask(task) && (
-                            <div className="flex gap-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditTask(task);
-                                }}
-                                className="p-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                aria-label="Editar tarefa"
-                              >
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteTask(task.id);
-                                }}
-                                className="p-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
-                                aria-label="Excluir tarefa"
-                              >
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
+          {/* Abas Horizontais */}
+          <div className="border-b border-slate-200 dark:border-slate-700">
+            <nav className="flex space-x-1 px-4" aria-label="Tabs">
+              {statuses.map(status => {
+                const tasks = tasksByStatus[status] ?? [];
+                const isActive = activeTab === status;
+                
+                // Mapear cores para cada status
+                const tabColors: { [key: string]: { active: string; inactive: string; border: string } } = {
+                  'Pendente': {
+                    active: 'text-red-600 dark:text-red-400 border-red-500',
+                    inactive: 'text-red-500 dark:text-red-500/70 hover:text-red-600 dark:hover:text-red-400',
+                    border: 'border-red-500'
+                  },
+                  'A Fazer': {
+                    active: 'text-yellow-600 dark:text-yellow-400 border-yellow-500',
+                    inactive: 'text-yellow-500 dark:text-yellow-500/70 hover:text-yellow-600 dark:hover:text-yellow-400',
+                    border: 'border-yellow-500'
+                  },
+                  'Em andamento': {
+                    active: 'text-blue-600 dark:text-blue-400 border-blue-500',
+                    inactive: 'text-blue-500 dark:text-blue-500/70 hover:text-blue-600 dark:hover:text-blue-400',
+                    border: 'border-blue-500'
+                  },
+                  'Concluído': {
+                    active: 'text-green-600 dark:text-green-400 border-green-500',
+                    inactive: 'text-green-500 dark:text-green-500/70 hover:text-green-600 dark:hover:text-green-400',
+                    border: 'border-green-500'
+                  }
+                };
+                
+                const colors = tabColors[status] || {
+                  active: 'text-indigo-600 dark:text-indigo-400 border-indigo-500',
+                  inactive: 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300',
+                  border: 'border-indigo-500'
+                };
+                
+                return (
+                  <button
+                    key={status}
+                    onClick={() => setActiveTab(status)}
+                    className={`
+                      px-4 py-3 text-sm font-medium border-b-2 transition-colors
+                      ${isActive 
+                        ? `${colors.active} ${colors.border}` 
+                        : `${colors.inactive} border-transparent`
+                      }
+                    `}
+                  >
+                    {status}
+                    {tasks.length > 0 && (
+                      <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        isActive 
+                          ? 'bg-slate-100 dark:bg-slate-700' 
+                          : 'bg-slate-200 dark:bg-slate-700/50'
+                      }`}>
+                        {tasks.length}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+          
+          {/* Conteúdo da Aba Ativa */}
+          <div className="divide-y divide-slate-200 dark:divide-slate-700">
+            {(() => {
+              const tasks = tasksByStatus[activeTab] ?? [];
+              
+              if (tasks.length === 0) {
+                return (
+                  <div className="px-6 py-12 text-center">
+                    <p className="text-slate-500 dark:text-slate-400">Nenhuma tarefa com status "{activeTab}" encontrada.</p>
+                  </div>
+                );
+              }
+              
+              // Mapear bordas laterais coloridas para cada status
+              const statusBorders: { [key: string]: string } = {
+                'Pendente': 'border-l-4 border-red-500',
+                'A Fazer': 'border-l-4 border-yellow-500',
+                'Em andamento': 'border-l-4 border-blue-500',
+                'Concluído': 'border-l-4 border-green-500'
+              };
+              
+              return tasks.map(task => (
+                <div 
+                  key={task.id} 
+                  className={`px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer ${statusBorders[activeTab] || ''}`}
+                  onClick={() => handleViewTask(task)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-base font-medium text-slate-900 dark:text-slate-100 truncate">{task.name}</h4>
+                      <p className="mt-0.5 text-sm text-indigo-600 dark:text-indigo-400 truncate">{task.projectName}</p>
+                      {task.description && (
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{task.description}</p>
+                      )}
                     </div>
-                  ))}
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center">
+                        {task.assignee ? (
+                          <img 
+                            src={task.assignee.avatar} 
+                            alt={task.assignee.name} 
+                            className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-800"
+                            title={task.assignee.name}
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-slate-500 dark:text-slate-300">
+                            <span className="text-xs font-medium">N/A</span>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          task.priority === TaskPriority.High ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200' :
+                          task.priority === TaskPriority.Medium ? 'bg-yellow-100 text-yellow-800 dark:bg-amber-500/20 dark:text-amber-200' :
+                          'bg-blue-100 text-blue-800 dark:bg-sky-500/20 dark:text-sky-200'
+                        }`}>
+                          {task.priority}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                      {canEditTask(task) && (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditTask(task);
+                            }}
+                            className="p-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            aria-label="Editar tarefa"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTask(task.id);
+                            }}
+                            className="p-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            aria-label="Excluir tarefa"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              ));
+            })()}
+          </div>
         </div>
       )}
 

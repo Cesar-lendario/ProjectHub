@@ -108,7 +108,17 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
     } catch(error) {
         clearTimeout(timeoutId);
         console.error("[ProjectForm] ❌ Falha ao salvar projeto:", error);
-        alert(error instanceof Error ? error.message : "Não foi possível salvar o projeto. Verifique o console para mais detalhes.");
+        
+        // Tratamento específico para erros de autenticação
+        const errorMessage = error instanceof Error ? error.message : "Não foi possível salvar o projeto. Verifique o console para mais detalhes.";
+        
+        if (errorMessage.includes('Sessão expirada') || errorMessage.includes('expired') || errorMessage.includes('401')) {
+          alert('Sua sessão expirou. A página será recarregada para renovar a autenticação.');
+          window.location.reload();
+          return;
+        }
+        
+        alert(errorMessage);
         setIsLoading(false);
     }
   };

@@ -87,12 +87,6 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, isOpen, onClose }) => {
                     </p>
                     <p className="mt-1 text-base font-medium text-slate-900 dark:text-white">{task.status}</p>
                 </div>
-                <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">
-                      Duração
-                    </p>
-                    <p className="mt-1 text-base font-medium text-slate-900 dark:text-white">{task.duration} dia(s)</p>
-                </div>
             </div>
         </div>
         <div className="flex justify-end items-center gap-3 p-5 border-t border-slate-200/80 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50">

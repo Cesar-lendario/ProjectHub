@@ -26,12 +26,12 @@ const getStatusAppearance = (status: TaskStatus) => {
                 text: 'text-red-800 dark:text-red-200',
                 border: 'border-red-400 dark:border-red-500/40',
             };
-        // A Fazer = roxo
+        // A Fazer = dourado
         case TaskStatus.ToDo:
             return {
-                bg: 'bg-purple-200 dark:bg-purple-500/20',
-                text: 'text-purple-800 dark:text-purple-200',
-                border: 'border-purple-400 dark:border-purple-500/40',
+                bg: 'bg-yellow-200 dark:bg-yellow-500/20',
+                text: 'text-yellow-800 dark:text-yellow-200',
+                border: 'border-yellow-500 dark:border-yellow-500/40',
             };
         // Em andamento = azul
         case TaskStatus.InProgress:

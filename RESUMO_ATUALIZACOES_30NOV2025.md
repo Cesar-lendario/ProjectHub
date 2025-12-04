@@ -235,3 +235,4 @@ Se aparecer, significa que o app demorou para carregar. As correções implement
 
 
 
+

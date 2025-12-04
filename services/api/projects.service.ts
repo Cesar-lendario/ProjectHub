@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { Database } from '../../types/database.types';
+import { authenticatedFetch } from './authHelper';
 
 type ProjectRow = Database['public']['Tables']['projects']['Row'];
 type ProjectInsert = Database['public']['Tables']['projects']['Insert'];
@@ -45,20 +46,16 @@ export const ProjectsService = {
 
   // Criar novo projeto usando fetch direto (contorna bug do Supabase JS)
   async create(project: ProjectInsert) {
-    console.log('ProjectsService.create - Dados enviados:', project);
-    console.log('ProjectsService.create - Tamanho do email:', project.cliente_email?.length || 0);
-    console.log('ProjectsService.create - Usando fetch direto...');
+    console.log('[ProjectsService.create] 📝 Dados enviados:', project);
+    console.log('[ProjectsService.create] 📧 Tamanho do email:', project.cliente_email?.length || 0);
+    console.log('[ProjectsService.create] 🔄 Usando fetch autenticado...');
     
     try {
       const supabaseUrl = 'https://siujbzskkmjxipcablao.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpdWpienNra21qeGlwY2FibGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MTUyNjgsImV4cCI6MjA3ODM5MTI2OH0.TVJ_7RHPOQhZBQkykHcZOzCF5MQj7pIY-_rxxJ9XqGI';
       
-      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/create_project`, {
+      const response = await authenticatedFetch(`${supabaseUrl}/rest/v1/rpc/create_project`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({
@@ -74,45 +71,47 @@ export const ProjectsService = {
         })
       });
 
-      console.log('ProjectsService.create - Fetch concluído, status:', response.status);
+      console.log('[ProjectsService.create] ✅ Fetch concluído, status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('ProjectsService.create - Erro HTTP:', errorText);
+        console.error('[ProjectsService.create] ❌ Erro HTTP:', response.status, errorText);
+        
+        // Tratamento específico para erros de autenticação
+        if (response.status === 401) {
+          throw new Error('Sessão expirada. Por favor, recarregue a página.');
+        }
+        
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('ProjectsService.create - Data:', data);
+      console.log('[ProjectsService.create] 📦 Data recebida:', data);
 
       // RPC retorna array, pegar o primeiro item
       const projectData = Array.isArray(data) ? data[0] : data;
       
-      console.log('ProjectsService.create - Projeto criado com sucesso!');
+      console.log('[ProjectsService.create] ✅ Projeto criado com sucesso!');
       return projectData;
     } catch (err) {
-      console.error('ProjectsService.create - ERRO:', err);
+      console.error('[ProjectsService.create] ❌ ERRO:', err);
       throw err;
     }
   },
 
   // Atualizar projeto usando RPC (contorna bug do Supabase JS com emails longos)
   async update(id: string, project: ProjectUpdate) {
-    console.log('ProjectsService.update - ID:', id);
-    console.log('ProjectsService.update - Dados enviados:', project);
-    console.log('ProjectsService.update - Tamanho do email:', project.cliente_email?.length || 0);
-    console.log('ProjectsService.update - Usando RPC para atualizar projeto...');
+    console.log('[ProjectsService.update] 🆔 ID:', id);
+    console.log('[ProjectsService.update] 📝 Dados enviados:', project);
+    console.log('[ProjectsService.update] 📧 Tamanho do email:', project.cliente_email?.length || 0);
+    console.log('[ProjectsService.update] 🔄 Usando RPC autenticado para atualizar projeto...');
     
     try {
       const supabaseUrl = 'https://siujbzskkmjxipcablao.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpdWpienNra21qeGlwY2FibGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MTUyNjgsImV4cCI6MjA3ODM5MTI2OH0.TVJ_7RHPOQhZBQkykHcZOzCF5MQj7pIY-_rxxJ9XqGI';
       
-      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/update_project`, {
+      const response = await authenticatedFetch(`${supabaseUrl}/rest/v1/rpc/update_project`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({
@@ -128,25 +127,30 @@ export const ProjectsService = {
         })
       });
 
-      console.log('ProjectsService.update - RPC concluído');
-      console.log('ProjectsService.update - Status:', response.status);
+      console.log('[ProjectsService.update] ✅ RPC concluído, status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('ProjectsService.update - Erro HTTP:', errorText);
+        console.error('[ProjectsService.update] ❌ Erro HTTP:', response.status, errorText);
+        
+        // Tratamento específico para erros de autenticação
+        if (response.status === 401) {
+          throw new Error('Sessão expirada. Por favor, recarregue a página.');
+        }
+        
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('ProjectsService.update - Data:', data);
+      console.log('[ProjectsService.update] 📦 Data recebida:', data);
       
       // RPC retorna array, pegar o primeiro item
       const projectData = Array.isArray(data) ? data[0] : data;
       
-      console.log('ProjectsService.update - Projeto atualizado com sucesso!');
+      console.log('[ProjectsService.update] ✅ Projeto atualizado com sucesso!');
       return projectData;
     } catch (err) {
-      console.error('ProjectsService.update - ERRO:', err);
+      console.error('[ProjectsService.update] ❌ ERRO:', err);
       throw err;
     }
   },

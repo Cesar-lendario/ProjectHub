@@ -209,12 +209,50 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     );
 
+    // Monitoramento preventivo de sessão: verificar a cada 2 minutos se o token está próximo de expirar
+    const sessionCheckInterval = setInterval(async () => {
+      if (!isMounted) return;
+      
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        if (currentSession?.expires_at) {
+          const expiresIn = currentSession.expires_at - Math.floor(Date.now() / 1000);
+          
+          // Se o token expira em menos de 5 minutos, fazer refresh preventivo
+          if (expiresIn < 300 && expiresIn > 0) {
+            console.log('[useAuth] 🔄 Token próximo de expirar (' + expiresIn + 's), fazendo refresh preventivo...');
+            const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+            
+            if (refreshError) {
+              console.error('[useAuth] ❌ Erro ao fazer refresh preventivo:', refreshError);
+            } else if (refreshedSession) {
+              console.log('[useAuth] ✅ Token atualizado preventivamente');
+              if (isMounted) {
+                setSession(refreshedSession);
+              }
+            }
+          } else if (expiresIn <= 0) {
+            console.warn('[useAuth] ⚠️ Token já expirado!');
+            // Token expirado, limpar sessão
+            if (isMounted) {
+              setSession(null);
+              setProfile(null);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[useAuth] ❌ Erro ao verificar sessão:', error);
+      }
+    }, 120000); // Verificar a cada 2 minutos
+
     return () => {
       isMounted = false;
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
       subscription?.unsubscribe();
+      clearInterval(sessionCheckInterval);
     };
   }, []);
   

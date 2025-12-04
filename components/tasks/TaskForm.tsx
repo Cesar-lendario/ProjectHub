@@ -29,7 +29,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.Medium);
   const [status, setStatus] = useState<TaskStatus>(TaskStatus.Pending);
-  const [duration, setDuration] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
   
   // Refs para rastrear estado anterior
@@ -61,7 +60,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
         setDueDate(taskToEdit.dueDate);
         setPriority(taskToEdit.priority);
         setStatus(taskToEdit.status);
-        setDuration(taskToEdit.duration);
       } else {
         // Reset form para nova tarefa
         // Usar projects[0] apenas se projects já estiver carregado
@@ -73,7 +71,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
         setDueDate(new Date().toISOString().split('T')[0]);
         setPriority(TaskPriority.Medium);
         setStatus(TaskStatus.Pending);
-        setDuration(1);
       }
     }
     
@@ -106,10 +103,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
     }
     
     setIsLoading(true);
+    const startTime = Date.now();
     const timeoutId = setTimeout(() => {
-      console.error('[TaskForm] ⚠️ Timeout ao salvar tarefa (30s)');
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      console.error('[TaskForm] ⚠️ Timeout ao salvar tarefa após', elapsed, 'segundos');
       setIsLoading(false);
-      alert('A operação está demorando muito. Por favor, tente novamente.');
+      
+      // Verificar se é problema de conexão ou servidor
+      const errorMsg = elapsed >= 30 
+        ? 'A operação está demorando muito. Isso pode indicar:\n\n• Problema de conexão com a internet\n• Servidor sobrecarregado\n• Token de autenticação expirado\n\nPor favor, verifique sua conexão e tente novamente. Se o problema persistir, recarregue a página (Ctrl+Shift+R).'
+        : 'A operação está demorando mais que o esperado. Por favor, tente novamente.';
+      
+      alert(errorMsg);
     }, 30000); // 30 segundos de timeout
     
     try {
@@ -128,7 +133,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
           dueDate,
           priority,
           status,
-          duration,
+          duration: 1, // Valor padrão fixo
           dependencies: taskToEdit?.dependencies || [],
         });
         
@@ -141,7 +146,17 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
     } catch(error) {
         clearTimeout(timeoutId);
         console.error('[TaskForm] ❌ Erro ao salvar tarefa:', error);
-        alert(error instanceof Error ? error.message : "Não foi possível salvar a tarefa.");
+        
+        // Tratamento específico para erros de autenticação
+        const errorMessage = error instanceof Error ? error.message : "Não foi possível salvar a tarefa.";
+        
+        if (errorMessage.includes('Sessão expirada') || errorMessage.includes('expired') || errorMessage.includes('401')) {
+          alert('Sua sessão expirou. A página será recarregada para renovar a autenticação.');
+          window.location.reload();
+          return;
+        }
+        
+        alert(errorMessage);
         setIsLoading(false); // Resetar loading em caso de erro
     }
   };
@@ -196,8 +211,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
           />
         </div>
 
-        {/* Row 2: Data e Duração */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Row 2: Data de Início, Prioridade e Status */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Input
             label="Data de Início"
             type="date"
@@ -205,18 +220,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
             onChange={(e) => setDueDate(e.target.value)}
             required
           />
-          <Input
-            label="Duração (dias)"
-            type="number"
-            value={duration}
-            onChange={(e) => setDuration(Number(e.target.value))}
-            min="1"
-            placeholder="1"
-          />
-        </div>
-
-        {/* Row 3: Prioridade e Status */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Prioridade"
             value={priority}

@@ -326,9 +326,9 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
                         onChange={() => handleStatusChange(task, TaskStatus.ToDo)}
                         disabled={updatingTaskId === task.id}
                         className="w-5 h-5 rounded border-2 cursor-pointer transition-all appearance-none
-                          checked:bg-purple-500 checked:border-purple-500
+                          checked:bg-yellow-500 checked:border-yellow-500
                           unchecked:bg-white unchecked:border-slate-300 dark:unchecked:bg-slate-700 dark:unchecked:border-slate-600
-                          hover:border-purple-400 focus:ring-2 focus:ring-purple-500 focus:ring-offset-1
+                          hover:border-yellow-400 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-1
                           disabled:opacity-50 disabled:cursor-not-allowed"
                         title="A Fazer"
                         onClick={(e) => e.stopPropagation()}
@@ -339,7 +339,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
                         </svg>
                       )}
                     </div>
-                    <span className="text-xs text-purple-600 dark:text-purple-400 mt-1 font-medium">
+                    <span className="text-xs text-yellow-600 dark:text-yellow-400 mt-1 font-medium">
                       A Fazer
                     </span>
                   </div>

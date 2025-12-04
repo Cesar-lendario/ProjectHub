@@ -7,7 +7,7 @@ TaskMeet é uma plataforma web multitenant de gestão de projetos orientada a eq
 ### 📊 Dashboard
 - Métricas resumidas e KPIs em tempo real
 - Gráficos de orçamento (realizado vs planejado)
-- Análise de riscos com IA (Google Gemini)
+- Análise de riscos com IA (OpenAI GPT-4o-mini)
 - Indicadores de progresso por projeto
 - Visão consolidada de tarefas ativas, atrasadas e concluídas
 
@@ -36,11 +36,11 @@ TaskMeet é uma plataforma web multitenant de gestão de projetos orientada a eq
   - Mostra nome, descrição e data de vencimento de cada tarefa
   - Agrupado por status com identificação visual por cor
   - Sincronizado com o projeto atualmente filtrado
- - Paleta de cores unificada por status em todo o sistema (Kanban e cronograma):
-   - **Pendente** = vermelho
-   - **A Fazer** = roxo
-   - **Em andamento** = azul
-   - **Concluído** = verde
+ - Paleta de cores unificada por status em todo o sistema (Kanban, cronograma e gráficos):
+   - **Pendente** = vermelho (`#ef4444`)
+   - **A Fazer** = dourado (`#FFD700` / `yellow-500`)
+   - **Em andamento** = azul (`#38bdf8`)
+   - **Concluído** = verde (`#10b981`)
 
 ### 📅 Cronograma
 - Visão de Gantt consolidada por projeto
@@ -140,14 +140,22 @@ TaskMeet é uma plataforma web multitenant de gestão de projetos orientada a eq
   - Upload de arquivos de projetos
   - Integração completa implementada
 
-### Google Gemini AI
-- **Serviço** (`services/geminiService.ts`):
-  - Análise de riscos de projetos
+### OpenAI AI
+- **Serviço** (`services/openaiService.ts`):
+  - Análise de riscos de projetos com dados detalhados
   - Geração de insights e oportunidades
   - Análise de caminho crítico
-  - Política de retry automático
+  - Modelo usado: GPT-4o-mini
+  - Política de retry automático (3 tentativas)
   - Tratamento robusto de erros
-  - Timeout configurável (30s)
+  - Integração com InsightsModal para análise de projetos
+  - **Análise aprimorada** (Dez 2025):
+    - Considera progresso geral de cada projeto (percentual de conclusão)
+    - Projetos 100% completos não são considerados como risco
+    - Foca em tarefas atrasadas que ainda não foram concluídas
+    - Diferencia tarefas por status (Pendentes, A Fazer, Em Andamento, Concluídas)
+    - Fornece dados detalhados: total de tarefas, distribuição por status, tarefas atrasadas não concluídas
+    - Destaca projetos em andamento com bom progresso
 
 ## Stack Tecnológica
 
@@ -156,7 +164,7 @@ TaskMeet é uma plataforma web multitenant de gestão de projetos orientada a eq
 - **UI**: Componentização por domínio com Tailwind CSS
 - **Gráficos**: Recharts para visualizações
 - **Backend**: Supabase (Auth + Storage)
-- **IA**: Google Gemini para análise de riscos
+- **IA**: OpenAI GPT-4o-mini para análise de riscos e insights
 - **Build/Dev**: npm + Vite + TypeScript
 - **Performance**: Lazy loading, code splitting, Web Vitals
 
@@ -206,7 +214,7 @@ Frontend (React)
   │   ├─ Auth (login, logout, session)
   │   └─ Storage (avatars bucket)
   │
-  └─ Gemini Service
+  └─ OpenAI Service
       └─ AI Analysis (risks, insights)
 ```
 
@@ -298,7 +306,7 @@ Hooks contextuais que encapsulam regras de negócio:
 Integrações com serviços externos e APIs:
 
 - `supabaseClient.ts`: cliente Supabase tipado com credenciais
-- `geminiService.ts`: integração Google Gemini AI com retry policy
+- `openaiService.ts`: integração OpenAI GPT-4o-mini com retry policy
 - `api/`: serviços de API para cada tabela do Supabase
   - `projects.service.ts`: CRUD de projetos e notificações
   - `tasks.service.ts`: CRUD de tarefas, criação em lote
@@ -449,10 +457,10 @@ tasks ──> attachments (opcional)
    VITE_SUPABASE_URL=sua-url-do-projeto.supabase.co
    VITE_SUPABASE_ANON_KEY=sua-chave-anon-publica
    
-   # Google Gemini AI (opcional)
-   VITE_GEMINI_API_KEY=sua-chave-gemini
+   # OpenAI AI (opcional - para Insights com IA)
+   OPENAI_API_KEY=sua-chave-openai
    # ou
-   API_KEY=sua-chave-gemini
+   VITE_OPENAI_API_KEY=sua-chave-openai
    ```
 
 3. **Configure o Supabase Storage:**
@@ -477,7 +485,11 @@ tasks ──> attachments (opcional)
 
 ### Observações Importantes
 
-- ⚠️ Sem a chave do Gemini, funcionalidades de análise de risco e insights de caminho crítico permanecem inativas, mas o restante da aplicação segue operacional.
+- ⚠️ **Insights com IA**: Para usar a funcionalidade de "Insights com IA" no Dashboard, é necessário configurar a chave da API OpenAI no arquivo `.env.local`:
+  - Adicione `OPENAI_API_KEY=sua-chave-openai` ou `VITE_OPENAI_API_KEY=sua-chave-openai`
+  - Sem a chave configurada, o modal de insights exibirá a mensagem: "Chave da API OpenAI não configurada. A análise está indisponível."
+  - A funcionalidade usa o modelo GPT-4o-mini da OpenAI
+  - Os insights analisam riscos e oportunidades nos projetos
 - ⚠️ Sem configurar o bucket `avatars`, o upload de fotos de perfil falhará.
 - ℹ️ O sistema está integrado ao Supabase para persistência de dados. Certifique-se de que as tabelas estão criadas no banco.
 - 🔧 **Cache do navegador**: Ao fazer mudanças no código, use `npm run dev` para desenvolvimento com hot reload. Para limpar cache do navegador, use `Ctrl + Shift + R` (Firefox/Chrome). Veja `docs/LIMPAR_CACHE_NAVEGADOR.md` para instruções detalhadas.
@@ -555,8 +567,8 @@ npm run preview
 
 ## Otimizações de Performance
 
-- **Lazy loading agressivo**: views de domínio (`Dashboard`, `TaskList`, etc.), `ProjectProvider`, gráficos (Recharts) e integrações Gemini só são carregados quando necessários, reduzindo o bundle inicial para ~205 kB (≈64 kB gzip).
-- **Divisão manual de chunks**: configuração em `vite.config.ts` separa dependências pesadas (`recharts`, `supabase`, `react`, `@google/genai`, utilitários), melhorando cache de longo prazo.
+- **Lazy loading agressivo**: views de domínio (`Dashboard`, `TaskList`, etc.), `ProjectProvider`, gráficos (Recharts) e integrações OpenAI só são carregados quando necessários, reduzindo o bundle inicial para ~205 kB (≈64 kB gzip).
+- **Divisão manual de chunks**: configuração em `vite.config.ts` separa dependências pesadas (`recharts`, `supabase`, `react`, `openai`, utilitários), melhorando cache de longo prazo.
 - **Métricas em desenvolvimento**: `utils/reportWebVitals.ts` inicializa Web Vitals automaticamente em modo DEV e loga FCP, LCP, INP, TTFB etc. no console.
 - **Boas práticas sugeridas**:
   1. Rode `npm run build` e sirva `dist/` com `npm run preview` antes de executar Lighthouse.
@@ -775,7 +787,7 @@ npm run preview
   - Sincronizar automaticamente o projeto selecionado com o filtro atual da página de tarefas
  - Unificada a paleta de cores de status entre **Quadro de Tarefas (Kanban)** e **Cronograma**, garantindo que:
    - **Pendente** seja exibido em vermelho
-   - **A Fazer** seja exibido em roxo
+   - **A Fazer** seja exibido em dourado
    - **Em andamento** seja exibido em azul
    - **Concluído** seja exibido em verde
 - Implementado **Modal de Resumo de Tarefas** (`TaskSummaryModal.tsx`):
@@ -941,6 +953,100 @@ FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 CREATE INDEX idx_messages_is_read ON messages(channel, is_read, sender_id);
 ```
 
+### Correção: Análise de Riscos com IA (Dez 2025)
+
+**Problema identificado**: O insight da IA estava relatando projetos 100% completos como "em risco" devido a tarefas atrasadas, mesmo que todas as tarefas já estivessem concluídas.
+
+**Sintomas**:
+- ❌ Projetos totalmente concluídos listados como risco
+- ❌ IA considerava apenas contagem de tarefas atrasadas, ignorando status de conclusão
+- ❌ Análise pouco precisa e confusa
+
+**Causa raiz**:
+O serviço OpenAI recebia apenas:
+- Total de tarefas
+- Número de tarefas atrasadas
+- Nome do cliente
+
+Sem informações sobre:
+- Quantas tarefas estavam concluídas
+- Percentual de progresso do projeto
+- Distribuição de tarefas por status
+
+**Solução implementada**:
+
+1. **Dados detalhados por projeto**:
+```typescript
+const projectDataSummary = projects.map(p => {
+  const totalTasks = p.tasks.length;
+  const completedTasks = p.tasks.filter(t => t.status === TaskStatus.Done).length;
+  const inProgressTasks = p.tasks.filter(t => t.status === TaskStatus.InProgress).length;
+  const todoTasks = p.tasks.filter(t => t.status === TaskStatus.ToDo).length;
+  const pendingTasks = p.tasks.filter(t => t.status === TaskStatus.Pending).length;
+  const overdueTasks = p.tasks.filter(t => new Date(t.dueDate) < new Date() && t.status !== TaskStatus.Done).length;
+  const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  
+  return `- Projeto "${p.name}": ${totalTasks} tarefas (${completedTasks} concluídas, ${inProgressTasks} em andamento, ${todoTasks} a fazer, ${pendingTasks} pendentes). Progresso: ${progressPercentage}%. Tarefas atrasadas (não concluídas): ${overdueTasks}. ${clientLabel}`;
+});
+```
+
+2. **Prompt aprimorado para a IA**:
+```typescript
+const prompt = `
+  Como um gerente de projetos sênior, analise o seguinte resumo de dados de projetos.
+  Identifique os 2-3 riscos mais significativos e potenciais oportunidades.
+  
+  IMPORTANTE: 
+  - Considere o progresso geral de cada projeto (percentual de conclusão)
+  - Projetos com 100% de progresso estão COMPLETOS e NÃO devem ser considerados como risco
+  - Foque apenas em tarefas atrasadas que ainda NÃO foram concluídas
+  - Destaque projetos que estão em andamento com bom progresso
+  
+  Seja conciso e forneça insights acionáveis em formato de lista markdown.
+
+  Dados dos Projetos:
+  ${projectDataSummary}
+`;
+```
+
+**Exemplo de dados enviados**:
+
+**Antes (PROBLEMA)**:
+```
+- Projeto "ALFLEN": 12 tarefas, 0 tarefas atrasadas. Cliente: Mayara.
+- Projeto "IMAP": 8 tarefas, 0 tarefas atrasadas. Cliente: João.
+```
+❌ IA não sabia se projetos estavam completos ou apenas sem atrasos
+
+**Depois (SOLUÇÃO)**:
+```
+- Projeto "ALFLEN": 12 tarefas (12 concluídas, 0 em andamento, 0 a fazer, 0 pendentes). Progresso: 100%. Tarefas atrasadas (não concluídas): 0. Cliente: Mayara.
+- Projeto "IMAP": 8 tarefas (8 concluídas, 0 em andamento, 0 a fazer, 0 pendentes). Progresso: 100%. Tarefas atrasadas (não concluídas): 0. Cliente: João.
+```
+✅ IA identifica claramente que projetos estão 100% completos
+
+**Arquivo modificado**:
+- `services/openaiService.ts`: função `analyzeRisksAndOpportunities`
+
+**Resultados**:
+- ✅ IA não reporta mais projetos completos como risco
+- ✅ Análise mais precisa e contextualizada
+- ✅ Diferenciação clara entre projetos completos, em andamento e atrasados
+- ✅ Insights mais úteis e acionáveis
+- ✅ Destaque para projetos com bom progresso
+
+**Testes realizados**:
+- ✅ Projeto 100% completo → Não aparece como risco
+- ✅ Projeto 50% completo com tarefas atrasadas → Identificado como risco
+- ✅ Projeto em andamento sem atrasos → Destacado como oportunidade
+- ✅ Múltiplos projetos com diferentes status → Análise diferenciada
+
+**Benefícios**:
+- Insights mais confiáveis para tomada de decisão
+- Redução de falsos positivos na análise de riscos
+- Melhor visibilidade de projetos que realmente precisam de atenção
+- IA fornece recomendações mais contextualizadas e úteis
+
 **Melhorias Visuais na Interface**
 
 1. **Reordenação do Sidebar** (`Sidebar.tsx`):
@@ -967,7 +1073,7 @@ CREATE INDEX idx_messages_is_read ON messages(channel, is_read, sender_id);
 4. **Lista de Tarefas com Cores** (`TaskList.tsx`):
    - **Títulos de status coloridos** na visualização em lista:
      - Pendente: vermelho (`text-red-600 dark:text-red-400`)
-     - A Fazer: roxo (`text-purple-600 dark:text-purple-400`)
+     - A Fazer: dourado (`text-yellow-600 dark:text-yellow-400`)
      - Em andamento: azul (`text-blue-600 dark:text-blue-400`)
      - Concluído: verde (`text-green-600 dark:text-green-400`)
    - **Bordas laterais coloridas** em cada linha de tarefa (4px) e no cabeçalho de status
@@ -1664,7 +1770,7 @@ useEffect(() => {
 
 5. **Cores de Status por Dia** (mantidas):
    - 🔴 **Vermelho**: Pendente
-   - 🟣 **Roxo**: A Fazer
+   - 🟡 **Dourado**: A Fazer
    - 🔵 **Azul**: Em andamento
    - 🟢 **Verde**: Concluído
 
@@ -2317,9 +2423,142 @@ useEffect(() => {
   if (prop) setValue(prop);
 }, [prop]);
 
-// ✅ PREFIRA: Iniciar com valor conhecido
+// ✅ PREFERA: Iniciar com valor conhecido
 const [value, setValue] = useState(prop || '');
 useEffect(() => {
   if (prop) setValue(prop); // Só redefine se mudar
 }, [prop]);
 ```
+
+### Atualizações de Interface e UX (Dez 2025)
+
+**Melhorias no Dashboard e Visualizações**
+
+1. **Gráfico de Tarefas por Status** (`TasksByStatusChart.tsx`):
+   - **Ordem racional das barras empilhadas**: Pendente (base) → A Fazer → Em Andamento → Concluído (topo)
+   - **Tooltip customizado transparente**:
+     - Fundo semitransparente (`bg-black/50`) com blur (`backdrop-blur-lg`)
+     - Ordem invertida na legenda: Concluído → Em Andamento → A Fazer → Pendente
+     - Mantém-se dentro dos limites do gráfico
+     - Estilo moderno com bordas arredondadas e sombras
+   - **Navegação por clique**: Clicar em qualquer parte da coluna navega diretamente para a página de tarefas do projeto correspondente
+   - **Feedback visual**: Texto indicativo "Clique na coluna para ver tarefas" quando navegação está disponível
+   - **Cursor pointer**: Indicação visual de que as colunas são clicáveis
+
+2. **Paleta de Cores Atualizada**:
+   - **A Fazer** alterado de roxo para **dourado** (`#FFD700` / `yellow-500`):
+     - Consistente em todo o sistema (Kanban, lista, gráficos, tooltips)
+     - Gráfico de barras: `#FFD700`
+     - Kanban: `bg-yellow-200`, `text-yellow-800`, `border-yellow-500`
+     - Lista de tarefas: `text-yellow-600`, `border-yellow-500`
+     - Checklist: checkbox `bg-yellow-500`, texto `text-yellow-600`
+   - **Mantidas as outras cores**:
+     - Pendente: vermelho (`#ef4444`)
+     - Em Andamento: azul (`#38bdf8`)
+     - Concluído: verde (`#10b981`)
+
+3. **Visualização em Lista de Tarefas** (`TaskList.tsx`):
+   - **Abas horizontais por status**: Modo lista agora organiza tarefas em abas clicáveis
+     - Cada aba representa um status: Pendente, A Fazer, Em Andamento, Concluído
+     - Aba ativa destacada com borda inferior colorida correspondente ao status
+     - Contador de tarefas em cada aba
+     - Seleção automática da primeira aba com tarefas ao entrar no modo lista
+   - **Layout otimizado**: Conteúdo da aba ativa exibido abaixo das abas
+   - **Navegação fluida**: Alternância entre status através de cliques nas abas
+   - **Mensagem informativa**: Exibe mensagem quando não há tarefas no status selecionado
+
+4. **Remoção do Campo "Duração (dias)"**:
+   - **Campo removido do formulário de tarefas** (`TaskForm.tsx`):
+     - Interface simplificada e mais focada
+     - Layout ajustado para melhor organização dos campos restantes
+   - **Campo removido da visualização de detalhes** (`TaskDetail.tsx`):
+     - Informação de duração não é mais exibida na visualização detalhada
+   - **Compatibilidade mantida**: Backend mantém o campo para compatibilidade com dados existentes (valor padrão: 1)
+
+5. **Modal de Envio de Lembretes** (`NotificationSenderModal.tsx`):
+   - **Botão do WhatsApp em verde**: Estilo alinhado com a identidade visual do WhatsApp
+     - Cores: `bg-green-600`, `hover:bg-green-700` (modo claro)
+     - Cores escuras: `dark:bg-green-500`, `dark:hover:bg-green-600`
+     - Implementado como elemento HTML nativo para garantir aplicação correta das cores
+
+**Correções Técnicas**
+
+6. **Erro de Inicialização no TaskList**:
+   - **Problema**: `ReferenceError: can't access lexical declaration 'tasksByStatus' before initialization`
+   - **Causa**: `useEffect` tentava usar `tasksByStatus` antes de sua declaração
+   - **Solução**:
+     - Reorganizada a ordem de declaração de variáveis e hooks
+     - `useEffect` que define a aba ativa movido para depois da declaração de `tasksByStatus`
+     - Inicialização segura com estrutura vazia por status
+   - **Resultado**: Página de tarefas carrega corretamente sem erros
+
+**Arquivos modificados**:
+- `components/dashboard/TasksByStatusChart.tsx`: Tooltip customizado transparente, navegação por clique nas colunas, cores atualizadas para dourado
+- `components/tasks/TaskList.tsx`: Abas horizontais por status no modo lista, correção de erro de inicialização
+- `components/tasks/TaskForm.tsx`: Remoção do campo "Duração (dias)", layout ajustado
+- `components/tasks/TaskDetail.tsx`: Remoção da exibição do campo "Duração"
+- `components/tasks/KanbanColumn.tsx`: Cores atualizadas para dourado no status "A Fazer"
+- `components/tasks/ChecklistView.tsx`: Cores atualizadas para dourado no checkbox e texto
+- `components/tasks/TaskSummaryModal.tsx`: Cores atualizadas para dourado no gráfico e indicadores
+- `components/tasks/NotificationSenderModal.tsx`: Botão WhatsApp em verde
+- `components/dashboard/Dashboard.tsx`: Passagem de prop `onNavigateToTasksWithProject` para o gráfico
+
+**Resultados**:
+- ✅ Visualização de gráficos mais intuitiva e interativa
+- ✅ Navegação direta do dashboard para tarefas de projetos através de cliques nas colunas
+- ✅ Identificação visual melhorada com cores consistentes em todo o sistema
+- ✅ Interface de lista de tarefas mais organizada e acessível com abas por status
+- ✅ Estilo moderno e profissional em todos os componentes
+- ✅ Correção de erros que impediam o carregamento da página de tarefas
+- ✅ Formulário de tarefas simplificado sem campo de duração
+- ✅ Tooltip transparente e elegante no gráfico de barras
+- ✅ Experiência de usuário aprimorada em todas as visualizações
+
+**Benefícios para o usuário**:
+- Navegação mais rápida: clicar diretamente no gráfico para ver tarefas do projeto
+- Organização melhorada: abas facilitam a visualização de tarefas por status
+- Identificação visual instantânea: cores consistentes em todo o sistema
+- Interface mais limpa: campo de duração removido simplifica o formulário
+- Feedback visual claro: tooltips e indicadores facilitam a compreensão dos dados
+
+### Configuração da Chave API para Insights (Dez 2025)
+
+**Importante**: O sistema de Insights com IA utiliza **OpenAI GPT-4o-mini**, não Google Gemini.
+
+**Como configurar**:
+
+1. **Criar arquivo `.env.local`** na raiz do projeto (se ainda não existir)
+
+2. **Adicionar a chave da API OpenAI**:
+   ```env
+   # OpenAI AI (opcional - para Insights com IA)
+   OPENAI_API_KEY=sua-chave-openai
+   # ou
+   VITE_OPENAI_API_KEY=sua-chave-openai
+   ```
+
+3. **Obter a chave da API**:
+   - Acesse: https://platform.openai.com/api-keys
+   - Crie uma nova chave de API
+   - Copie e cole no arquivo `.env.local`
+
+4. **Reiniciar o servidor de desenvolvimento**:
+   ```bash
+   npm run dev
+   ```
+
+**Observações**:
+- ⚠️ Sem a chave configurada, o botão "Insights com IA" exibirá a mensagem: "Chave da API OpenAI não configurada. A análise está indisponível."
+- ✅ O modelo usado é **GPT-4o-mini** (mais econômico e rápido)
+- ✅ A análise considera todos os projetos ativos e identifica riscos e oportunidades
+- ✅ Funcionalidade totalmente opcional - o restante da aplicação funciona normalmente sem a chave
+
+**Arquivos relacionados**:
+- `services/openaiService.ts`: Serviço de integração com OpenAI
+- `components/dashboard/InsightsModal.tsx`: Modal de insights
+- `vite.config.ts`: Configuração de variáveis de ambiente
+- `.env.local`: Arquivo de configuração (não versionado)
+
+**Correção na documentação**:
+- Todas as referências antigas ao Google Gemini foram corrigidas para OpenAI
+- Seção de integrações atualizada para refletir o uso de OpenAI

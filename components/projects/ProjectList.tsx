@@ -110,7 +110,7 @@ const ProjectCard: React.FC<{
 
 
 const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProjectFilter }) => {
-  const { projects, addProject, updateProject, deleteProject, addFile, refreshData } = useProjectContext();
+  const { projects, addProject, updateProject, deleteProject, addFile, refreshData, loading, error } = useProjectContext();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
   const [teamModalProject, setTeamModalProject] = useState<Project | null>(null);
@@ -193,8 +193,18 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
       // Atualizar dados sem recarregar a página
       await refreshData();
     } catch (error) {
-      console.error('Erro ao salvar projeto:', error);
-      alert('Erro ao salvar projeto. Verifique o console para mais detalhes.');
+      console.error('[ProjectList] ❌ Erro ao salvar projeto:', error);
+      
+      // Tratamento específico para erros de autenticação
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao salvar projeto. Verifique o console para mais detalhes.';
+      
+      if (errorMessage.includes('Sessão expirada') || errorMessage.includes('expired') || errorMessage.includes('401')) {
+        alert('Sua sessão expirou. A página será recarregada para renovar a autenticação.');
+        window.location.reload();
+        return;
+      }
+      
+      alert(errorMessage);
     }
   };
 
@@ -298,8 +308,38 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
         </div>
       </div>
 
-      {filteredProjects.length === 0 && (
-        <p className="text-center py-10 text-slate-500 dark:text-slate-400">Nenhum projeto foi criado ainda.</p>
+      {loading && (
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400 mx-auto mb-4"></div>
+          <p className="text-slate-500 dark:text-slate-400">Carregando projetos...</p>
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="text-center py-10">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md mx-auto">
+            <p className="text-red-800 dark:text-red-200 font-semibold mb-2">Erro ao carregar projetos</p>
+            <p className="text-red-600 dark:text-red-300 text-sm mb-4">{error.message}</p>
+            <button
+              onClick={() => refreshData()}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Tentar Novamente
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && filteredProjects.length === 0 && (
+        <div className="text-center py-10">
+          <p className="text-slate-500 dark:text-slate-400 mb-4">Nenhum projeto foi criado ainda.</p>
+          <button
+            onClick={() => { setProjectToEdit(null); setIsFormOpen(true); }}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Criar Primeiro Projeto
+          </button>
+        </div>
       )}
 
       {filteredProjects.length > 0 && viewMode === 'cards' && (

@@ -35,14 +35,28 @@ export const analyzeRisksAndOpportunities = async (projects: Project[]): Promise
     if (!openai) return "Chave da API OpenAI não configurada. A análise está indisponível.";
 
     const projectDataSummary = projects.map(p => {
+        const totalTasks = p.tasks.length;
+        const completedTasks = p.tasks.filter(t => t.status === TaskStatus.Done).length;
+        const inProgressTasks = p.tasks.filter(t => t.status === TaskStatus.InProgress).length;
+        const todoTasks = p.tasks.filter(t => t.status === TaskStatus.ToDo).length;
+        const pendingTasks = p.tasks.filter(t => t.status === TaskStatus.Pending).length;
         const overdueTasks = p.tasks.filter(t => new Date(t.dueDate) < new Date() && t.status !== TaskStatus.Done).length;
+        const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
         const clientLabel = p.clientName ? `Cliente: ${p.clientName}.` : 'Cliente não informado.';
-        return `- Projeto "${p.name}": ${p.tasks.length} tarefas, ${overdueTasks} tarefas atrasadas. ${clientLabel}`;
+        
+        return `- Projeto "${p.name}": ${totalTasks} tarefas (${completedTasks} concluídas, ${inProgressTasks} em andamento, ${todoTasks} a fazer, ${pendingTasks} pendentes). Progresso: ${progressPercentage}%. Tarefas atrasadas (não concluídas): ${overdueTasks}. ${clientLabel}`;
     }).join('\n');
 
     const prompt = `
     Como um gerente de projetos sênior, analise o seguinte resumo de dados de projetos.
     Identifique os 2-3 riscos mais significativos e potenciais oportunidades.
+    
+    IMPORTANTE: 
+    - Considere o progresso geral de cada projeto (percentual de conclusão)
+    - Projetos com 100% de progresso estão COMPLETOS e NÃO devem ser considerados como risco
+    - Foque apenas em tarefas atrasadas que ainda NÃO foram concluídas
+    - Destaque projetos que estão em andamento com bom progresso
+    
     Seja conciso e forneça insights acionáveis em formato de lista markdown.
 
     Dados dos Projetos:

@@ -3,6 +3,7 @@ import { useAuth } from './useAuth';
 import { Project, User, Task, Message, TeamMember, Attachment, ProjectStatus, TaskStatus, TaskPriority, ProjectType, GlobalRole, PermissionsByRole, PermissionAction } from '../types';
 import { HOMOLOGACAO_TASK_NAMES, RENOVACAO_CCT_TASK_NAMES, DEFAULT_ROLE_PERMISSIONS, PERMISSION_MODULES } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '../services/supabaseClient';
 
 // Importar serviços do Supabase
 import { ProjectsService, TasksService, UsersService, TeamService, AttachmentsService, MessagesService } from '../services/api';
@@ -70,51 +71,98 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       console.log('🔄 [ProjectContext] Iniciando carregamento de dados...');
       console.log('🔄 [ProjectContext] Profile atual:', profile?.name || 'Sem perfil');
-      console.log('🔄 [ProjectContext] URL Supabase conectado');
+      console.log('🔄 [ProjectContext] Profile ID:', profile?.id || 'Sem ID');
+      
+      // Verificar sessão antes de carregar dados
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('❌ [ProjectContext] Erro ao verificar sessão:', sessionError);
+        throw new Error('Erro de autenticação: ' + sessionError.message);
+      }
+      
+      if (!session) {
+        console.warn('⚠️ [ProjectContext] Nenhuma sessão encontrada');
+        throw new Error('Sessão não encontrada. Por favor, faça login novamente.');
+      }
+      
+      console.log('✅ [ProjectContext] Sessão válida encontrada');
+      console.log('✅ [ProjectContext] Token expira em:', session.expires_at ? (session.expires_at - Math.floor(Date.now() / 1000)) + ' segundos' : 'N/A');
 
       // Carregar usuários, projetos e mensagens em paralelo para reduzir o tempo total
+      console.log('📤 [ProjectContext] Iniciando requisições ao Supabase...');
       const [dbUsers, dbProjects, dbMessages] = await Promise.all([
-        UsersService.getAll(),
-        ProjectsService.getAll(),
-        MessagesService.getAll(),
+        UsersService.getAll().catch(err => {
+          console.error('❌ [ProjectContext] Erro ao carregar usuários:', err);
+          throw new Error('Erro ao carregar usuários: ' + (err instanceof Error ? err.message : String(err)));
+        }),
+        ProjectsService.getAll().catch(err => {
+          console.error('❌ [ProjectContext] Erro ao carregar projetos:', err);
+          throw new Error('Erro ao carregar projetos: ' + (err instanceof Error ? err.message : String(err)));
+        }),
+        MessagesService.getAll().catch(err => {
+          console.error('❌ [ProjectContext] Erro ao carregar mensagens:', err);
+          // Mensagens não são críticas, continuar mesmo com erro
+          console.warn('⚠️ [ProjectContext] Continuando sem mensagens...');
+          return [];
+        }),
       ]);
 
-      console.log('👥 [ProjectContext] Usuários carregados:', dbUsers.length);
-      if (dbUsers.length === 0) {
+      console.log('👥 [ProjectContext] Usuários carregados:', dbUsers?.length || 0);
+      if (!dbUsers || dbUsers.length === 0) {
         console.warn('⚠️ [ProjectContext] ATENÇÃO: Nenhum usuário encontrado no banco!');
       }
-      const mappedUsers = dbUsers.map(mapUser);
+      const mappedUsers = (dbUsers || []).map(mapUser);
       setUsers(mappedUsers);
+      console.log('✅ [ProjectContext] Usuários mapeados e salvos:', mappedUsers.length);
 
-      console.log('📁 [ProjectContext] Projetos carregados do banco:', dbProjects.length);
-      if (dbProjects.length === 0) {
+      console.log('📁 [ProjectContext] Projetos carregados do banco:', dbProjects?.length || 0);
+      if (!dbProjects || dbProjects.length === 0) {
         console.warn('⚠️ [ProjectContext] ATENÇÃO: Nenhum projeto encontrado no banco!');
+        // Definir array vazio mesmo sem projetos
+        setProjects([]);
+      } else {
+        // Para cada projeto, carregar tarefas e arquivos
+        console.log('📦 [ProjectContext] Carregando detalhes dos projetos...');
+        const projectsWithDetails = await Promise.all(
+          dbProjects.map(async (dbProject) => {
+            try {
+              const project = mapProject(dbProject);
+
+              // Carregar tarefas e arquivos do projeto em paralelo
+              const [dbTasks, dbFiles] = await Promise.all([
+                TasksService.getByProject(project.id).catch(err => {
+                  console.error(`❌ [ProjectContext] Erro ao carregar tarefas do projeto ${project.id}:`, err);
+                  return [];
+                }),
+                AttachmentsService.getByProject(project.id).catch(err => {
+                  console.error(`❌ [ProjectContext] Erro ao carregar arquivos do projeto ${project.id}:`, err);
+                  return [];
+                }),
+              ]);
+
+              project.tasks = (dbTasks || []).map(mapTask);
+              project.files = (dbFiles || []).map(mapAttachment);
+
+              return project;
+            } catch (err) {
+              console.error(`❌ [ProjectContext] Erro ao processar projeto ${dbProject.id}:`, err);
+              // Retornar projeto mesmo com erro, sem tarefas/arquivos
+              const project = mapProject(dbProject);
+              project.tasks = [];
+              project.files = [];
+              return project;
+            }
+          })
+        );
+
+        console.log('✅ [ProjectContext] Projetos processados:', projectsWithDetails.length);
+        setProjects(projectsWithDetails);
       }
 
-      // Para cada projeto, carregar tarefas e arquivos
-      const projectsWithDetails = await Promise.all(
-        dbProjects.map(async (dbProject) => {
-          const project = mapProject(dbProject);
-
-          // Carregar tarefas e arquivos do projeto em paralelo
-          const [dbTasks, dbFiles] = await Promise.all([
-            TasksService.getByProject(project.id),
-            AttachmentsService.getByProject(project.id),
-          ]);
-
-          project.tasks = dbTasks.map(mapTask);
-          project.files = dbFiles.map(mapAttachment);
-
-          return project;
-        })
-      );
-
-      console.log('✅ Projetos processados:', projectsWithDetails.length);
-      console.log('✅ Projetos com detalhes:', projectsWithDetails);
-      setProjects(projectsWithDetails);
-
-      const mappedMessages = dbMessages.map(mapMessage);
+      const mappedMessages = (dbMessages || []).map(mapMessage);
       setMessages(mappedMessages);
+      console.log('✅ [ProjectContext] Mensagens carregadas:', mappedMessages.length);
+      console.log('✅ [ProjectContext] Todos os dados carregados com sucesso!');
 
     } catch (err) {
       console.error('❌ [ProjectContext] ERRO ao carregar dados:', err);
@@ -133,10 +181,16 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [profile]);
 
-  // Carregar dados na inicialização
+  // Carregar dados na inicialização (apenas quando há profile)
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    if (profile) {
+      console.log('🔄 [ProjectContext] Profile disponível, carregando dados...');
+      refreshData();
+    } else {
+      console.log('⏳ [ProjectContext] Aguardando profile para carregar dados...');
+      setLoading(false); // Não mostrar loading se não há profile
+    }
+  }, [refreshData, profile]);
 
   // Sincronizar/mesclar perfil do usuário logado na lista de usuários
   useEffect(() => {
@@ -318,6 +372,14 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateTask = useCallback(async (taskData: Task) => {
     try {
       setLoading(true);
+      console.log('[useProjectContext.updateTask] 🔄 Iniciando atualização...', { taskId: taskData.id });
+      
+      // Verificar token antes de fazer operação
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('[useProjectContext.updateTask] ❌ Nenhuma sessão encontrada');
+        throw new Error('Sessão expirada. Por favor, recarregue a página.');
+      }
       
       // Buscar a tarefa anterior para verificar se o status mudou
       let finalTaskData = { ...taskData };
@@ -328,6 +390,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         finalTaskData.dueDate = new Date().toISOString().split('T')[0];
       }
       
+      const startTime = Date.now();
       await TasksService.update(finalTaskData.id, {
         name: finalTaskData.name,
         description: finalTaskData.description,
@@ -338,6 +401,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         duration: finalTaskData.duration,
         dependencies: finalTaskData.dependencies,
       });
+      
+      const duration = Date.now() - startTime;
+      console.log('[useProjectContext.updateTask] ⏱️ Atualização concluída em', duration, 'ms');
 
       const assignee = users.find(u => u.id === finalTaskData.assignee_id) || null;
       const consistentTaskData = { ...finalTaskData, assignee };
