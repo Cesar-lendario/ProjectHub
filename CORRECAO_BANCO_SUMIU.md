@@ -273,3 +273,4 @@ useEffect(() => {
    - Implementar retry automático
    - Implementar carregamento incremental
 
+

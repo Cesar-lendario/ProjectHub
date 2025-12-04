@@ -36,19 +36,60 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         // Verificar se há token no localStorage
         const storageKey = 'taskmeet-auth-token';
-        const storedAuth = localStorage.getItem(storageKey);
-        console.log('[useAuth] 💾 Token no localStorage:', storedAuth ? '✅ Encontrado' : '❌ Não encontrado');
+        let storedAuth: string | null = null;
+        
+        try {
+          storedAuth = localStorage.getItem(storageKey);
+          
+          // Validar se o token não está corrompido
+          if (storedAuth) {
+            try {
+              const parsed = JSON.parse(storedAuth);
+              
+              // Verificar estrutura básica
+              if (!parsed || typeof parsed !== 'object') {
+                console.warn('[useAuth] ⚠️ Token corrompido, limpando...');
+                localStorage.removeItem(storageKey);
+                storedAuth = null;
+              } else {
+                console.log('[useAuth] 💾 Token no localStorage: ✅ Encontrado e válido');
+              }
+            } catch (parseError) {
+              console.error('[useAuth] ❌ Erro ao parsear token, limpando...', parseError);
+              localStorage.removeItem(storageKey);
+              storedAuth = null;
+            }
+          } else {
+            console.log('[useAuth] 💾 Token no localStorage: ❌ Não encontrado');
+          }
+        } catch (storageError) {
+          console.error('[useAuth] ❌ Erro ao acessar localStorage:', storageError);
+          storedAuth = null;
+        }
         
         setLoading(true);
         
-        // Timeout de segurança: se não carregar em 10 segundos, forçar loading = false
+        // Timeout de segurança: se não carregar em 8 segundos, forçar loading = false
         timeoutId = setTimeout(() => {
           if (isMounted && !hasCompletedInitialLoad) {
-            console.warn('[useAuth] ⚠️ Timeout ao carregar sessão inicial (10s)');
+            console.warn('[useAuth] ⚠️ Timeout ao carregar sessão inicial (8s)');
+            console.warn('[useAuth] 🧹 Limpando possível sessão corrompida...');
+            
+            // Limpar localStorage do Supabase
+            try {
+              const storageKey = 'taskmeet-auth-token';
+              localStorage.removeItem(storageKey);
+              console.log('[useAuth] ✅ Storage limpo após timeout');
+            } catch (cleanupError) {
+              console.error('[useAuth] ❌ Erro ao limpar storage:', cleanupError);
+            }
+            
             hasCompletedInitialLoad = true;
+            setSession(null);
+            setProfile(null);
             setLoading(false);
           }
-        }, 10000);
+        }, 8000);
         
         // Buscar sessão atual explicitamente
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();

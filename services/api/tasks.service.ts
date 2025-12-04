@@ -87,11 +87,11 @@ export const TasksService = {
         .select()
         .single();
       
-      // Timeout de 25 segundos
+      // Timeout de 15 segundos
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
-          reject(new Error('Timeout: A requisição demorou mais de 25 segundos. Verifique sua conexão.'));
-        }, 25000);
+          reject(new Error('Timeout: A requisição demorou mais de 15 segundos. Possíveis causas:\n\n• Conexão lenta com internet\n• Servidor Supabase sobrecarregado\n• Problema nas regras RLS do banco\n\nTente recarregar a página (Ctrl+Shift+R).'));
+        }, 15000);
       });
       
       const { data, error } = await Promise.race([createPromise, timeoutPromise]) as any;
@@ -155,11 +155,11 @@ export const TasksService = {
         .select()
         .single();
       
-      // Timeout de 25 segundos (menor que o timeout do TaskForm de 30s)
+      // Timeout de 15 segundos (mais agressivo para detectar problemas mais cedo)
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
-          reject(new Error('Timeout: A requisição demorou mais de 25 segundos. Verifique sua conexão.'));
-        }, 25000);
+          reject(new Error('Timeout: A requisição demorou mais de 15 segundos. Possíveis causas:\n\n• Conexão lenta com internet\n• Servidor Supabase sobrecarregado\n• Problema nas regras RLS do banco\n\nTente recarregar a página (Ctrl+Shift+R).'));
+        }, 15000);
       });
       
       const { data, error } = await Promise.race([updatePromise, timeoutPromise]) as any;

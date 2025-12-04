@@ -1,0 +1,187 @@
+═══════════════════════════════════════════════════════════════
+  LISTA DE ARQUIVOS MODIFICADOS - Deploy 04/12/2025
+═══════════════════════════════════════════════════════════════
+
+📋 RESUMO:
+- 5 arquivos modificados (4 código + 1 config)
+- 3 arquivos de documentação criados
+- Build concluído com sucesso
+- 29 arquivos gerados em dist/
+
+═══════════════════════════════════════════════════════════════
+
+🔧 ARQUIVOS DE CÓDIGO MODIFICADOS (4):
+
+1. index.html
+   Status: ✅ Modificado
+   Localização: Raiz do projeto
+   Mudanças:
+   - Removido importmap conflitante
+   - Adicionado sistema de versionamento (CACHE_VERSION)
+   - Adicionado limpeza automática de storage
+   - Adicionado detecção de erros de módulo
+   - Adicionado botão de emergência
+   
+2. services/supabaseClient.ts
+   Status: ✅ Modificado
+   Localização: services/
+   Mudanças:
+   - Adicionado função validateAndCleanStorage()
+   - Valida token antes de usar
+   - Remove tokens corrompidos/expirados
+   
+3. hooks/useAuth.tsx
+   Status: ✅ Modificado
+   Localização: hooks/
+   Mudanças:
+   - Valida token antes de processar
+   - Timeout reduzido (10s → 8s)
+   - Limpeza automática no timeout
+   
+4. .htaccess
+   Status: ✅ Modificado
+   Localização: Raiz do projeto
+   Mudanças:
+   - Headers HTTP mais agressivos
+   - Adicionado Surrogate-Control
+   - Adicionado ETag único
+
+═══════════════════════════════════════════════════════════════
+
+📚 ARQUIVOS DE DOCUMENTAÇÃO CRIADOS (3):
+
+5. CORRECAO_DEFINITIVA_CACHE.md
+   Status: ✅ Novo
+   Conteúdo: Documentação técnica completa
+   
+6. RESUMO_DEPLOY_04DEZ2025.md
+   Status: ✅ Novo
+   Conteúdo: Instruções detalhadas de deploy
+   
+7. QUICK_START_DEPLOY.md
+   Status: ✅ Novo
+   Conteúdo: Guia rápido de deploy
+
+8. ARQUIVOS_MODIFICADOS.txt
+   Status: ✅ Novo
+   Conteúdo: Este arquivo
+
+═══════════════════════════════════════════════════════════════
+
+📦 ARQUIVOS PARA UPLOAD (PRIORIDADE):
+
+🔴 ALTA PRIORIDADE (OBRIGATÓRIO):
+
+1. dist/index.html
+   → Enviar para: RAIZ do site (public_html/ ou www/)
+   → Sobrescrever: Sim
+   → Tamanho: 8.19 KB
+   
+2. .htaccess
+   → Enviar para: RAIZ do site (public_html/ ou www/)
+   → Sobrescrever: Sim
+   → Tamanho: ~3 KB
+   
+3. dist/assets/index-B3kKVrsI.js
+   → Enviar para: assets/ no site
+   → Sobrescrever: Sim
+   → Tamanho: 261.86 KB
+   → Nota: Arquivo principal da aplicação
+
+4. dist/assets/*.* (TODOS OS 28 ARQUIVOS)
+   → Enviar para: assets/ no site
+   → Sobrescrever: Sim
+   → Nota: Incluir TODOS os arquivos de assets/
+
+═══════════════════════════════════════════════════════════════
+
+📁 ESTRUTURA DE PASTAS NO SERVIDOR:
+
+public_html/ (ou www/)
+│
+├── index.html              ← dist/index.html
+├── .htaccess              ← .htaccess (raiz)
+│
+└── assets/
+    ├── index-B3kKVrsI.js         ← dist/assets/
+    ├── index-XVTr1tC5.css        ← dist/assets/
+    ├── react-DS08_OVb.js         ← dist/assets/
+    ├── recharts-CVb5HtI4.js      ← dist/assets/
+    ├── supabase-CMJcXR0g.js      ← dist/assets/
+    └── ... (mais 23 arquivos)    ← dist/assets/
+
+═══════════════════════════════════════════════════════════════
+
+✅ CHECKLIST DE UPLOAD:
+
+[ ] 1. Conectar FTP (ftp.taskmeet.com.br)
+[ ] 2. Fazer backup dos arquivos atuais
+[ ] 3. Enviar dist/index.html → raiz/
+[ ] 4. Enviar .htaccess → raiz/
+[ ] 5. Criar pasta assets/ (se não existir)
+[ ] 6. Enviar TODOS os arquivos de dist/assets/ → assets/
+[ ] 7. Verificar estrutura de pastas
+[ ] 8. Limpar cache do CDN (se aplicável)
+[ ] 9. Testar em janela anônima
+[ ] 10. Verificar logs no console (F12)
+
+═══════════════════════════════════════════════════════════════
+
+🔍 COMO VERIFICAR SE UPLOAD FOI CORRETO:
+
+1. Acesse www.taskmeet.com.br em janela anônima
+2. Abra console (F12)
+3. Deve aparecer:
+
+   [Cache] 🔧 Versão: 2025.12.04.v2
+   
+   ✅ Se aparecer → Upload correto!
+   ❌ Se não aparecer → index.html não foi enviado
+
+═══════════════════════════════════════════════════════════════
+
+📊 ESTATÍSTICAS DO BUILD:
+
+- Módulos transformados: 1175
+- Arquivos gerados: 29
+- Tempo de build: 1m 36s
+- Tamanho total: ~2.5 MB
+- Tamanho comprimido (gzip): ~560 KB
+
+Maior arquivo: TaskList-BRfgluM6.js (453 KB)
+Arquivo principal: index-B3kKVrsI.js (261 KB)
+
+═══════════════════════════════════════════════════════════════
+
+🎯 VERSÃO ANTERIOR vs ATUAL:
+
+CACHE_VERSION anterior: 2025.12.01.v1
+CACHE_VERSION atual:    2025.12.04.v2
+
+Hash do arquivo principal:
+- Anterior: index-iCprt0IY.js
+- Atual:    index-B3kKVrsI.js
+            ^^^^^^^^^^^ HASH MUDOU (força cache refresh)
+
+═══════════════════════════════════════════════════════════════
+
+📞 SUPORTE:
+
+- Documentação técnica: CORRECAO_DEFINITIVA_CACHE.md
+- Instruções de deploy: RESUMO_DEPLOY_04DEZ2025.md
+- Guia rápido: QUICK_START_DEPLOY.md
+
+Se algo não funcionar:
+1. Verificar logs no console (F12)
+2. Verificar estrutura de pastas no FTP
+3. Limpar cache do navegador manualmente (teste)
+4. Consultar seção "Debug" nos arquivos MD
+
+═══════════════════════════════════════════════════════════════
+
+Data: 04/12/2025
+Build: npm run build (concluído com sucesso)
+Status: ✅ PRONTO PARA DEPLOY
+
+═══════════════════════════════════════════════════════════════
+

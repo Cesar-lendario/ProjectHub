@@ -1,9 +1,13 @@
 # Cache control rules for TaskMeet
 # HTML nunca deve ser cacheado
 <FilesMatch "\.html$">
-  Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
-  Header set Pragma "no-cache"
-  Header set Expires "0"
+  Header always set Cache-Control "no-cache, no-store, must-revalidate, max-age=0, private"
+  Header always set Pragma "no-cache"
+  Header always set Expires "0"
+  # Prevenir cache de proxies e CDNs
+  Header always set Surrogate-Control "no-store"
+  # ETag único por requisição para forçar revalidação
+  Header always set ETag "W/\"taskmeet-2025.12.04\""
 </FilesMatch>
 
 # Cache para arquivos JS/CSS

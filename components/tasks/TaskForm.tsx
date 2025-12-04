@@ -109,13 +109,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
       console.error('[TaskForm] ⚠️ Timeout ao salvar tarefa após', elapsed, 'segundos');
       setIsLoading(false);
       
-      // Verificar se é problema de conexão ou servidor
-      const errorMsg = elapsed >= 30 
-        ? 'A operação está demorando muito. Isso pode indicar:\n\n• Problema de conexão com a internet\n• Servidor sobrecarregado\n• Token de autenticação expirado\n\nPor favor, verifique sua conexão e tente novamente. Se o problema persistir, recarregue a página (Ctrl+Shift+R).'
-        : 'A operação está demorando mais que o esperado. Por favor, tente novamente.';
+      // Mensagem mais clara sobre o problema
+      const errorMsg = 'A operação está demorando muito (' + elapsed + 's). Isso pode indicar:\n\n• Problema de conexão com a internet\n• Servidor sobrecarregado\n• Token de autenticação expirado\n• Cache do navegador corrompido\n\nPor favor:\n1. Verifique sua conexão com internet\n2. Recarregue a página (Ctrl+Shift+R)\n3. Tente salvar novamente\n\nSe o problema persistir:\n• Limpe completamente o cache do navegador\n• Verifique se outras pessoas também têm o problema (pode ser servidor)';
       
       alert(errorMsg);
-    }, 30000); // 30 segundos de timeout
+    }, 20000); // 20 segundos de timeout (reduzido de 30s para detectar problemas mais cedo)
     
     try {
         console.log('[TaskForm] Iniciando salvamento da tarefa...', { 

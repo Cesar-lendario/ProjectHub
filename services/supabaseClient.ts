@@ -11,6 +11,58 @@ console.log('[Supabase] 🌐 Ambiente:', isProduction ? 'PRODUÇÃO' : 'DESENVOL
 console.log('[Supabase] 🌐 Hostname:', window.location.hostname);
 console.log('[Supabase] 🔗 URL:', supabaseUrl);
 
+// Sistema de detecção e limpeza de storage corrompido
+function validateAndCleanStorage() {
+  try {
+    const authKey = 'taskmeet-auth-token';
+    const storedAuth = localStorage.getItem(authKey);
+    
+    if (storedAuth) {
+      try {
+        // Tentar parsear o token armazenado
+        const parsed = JSON.parse(storedAuth);
+        
+        // Verificar se tem a estrutura esperada
+        if (!parsed || typeof parsed !== 'object') {
+          console.warn('[Supabase] ⚠️ Token com estrutura inválida, limpando...');
+          localStorage.removeItem(authKey);
+          return false;
+        }
+        
+        // Verificar se o token não está expirado há muito tempo
+        if (parsed.expires_at) {
+          const expiresAt = parsed.expires_at * 1000; // Converter para ms
+          const now = Date.now();
+          const hoursSinceExpiry = (now - expiresAt) / (1000 * 60 * 60);
+          
+          // Se expirou há mais de 24 horas, limpar
+          if (hoursSinceExpiry > 24) {
+            console.warn('[Supabase] ⚠️ Token expirado há', Math.floor(hoursSinceExpiry), 'horas, limpando...');
+            localStorage.removeItem(authKey);
+            return false;
+          }
+        }
+        
+        console.log('[Supabase] ✅ Token válido no storage');
+        return true;
+      } catch (parseError) {
+        console.error('[Supabase] ❌ Erro ao parsear token, limpando...', parseError);
+        localStorage.removeItem(authKey);
+        return false;
+      }
+    } else {
+      console.log('[Supabase] ℹ️ Nenhum token armazenado');
+      return true; // Não há token, mas está OK
+    }
+  } catch (error) {
+    console.error('[Supabase] ❌ Erro ao validar storage:', error);
+    return false;
+  }
+}
+
+// Executar validação antes de criar o cliente
+validateAndCleanStorage();
+
 // Cliente Supabase tipado com as definições do banco de dados
 // Configurações para aumentar timeout e melhorar performance
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {

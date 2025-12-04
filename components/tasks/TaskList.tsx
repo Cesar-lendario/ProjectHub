@@ -213,14 +213,14 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
       console.error('[TaskList] ⚠️ Timeout ao salvar tarefa após', elapsed, 'segundos');
       
       // Verificar se é problema de conexão ou servidor
-      const errorMsg = 'A operação está demorando muito. Isso pode indicar:\n\n• Problema de conexão com a internet\n• Servidor sobrecarregado\n• Token de autenticação expirado\n\nPor favor, verifique sua conexão e tente novamente. Se o problema persistir, recarregue a página (Ctrl+Shift+R).';
+      const errorMsg = 'A operação está demorando muito (' + elapsed + 's). Isso pode indicar:\n\n• Problema de conexão com a internet\n• Servidor sobrecarregado\n• Token de autenticação expirado\n• Cache do navegador corrompido\n\nPor favor:\n1. Verifique sua conexão\n2. Recarregue a página (Ctrl+Shift+R)\n3. Tente novamente\n\nSe o problema persistir, limpe o cache do navegador completamente.';
       
       alert(errorMsg);
       
       // Fechar modal mesmo em caso de timeout
       setIsFormOpen(false);
       setTaskToEdit(null);
-    }, 30000); // 30 segundos de timeout
+    }, 20000); // 20 segundos de timeout (reduzido de 30s)
     
     try {
       console.log('[TaskList] Iniciando salvamento...', { 

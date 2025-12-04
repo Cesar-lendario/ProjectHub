@@ -219,3 +219,4 @@ Sua sessão expirou. A página será recarregada para renovar a autenticação.
    - Cache de requisições frequentes
    - Debounce em refresh preventivo para evitar múltiplos refresh simultâneos
 
+

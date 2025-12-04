@@ -236,3 +236,4 @@ Se o problema persistir, recarregue a página (Ctrl+Shift+R)."
    - Adicionar índices se necessário
    - Otimizar payloads das requisições
 
+
