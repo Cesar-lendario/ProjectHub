@@ -56,26 +56,17 @@ export const TasksService = {
     console.log('[TasksService.create] 🔄 Iniciando criação de tarefa...', { task });
     
     try {
-      // Verificar token antes de fazer requisição
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.error('[TasksService.create] ❌ Nenhuma sessão encontrada');
-        throw new Error('Sessão expirada. Por favor, recarregue a página.');
+      // SEMPRE fazer refresh do token antes de criar (CRÍTICO!)
+      console.log('[TasksService.create] 🔄 Renovando token antes de criar...');
+      const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError || !refreshedSession) {
+        console.error('[TasksService.create] ❌ Erro ao renovar sessão:', refreshError);
+        throw new Error('Sessão expirada. Por favor, recarregue a página (Ctrl+Shift+R).');
       }
       
-      const expiresIn = session.expires_at ? session.expires_at - Math.floor(Date.now() / 1000) : 0;
-      console.log('[TasksService.create] 🔑 Token válido, expira em:', expiresIn, 'segundos');
-      
-      // Se token próximo de expirar, fazer refresh preventivo
-      if (expiresIn < 300 && expiresIn > 0) {
-        console.log('[TasksService.create] 🔄 Token próximo de expirar, fazendo refresh...');
-        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          console.error('[TasksService.create] ❌ Erro ao fazer refresh:', refreshError);
-        } else if (refreshedSession) {
-          console.log('[TasksService.create] ✅ Token atualizado');
-        }
-      }
+      const expiresIn = refreshedSession.expires_at ? refreshedSession.expires_at - Math.floor(Date.now() / 1000) : 0;
+      console.log('[TasksService.create] ✅ Token renovado! Expira em:', Math.floor(expiresIn / 60), 'minutos');
       
       const startTime = Date.now();
       console.log('[TasksService.create] 📤 Enviando requisição ao Supabase...');
@@ -123,26 +114,17 @@ export const TasksService = {
     console.log('[TasksService.update] 🔄 Iniciando atualização de tarefa...', { id, task });
     
     try {
-      // Verificar token antes de fazer requisição
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.error('[TasksService.update] ❌ Nenhuma sessão encontrada');
-        throw new Error('Sessão expirada. Por favor, recarregue a página.');
+      // SEMPRE fazer refresh do token antes de salvar (CRÍTICO!)
+      console.log('[TasksService.update] 🔄 Renovando token antes de salvar...');
+      const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError || !refreshedSession) {
+        console.error('[TasksService.update] ❌ Erro ao renovar sessão:', refreshError);
+        throw new Error('Sessão expirada. Por favor, recarregue a página (Ctrl+Shift+R).');
       }
       
-      const expiresIn = session.expires_at ? session.expires_at - Math.floor(Date.now() / 1000) : 0;
-      console.log('[TasksService.update] 🔑 Token válido, expira em:', expiresIn, 'segundos');
-      
-      // Se token próximo de expirar, fazer refresh preventivo
-      if (expiresIn < 300 && expiresIn > 0) {
-        console.log('[TasksService.update] 🔄 Token próximo de expirar, fazendo refresh...');
-        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          console.error('[TasksService.update] ❌ Erro ao fazer refresh:', refreshError);
-        } else if (refreshedSession) {
-          console.log('[TasksService.update] ✅ Token atualizado');
-        }
-      }
+      const expiresIn = refreshedSession.expires_at ? refreshedSession.expires_at - Math.floor(Date.now() / 1000) : 0;
+      console.log('[TasksService.update] ✅ Token renovado! Expira em:', Math.floor(expiresIn / 60), 'minutos');
       
       const startTime = Date.now();
       console.log('[TasksService.update] 📤 Enviando requisição ao Supabase...');
