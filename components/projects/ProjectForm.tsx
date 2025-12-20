@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { Project, ProjectStatus, ProjectType } from '../../types';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
 import Textarea from '../ui/Textarea';
 import Button from '../ui/Button';
+import { autoRecoverySystem } from '../../utils/autoRecoverySystem';
 
 interface ProjectFormProps {
   isOpen: boolean;
@@ -24,6 +25,35 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Registrar callback de limpeza no sistema de recuperação
+  useEffect(() => {
+    const componentId = `ProjectForm_${Math.random().toString(36).substr(2, 9)}`;
+    
+    autoRecoverySystem.registerRecoveryCallback(componentId, () => {
+      console.log('[ProjectForm] 🔄 Limpeza automática acionada');
+      
+      // Limpar timeout se existir
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
+      }
+      
+      // Resetar loading
+      setIsLoading(false);
+    });
+    
+    return () => {
+      autoRecoverySystem.unregisterRecoveryCallback(componentId);
+      
+      // Cleanup ao desmontar
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (projectToEdit) {
@@ -68,8 +98,17 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
     const timeoutId = setTimeout(() => {
       console.error('[ProjectForm] ⚠️ Timeout ao salvar projeto (30s)');
       setIsLoading(false);
-      alert('A operação está demorando muito. Por favor, tente novamente.');
+      alert('A operação está demorando muito. Tentando recuperação automática...');
+      
+      // Acionar recuperação automática
+      autoRecoverySystem.attemptRecovery({
+        refreshToken: true,
+        resetUIStates: true
+      });
     }, 30000); // 30 segundos de timeout
+    
+    // Salvar referência do timeout
+    timeoutIdRef.current = timeoutId;
     
     try {
         const projectData = {
@@ -102,11 +141,13 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
         }
         
         clearTimeout(timeoutId);
+        timeoutIdRef.current = null;
         // Resetar loading e fechar modal apenas após sucesso
         setIsLoading(false);
         onClose();
     } catch(error) {
         clearTimeout(timeoutId);
+        timeoutIdRef.current = null;
         console.error("[ProjectForm] ❌ Falha ao salvar projeto:", error);
         
         // Tratamento específico para erros de autenticação

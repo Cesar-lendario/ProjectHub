@@ -7,6 +7,7 @@ import Input from '../ui/Input';
 import Select from '../ui/Select';
 import Textarea from '../ui/Textarea';
 import Button from '../ui/Button';
+import { autoRecoverySystem } from '../../utils/autoRecoverySystem';
 
 type EnhancedTask = Task & {
   projectName: string;
@@ -34,6 +35,34 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
   // Refs para rastrear estado anterior
   const wasOpenRef = useRef(false);
   const lastTaskIdRef = useRef<string | null>(null);
+  const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Registrar callback de limpeza no sistema de recuperação
+  useEffect(() => {
+    const componentId = `TaskForm_${Math.random().toString(36).substr(2, 9)}`;
+    
+    autoRecoverySystem.registerRecoveryCallback(componentId, () => {
+      console.log('[TaskForm] 🔄 Limpeza automática acionada');
+      
+      // Limpar timeout se existir
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
+      }
+      
+      // Resetar loading
+      setIsLoading(false);
+    });
+    
+    return () => {
+      autoRecoverySystem.unregisterRecoveryCallback(componentId);
+      
+      // Cleanup ao desmontar
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+      }
+    };
+  }, []);
 
   // Sincronizar campos apenas quando modal abre ou tarefa muda
   useEffect(() => {
@@ -110,10 +139,19 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
       setIsLoading(false);
       
       // Mensagem mais clara sobre o problema
-      const errorMsg = 'A operação está demorando muito (' + elapsed + 's). Isso pode indicar:\n\n• Problema de conexão com a internet\n• Servidor sobrecarregado\n• Token de autenticação expirado\n• Cache do navegador corrompido\n\nPor favor:\n1. Verifique sua conexão com internet\n2. Recarregue a página (Ctrl+Shift+R)\n3. Tente salvar novamente\n\nSe o problema persistir:\n• Limpe completamente o cache do navegador\n• Verifique se outras pessoas também têm o problema (pode ser servidor)';
+      const errorMsg = 'A operação está demorando muito (' + elapsed + 's). Isso pode indicar:\n\n• Problema de conexão com a internet\n• Servidor sobrecarregado\n• Token de autenticação expirado\n• Cache do navegador corrompido\n\nTentando recuperação automática...';
       
       alert(errorMsg);
+      
+      // Acionar recuperação automática
+      autoRecoverySystem.attemptRecovery({
+        refreshToken: true,
+        resetUIStates: true
+      });
     }, 20000); // 20 segundos de timeout (reduzido de 30s para detectar problemas mais cedo)
+    
+    // Salvar referência do timeout para limpeza
+    timeoutIdRef.current = timeoutId;
     
     try {
         console.log('[TaskForm] Iniciando salvamento da tarefa...', { 
@@ -136,6 +174,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
         });
         
         clearTimeout(timeoutId);
+        timeoutIdRef.current = null;
         console.log('[TaskForm] ✅ Tarefa salva com sucesso');
         
         // Resetar loading e fechar modal após sucesso
@@ -143,6 +182,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
         // O modal será fechado pelo TaskList, mas garantimos que o loading seja resetado
     } catch(error) {
         clearTimeout(timeoutId);
+        timeoutIdRef.current = null;
         console.error('[TaskForm] ❌ Erro ao salvar tarefa:', error);
         
         // Tratamento específico para erros de autenticação

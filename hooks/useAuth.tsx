@@ -3,6 +3,8 @@ import { Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
 import { User, GlobalRole } from '../types';
 import { mapUser } from '../services/api/mappers';
+import { autoRecoverySystem } from '../utils/autoRecoverySystem';
+import { healthMonitor } from '../utils/appHealthMonitor';
 
 interface AuthContextType {
   session: Session | null;
@@ -26,6 +28,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let isMounted = true;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let hasCompletedInitialLoad = false; // Flag para evitar múltiplos carregamentos
+    
+    // Registrar callback de recuperação no sistema
+    autoRecoverySystem.registerRecoveryCallback('useAuth', async () => {
+      console.log('[useAuth] 🔄 Recuperação automática acionada');
+      
+      // Limpar estados
+      if (isMounted) {
+        setLoading(true);
+        setSession(null);
+        setProfile(null);
+      }
+      
+      // Tentar recarregar sessão
+      try {
+        const { data: { session: recoveredSession } } = await supabase.auth.getSession();
+        if (isMounted) {
+          setSession(recoveredSession);
+          if (recoveredSession?.user) {
+            const { data: userProfile } = await supabase
+              .from('users')
+              .select('*')
+              .eq('auth_id', recoveredSession.user.id)
+              .single();
+            
+            if (userProfile) {
+              const mapped = mapUser(userProfile);
+              setProfile({ ...mapped, email: recoveredSession.user.email ?? mapped.email });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[useAuth] ❌ Erro na recuperação:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    });
     
     const loadInitialSession = async () => {
       try {
@@ -250,7 +290,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     );
 
-    // Monitoramento agressivo de sessão: verificar a cada 30 SEGUNDOS
+    // Monitoramento preventivo de sessão: verificar a cada 2 minutos se o token está próximo de expirar
     const sessionCheckInterval = setInterval(async () => {
       if (!isMounted) return;
       
@@ -260,24 +300,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (currentSession?.expires_at) {
           const expiresIn = currentSession.expires_at - Math.floor(Date.now() / 1000);
           
-          // Se o token expira em menos de 10 minutos, fazer refresh preventivo (MAIS AGRESSIVO)
-          if (expiresIn < 600 && expiresIn > 0) {
+          // Se o token expira em menos de 5 minutos, fazer refresh preventivo
+          if (expiresIn < 300 && expiresIn > 0) {
             console.log('[useAuth] 🔄 Token próximo de expirar (' + expiresIn + 's), fazendo refresh preventivo...');
             const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
             
             if (refreshError) {
               console.error('[useAuth] ❌ Erro ao fazer refresh preventivo:', refreshError);
-              // Se falhar refresh, tentar novamente em 10 segundos
-              setTimeout(async () => {
-                if (isMounted) {
-                  console.log('[useAuth] 🔄 Tentando refresh novamente...');
-                  const retry = await supabase.auth.refreshSession();
-                  if (retry.data?.session && isMounted) {
-                    setSession(retry.data.session);
-                    console.log('[useAuth] ✅ Token atualizado na segunda tentativa');
-                  }
-                }
-              }, 10000);
             } else if (refreshedSession) {
               console.log('[useAuth] ✅ Token atualizado preventivamente');
               if (isMounted) {
@@ -296,47 +325,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } catch (error) {
         console.error('[useAuth] ❌ Erro ao verificar sessão:', error);
       }
-    }, 30000); // Verificar a cada 30 SEGUNDOS (mais agressivo)
-    
-    // Detectar inatividade do usuário e fazer refresh preventivo
-    let lastActivityTime = Date.now();
-    let inactivityCheckInterval: ReturnType<typeof setInterval> | null = null;
-    
-    const updateActivity = () => {
-      lastActivityTime = Date.now();
-    };
-    
-    // Eventos que indicam atividade do usuário
-    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    activityEvents.forEach(event => {
-      window.addEventListener(event, updateActivity, true);
-    });
-    
-    // Verificar inatividade a cada 30 segundos
-    inactivityCheckInterval = setInterval(async () => {
-      if (!isMounted) return;
-      
-      const inactiveTime = Date.now() - lastActivityTime;
-      const inactiveMinutes = Math.floor(inactiveTime / 60000);
-      
-      // Se ficou inativo por mais de 2 minutos, fazer refresh preventivo
-      if (inactiveMinutes >= 2) {
-        console.log('[useAuth] ⏰ Usuário inativo por', inactiveMinutes, 'minutos, fazendo refresh preventivo...');
-        try {
-          const { data: { session: refreshedSession }, error } = await supabase.auth.refreshSession();
-          
-          if (!error && refreshedSession && isMounted) {
-            setSession(refreshedSession);
-            console.log('[useAuth] ✅ Sessão renovada após inatividade');
-          }
-        } catch (error) {
-          console.error('[useAuth] ❌ Erro ao renovar sessão após inatividade:', error);
-        }
-        
-        // Resetar tempo de atividade
-        lastActivityTime = Date.now();
-      }
-    }, 30000);
+    }, 120000); // Verificar a cada 2 minutos
 
     return () => {
       isMounted = false;
@@ -346,15 +335,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       subscription?.unsubscribe();
       clearInterval(sessionCheckInterval);
       
-      // Limpar interval de inatividade
-      if (inactivityCheckInterval) {
-        clearInterval(inactivityCheckInterval);
-      }
-      
-      // Remover event listeners de atividade
-      activityEvents.forEach(event => {
-        window.removeEventListener(event, updateActivity, true);
-      });
+      // Desregistrar callback de recuperação
+      autoRecoverySystem.unregisterRecoveryCallback('useAuth');
     };
   }, []);
   

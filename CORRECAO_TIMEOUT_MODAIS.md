@@ -220,3 +220,4 @@ Sua sessão expirou. A página será recarregada para renovar a autenticação.
    - Debounce em refresh preventivo para evitar múltiplos refresh simultâneos
 
 
+

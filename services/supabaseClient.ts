@@ -68,7 +68,7 @@ validateAndCleanStorage();
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
-    autoRefreshToken: true, // CRÍTICO: Renovar token automaticamente
+    autoRefreshToken: true,
     detectSessionInUrl: true,
     // Usar localStorage em vez de cookies para compatibilidade
     storage: window.localStorage,
@@ -89,79 +89,4 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       eventsPerSecond: 10,
     },
   },
-});
-
-// Sistema de keep-alive: Fazer ping preventivo a cada 1 minuto
-// Isso mantém a conexão ativa e previne timeout quando inativo
-let keepAliveInterval: ReturnType<typeof setInterval> | null = null;
-
-const startKeepAlive = () => {
-  // Limpar interval anterior se existir
-  if (keepAliveInterval) {
-    clearInterval(keepAliveInterval);
-  }
-  
-  keepAliveInterval = setInterval(async () => {
-    try {
-      // Verificar se há sessão ativa
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        const expiresIn = session.expires_at ? session.expires_at - Math.floor(Date.now() / 1000) : 0;
-        
-        // Se o token expira em menos de 15 minutos, renovar
-        if (expiresIn < 900 && expiresIn > 0) {
-          console.log('[Supabase KeepAlive] 🔄 Renovando token preventivamente (expira em ' + Math.floor(expiresIn / 60) + 'min)...');
-          
-          const { data: { session: newSession }, error } = await supabase.auth.refreshSession();
-          
-          if (error) {
-            console.error('[Supabase KeepAlive] ❌ Erro ao renovar token:', error);
-          } else if (newSession) {
-            console.log('[Supabase KeepAlive] ✅ Token renovado com sucesso');
-          }
-        } else if (expiresIn > 0) {
-          console.log('[Supabase KeepAlive] ✓ Token OK (expira em ' + Math.floor(expiresIn / 60) + 'min)');
-        }
-      }
-    } catch (error) {
-      console.error('[Supabase KeepAlive] ❌ Erro no keep-alive:', error);
-    }
-  }, 60000); // A cada 1 MINUTO
-  
-  console.log('[Supabase KeepAlive] ✅ Sistema keep-alive iniciado (check a cada 1 minuto)');
-};
-
-// Iniciar keep-alive quando o módulo for carregado
-startKeepAlive();
-
-// Reiniciar keep-alive quando a janela voltar ao foco (usuário voltou à aba)
-window.addEventListener('focus', () => {
-  console.log('[Supabase KeepAlive] 👁️ Janela em foco, verificando sessão...');
-  startKeepAlive();
-});
-
-// Fazer refresh imediato quando usuário voltar de inatividade
-let lastActivityCheck = Date.now();
-window.addEventListener('visibilitychange', async () => {
-  if (!document.hidden) {
-    const inactiveTime = Date.now() - lastActivityCheck;
-    const inactiveMinutes = Math.floor(inactiveTime / 60000);
-    
-    if (inactiveMinutes >= 5) {
-      console.log('[Supabase KeepAlive] ⚠️ Usuário voltou após ' + inactiveMinutes + ' minutos, renovando sessão...');
-      
-      try {
-        const { data: { session }, error } = await supabase.auth.refreshSession();
-        
-        if (!error && session) {
-          console.log('[Supabase KeepAlive] ✅ Sessão renovada após inatividade');
-        }
-      } catch (error) {
-        console.error('[Supabase KeepAlive] ❌ Erro ao renovar após inatividade:', error);
-      }
-    }
-  }
-  
-  lastActivityCheck = Date.now();
 });

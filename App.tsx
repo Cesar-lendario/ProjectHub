@@ -1,11 +1,13 @@
 
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, Suspense, lazy, useEffect } from 'react';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ThemeProvider } from './hooks/useTheme';
 import LoginPage from './components/auth/LoginPage';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import { ProjectProvider, useProjectContext } from './hooks/useProjectContext';
+import { healthMonitor } from './utils/appHealthMonitor';
+import { autoRecoverySystem } from './utils/autoRecoverySystem';
 
 const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
 const ProjectList = lazy(() => import('./components/projects/ProjectList'));
@@ -31,6 +33,53 @@ const AppContent: React.FC = () => {
   const [loadingTimeout, setLoadingTimeout] = React.useState(false);
   
   console.log('[AppContent] 🔍 Render - loading:', loading, 'session:', !!session);
+  
+  // Inicializar sistemas de monitoramento e recuperação
+  React.useEffect(() => {
+    console.log('[App] 🚀 Inicializando sistemas de monitoramento...');
+    
+    // Iniciar Health Monitor
+    healthMonitor.startMonitoring();
+    
+    // Registrar callback de recuperação quando problemas forem detectados
+    healthMonitor.onRecoveryNeeded(() => {
+      console.warn('[App] 🔄 Problemas detectados, acionando recuperação...');
+      autoRecoverySystem.attemptRecovery({
+        refreshToken: true,
+        resetUIStates: true,
+        clearLocalStorage: false,
+        clearIndexedDB: false
+      });
+    });
+    
+    // Monitorar visibilidade da página para pausar/retomar
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[App] 👁️ Página visível, verificando saúde...');
+        healthMonitor.recordActivity();
+        
+        // Verificar se precisamos recuperar após inatividade
+        const healthStatus = healthMonitor.getHealthStatus();
+        const staleIssue = healthStatus.issues.find(i => i.type === 'stale_state');
+        
+        if (staleIssue && staleIssue.severity === 'high') {
+          console.warn('[App] ⚠️ Estado obsoleto detectado após inatividade');
+          autoRecoverySystem.attemptRecovery({
+            refreshToken: true,
+            resetUIStates: true
+          });
+        }
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      console.log('[App] 🛑 Parando sistemas de monitoramento...');
+      healthMonitor.stopMonitoring();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
   
   // Timeout de segurança: se loading demorar mais de 15 segundos, mostrar erro
   React.useEffect(() => {
@@ -185,7 +234,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors">
+    <div className="flex h-screen print:h-auto print:block bg-slate-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors">
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
@@ -195,7 +244,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(prev => !prev)}
       />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden print:overflow-visible print:h-auto">
         <Header 
           title={viewTitles[currentView] || 'TaskMeet'} 
           onMenuClick={() => setSidebarOpen(true)} 
@@ -203,7 +252,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentView, setCurrentView, gl
           onGoToSettings={handleGoToSettings}
           onGoToCommunication={handleGoToCommunication}
         />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-transparent transition-colors">
+        <main className="flex-1 overflow-y-auto print:overflow-visible print:h-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-transparent transition-colors">
           <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-300">Carregando...</div>}>
             {renderView()}
           </Suspense>

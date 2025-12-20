@@ -10,6 +10,7 @@ import TeamManagementModal from '../team/TeamManagementModal';
 import FileUpload from '../files/FileUpload';
 import SuccessToast from '../ui/SuccessToast';
 import ProjectConditionModal from '../tasks/ProjectConditionModal';
+import ProjectDetailModal from './ProjectDetailModal';
 
 interface ProjectListProps {
   setCurrentView: (view: string) => void;
@@ -35,12 +36,13 @@ const STATUS_BORDER_COLORS: { [key in ProjectStatus]: string } = {
 const ProjectCard: React.FC<{
   project: Project;
   onSelect: () => void;
+  onViewDetails: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onManageTeam: () => void;
   onUploadFile: () => void;
   onOpenCondition: () => void;
-}> = ({ project, onSelect, onEdit, onDelete, onManageTeam, onUploadFile, onOpenCondition }) => {
+}> = ({ project, onSelect, onViewDetails, onEdit, onDelete, onManageTeam, onUploadFile, onOpenCondition }) => {
   const totalTasks = project.tasks.length;
   const completedTasks = project.tasks.filter(t => t.status === TaskStatus.Done).length;
   const baseProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
@@ -49,7 +51,7 @@ const ProjectCard: React.FC<{
 
   
   return (
-    <Card className="flex flex-col cursor-pointer group hover:shadow-xl hover:border-indigo-300 transition-all duration-200" onClick={onSelect}>
+    <Card className="flex flex-col cursor-pointer group hover:shadow-xl hover:border-indigo-300 transition-all duration-200" onClick={onViewDetails}>
       <div className="flex-1">
         <div className="flex justify-between items-start">
           <h3 className="font-bold text-lg text-slate-800 dark:text-slate-50 group-hover:text-indigo-600 transition-colors">
@@ -116,12 +118,13 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
   const [teamModalProject, setTeamModalProject] = useState<Project | null>(null);
   const [uploadModalProjectId, setUploadModalProjectId] = useState<string | null>(null);
   const [conditionModalProjectId, setConditionModalProjectId] = useState<string | null>(null);
+  const [projectDetailModal, setProjectDetailModal] = useState<Project | null>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const [filterName, setFilterName] = useState('');
   const [filterProjectType, setFilterProjectType] = useState<ProjectType | 'all'>('all');
   const [filterClientName, setFilterClientName] = useState('');
-  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterStatus, setFilterStatus] = useState<ProjectStatus | 'all'>('all');
 
   const filteredProjects = useMemo(() => {
     return projects
@@ -138,11 +141,11 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
           ? (project.clientName || '').toLowerCase().includes(filterClientName.toLowerCase())
           : true;
 
-        const matchesStartDate = filterStartDate
-          ? project.startDate === filterStartDate
-          : true;
+        const matchesStatus = filterStatus === 'all'
+          ? true
+          : project.status === filterStatus;
 
-        return matchesName && matchesType && matchesClientName && matchesStartDate;
+        return matchesName && matchesType && matchesClientName && matchesStatus;
       })
       .sort((a, b) => {
         // Calcular progresso de cada projeto
@@ -161,7 +164,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
         // Ordenar do menos concluído ao mais concluído (crescente)
         return progressA - progressB;
       });
-  }, [projects, filterName, filterProjectType, filterClientName, filterStartDate]);
+  }, [projects, filterName, filterProjectType, filterClientName, filterStatus]);
 
   const handleProjectSelect = (projectId: string) => {
     setGlobalProjectFilter(projectId);
@@ -298,13 +301,17 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Data de Início</label>
-          <input
-            type="date"
-            value={filterStartDate}
-            onChange={(e) => setFilterStartDate(e.target.value)}
+          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Status do Projeto</label>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as ProjectStatus | 'all')}
             className="w-full border border-slate-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-900/60 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-          />
+          >
+            <option value="all">Todos os status</option>
+            {Object.values(ProjectStatus).map(status => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -349,6 +356,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
               key={project.id} 
               project={project} 
               onSelect={() => handleProjectSelect(project.id)}
+              onViewDetails={() => setProjectDetailModal(project)}
               onEdit={() => handleEdit(project)}
               onDelete={() => handleDelete(project.id)}
               onManageTeam={() => setTeamModalProject(project)}
@@ -444,6 +452,12 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
         isOpen={!!conditionModalProjectId}
         onClose={() => setConditionModalProjectId(null)}
         projectId={conditionModalProjectId || undefined}
+      />
+      
+      <ProjectDetailModal 
+        isOpen={!!projectDetailModal}
+        onClose={() => setProjectDetailModal(null)}
+        project={projectDetailModal}
       />
     </div>
   );

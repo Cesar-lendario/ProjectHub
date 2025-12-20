@@ -354,3 +354,4 @@ dist/assets/recharts-CVb5HtI4.js 496.22 kB │ gzip: 137.91 kB (charts)
 **Próxima Ação:** Upload via FileZilla  
 **Previsão:** Problema será resolvido definitivamente após deploy
 
+

@@ -376,3 +376,4 @@ Se não resolver completamente, execute **Opção 2**.
 - `FIX_TASKS_RLS_TIMEOUT_ALTERNATIVE.sql` (Solução alternativa)
 - `DIAGNOSTICO_TIMEOUT_SUPABASE.md` (Este arquivo)
 
+

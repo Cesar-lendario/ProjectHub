@@ -24,4 +24,188 @@
   }
 }
 
+/* Estilos para impressão da Lista de Verificação */
+@media print {
+  /* Configuração da página */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+  
+  /* Resetar body para impressão */
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+    overflow: visible !important;
+    height: auto !important;
+  }
+  
+  /* Remover restrições de altura e overflow de todos os containers */
+  html, body, #root, main {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Ocultar elementos específicos */
+  nav,
+  header,
+  aside,
+  .print\\:hidden {
+    display: none !important;
+  }
+  
+  /* Garantir que o container da checklist seja totalmente visível */
+  #checklist-print-area {
+    visibility: visible !important;
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    position: static !important;
+  }
+  
+  #checklist-print-area * {
+    visibility: visible !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  
+  /* Grid items devem manter o display grid */
+  #checklist-print-area div[class*="grid-cols"] {
+    display: grid !important;
+  }
+  
+  /* Flex items devem manter o display flex */
+  #checklist-print-area div[class*="flex"] {
+    display: flex !important;
+  }
+  
+  /* Remover overflow-y-auto que esconde conteúdo */
+  div[class*="overflow-y-auto"],
+  div[class*="overflow-hidden"],
+  main[class*="overflow"] {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+  
+  /* Ajustar root e main para ocupar toda a largura */
+  #root {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  
+  main {
+    padding: 1rem !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+  
+  /* Garantir que Cards tenham fundo branco e sejam visíveis */
+  div[class*="bg-"],
+  div[class*="dark:bg-"] {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Remover classes que escondem overflow */
+  .overflow-hidden,
+  .overflow-y-auto,
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+  
+  /* Garantir que o Card da lista seja totalmente visível */
+  #checklist-print-area > div[class*="space-y"] > div {
+    overflow: visible !important;
+    height: auto !important;
+  }
+  
+  /* Ajustar cores dos checkboxes para impressão */
+  input[type="checkbox"] {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  /* Garantir que as cores dos status sejam impressas */
+  .text-red-600,
+  .text-yellow-600,
+  .text-blue-600,
+  .text-green-600,
+  .bg-red-500,
+  .bg-yellow-500,
+  .bg-blue-500,
+  .bg-green-500,
+  .checked\\:bg-red-500,
+  .checked\\:bg-yellow-500,
+  .checked\\:bg-blue-500,
+  .checked\\:bg-green-500 {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  /* Remover sombras e efeitos */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  
+  /* Garantir que todo o conteúdo seja visível */
+  .space-y-4,
+  .space-y-2 {
+    display: block !important;
+    overflow: visible !important;
+  }
+  
+  /* Evitar quebras de página dentro de tarefas individuais */
+  #checklist-print-area div[class*="grid-cols-12"] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  /* Melhorar legibilidade do texto */
+  h1, h2, h3, h4, h5, h6,
+  p, span, div, td, th {
+    color: #000 !important;
+  }
+  
+  /* Garantir que bordas sejam visíveis */
+  .border,
+  .border-b,
+  .border-t {
+    border-color: #d1d5db !important;
+  }
+  
+  /* Mostrar elemento com hidden print:block */
+  .hidden.print\\:block {
+    display: block !important;
+  }
+  
+  /* Garantir altura automática para divs de conteúdo */
+  div[class*="h-screen"],
+  div[class*="h-full"],
+  div[class*="min-h"],
+  div[class*="max-h"] {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+  
+  /* Flex-1 deve permitir crescimento automático */
+  .flex-1 {
+    flex: 1 1 auto !important;
+    height: auto !important;
+  }
+}
+
 

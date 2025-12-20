@@ -263,3 +263,4 @@ ORDER BY tablename, indexname;
 -- 6. Verificar logs no console (deve ser < 1s)
 -- =====================================================
 
+

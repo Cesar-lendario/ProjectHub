@@ -173,10 +173,45 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
     }
   };
 
+  // Função para imprimir a lista
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" id="checklist-print-area">
+      {/* Cabeçalho para impressão - visível apenas ao imprimir */}
+      <div className="hidden print:block mb-6">
+        <h1 className="text-3xl font-bold text-black mb-2">
+          Lista de Verificação - TaskMeet
+        </h1>
+        <div className="text-sm text-gray-600 mb-1">
+          <strong>Data:</strong> {new Date().toLocaleDateString('pt-BR', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </div>
+        {globalProjectFilter !== 'all' && (
+          <div className="text-sm text-gray-600 mb-1">
+            <strong>Projeto:</strong> {projects.find(p => p.id === globalProjectFilter)?.name || 'N/A'}
+          </div>
+        )}
+        {statusFilter !== 'all' && (
+          <div className="text-sm text-gray-600 mb-1">
+            <strong>Status:</strong> {statusFilter}
+          </div>
+        )}
+        <div className="text-sm text-gray-600">
+          <strong>Total de tarefas:</strong> {allTasks.length}
+        </div>
+        <hr className="mt-4 border-gray-300" />
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between print:hidden">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
             Lista de Verificação
@@ -185,10 +220,22 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
             Visualize e atualize o status das tarefas rapidamente
           </p>
         </div>
+        
+        {/* Botão Imprimir - Oculto na impressão */}
+        <button
+          onClick={handlePrint}
+          className="print:hidden flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm"
+          title="Imprimir lista"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          <span>Imprimir Lista</span>
+        </button>
       </div>
 
-      {/* Filtros */}
-      <Card>
+      {/* Filtros - Ocultos na impressão */}
+      <Card className="print:hidden">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Filtro de Projeto */}
           <div className="flex-1">
@@ -259,7 +306,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
               <div className="col-span-3">Tarefa</div>
               <div className="col-span-3 hidden md:block">Descrição</div>
               <div className="col-span-4 text-center">Status</div>
-              <div className="col-span-2 text-center">Ações</div>
+              <div className="col-span-2 text-center print:hidden">Ações</div>
             </div>
 
             {/* Linhas de tarefas */}
@@ -399,8 +446,8 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
                   </div>
                 </div>
 
-                {/* Ações: Editar e Excluir */}
-                <div className="col-span-2 flex items-center justify-center gap-2">
+                {/* Ações: Editar e Excluir - Ocultos na impressão */}
+                <div className="col-span-2 flex items-center justify-center gap-2 print:hidden">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -428,9 +475,16 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
         )}
       </Card>
 
-      {/* Contador */}
-      <div className="text-sm text-slate-500 dark:text-slate-400 text-center">
+      {/* Contador - Oculto na impressão */}
+      <div className="text-sm text-slate-500 dark:text-slate-400 text-center print:hidden">
         Exibindo {allTasks.length} tarefa(s)
+      </div>
+
+      {/* Rodapé para impressão - visível apenas ao imprimir */}
+      <div className="hidden print:block mt-8 pt-4 border-t border-gray-300">
+        <p className="text-xs text-gray-500 text-center">
+          Documento gerado pelo TaskMeet - www.taskmeet.com.br
+        </p>
       </div>
 
       {/* Modal de Detalhes da Tarefa */}

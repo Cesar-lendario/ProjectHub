@@ -226,3 +226,4 @@ ORDER BY tablename, indexname;
 -- 4. ✅ Timeout reduzido de 20s para < 1s
 -- =====================================================
 
+
