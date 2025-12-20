@@ -205,6 +205,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           hasCompletedInitialLoad = true;
           setLoading(false);
         }
+      } finally {
+        // CRÍTICO: GARANTIR que loading=false é SEMPRE executado, mesmo em caso de erro inesperado
+        if (isMounted) {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+          if (!hasCompletedInitialLoad) {
+            console.warn('[useAuth] ⚠️ Finally: Forçando conclusão do carregamento inicial');
+            hasCompletedInitialLoad = true;
+            setLoading(false);
+          }
+        }
       }
     };
     
@@ -217,8 +230,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!isMounted) return;
         
         // Se já completou o carregamento inicial e for apenas um TOKEN_REFRESHED, ignorar
+        // MAS GARANTIR que loading=false está setado
         if (hasCompletedInitialLoad && _event === 'TOKEN_REFRESHED') {
           console.log('[useAuth] ℹ️ TOKEN_REFRESHED ignorado (já carregado)');
+          // CRÍTICO: Garantir que loading está false mesmo ao ignorar evento
+          if (isMounted && loading) {
+            console.log('[useAuth] 🔧 Forçando loading=false em TOKEN_REFRESHED ignorado');
+            setLoading(false);
+          }
           return;
         }
         
