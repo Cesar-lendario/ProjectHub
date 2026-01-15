@@ -5,24 +5,7 @@ type ProjectNoteRow = Database['public']['Tables']['project_notes']['Row'];
 type ProjectNoteInsert = Database['public']['Tables']['project_notes']['Insert'];
 type ProjectNoteUpdate = Database['public']['Tables']['project_notes']['Update'];
 
-// Helper para timeout de promessas
-const withTimeout = <T>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> => {
-  return new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(() => reject(new Error(errorMsg)), ms);
-    promise
-      .then((res) => {
-        clearTimeout(timeoutId);
-        resolve(res);
-      })
-      .catch((err) => {
-        clearTimeout(timeoutId);
-        reject(err);
-      });
-  });
-};
-
 export const NotesService = {
-  // ... (métodos de leitura mantidos iguais) ...
   // Buscar nota por projeto (última nota)
   async getByProject(projectId: string): Promise<ProjectNoteRow | null> {
     const { data, error } = await supabase
@@ -100,64 +83,19 @@ export const NotesService = {
 
   // Criar ou atualizar nota (upsert baseado em project_id)
   async upsert(projectId: string, noteText: string, createdBy: string): Promise<ProjectNoteRow> {
-    try {
-      // Verificar sessão antes de qualquer operação
-      const sessionPromise = supabase.auth.getSession();
-      const { data: { session } } = await withTimeout(
-        sessionPromise,
-        5000,
-        'Timeout ao verificar sessão.'
-      );
+    // Primeiro, tentar encontrar uma nota existente
+    const existingNote = await this.getByProject(projectId);
 
-      if (!session) {
-        throw new Error('Sessão expirada. Por favor, recarregue a página.');
-      }
-
-      const expiresIn = session.expires_at ? session.expires_at - Math.floor(Date.now() / 1000) : 0;
-
-      // Refresh preventivo se necessário
-      if (expiresIn < 300 && expiresIn > 0) {
-        try {
-          const refreshPromise = supabase.auth.refreshSession();
-          await withTimeout(refreshPromise, 5000, 'Timeout ao renovar sessão.');
-        } catch (err) {
-          console.warn('[NotesService] Falha/Timeout no refresh preventivo:', err);
-        }
-      }
-
-      // Primeiro, tentar encontrar uma nota existente
-      // Usar a versão da API original, pois `getByProject` já é chamada aqui via `this.getByProject`
-      // Mas para garantir timeout no DB operations, seria ideal envolver também
-
-      // Para simplificar, vamos envolver esta lógica inteira do upsert
-      const existingNote = await withTimeout(
-        this.getByProject(projectId),
-        10000,
-        'Timeout ao buscar nota existente'
-      );
-
-      if (existingNote) {
-        // Atualizar nota existente
-        return await withTimeout(
-          this.update((existingNote as ProjectNoteRow).id, { note_text: noteText }),
-          10000,
-          'Timeout ao atualizar nota'
-        );
-      } else {
-        // Criar nova nota
-        return await withTimeout(
-          this.create({
-            project_id: projectId,
-            note_text: noteText,
-            created_by: createdBy,
-          }),
-          10000,
-          'Timeout ao criar nota'
-        );
-      }
-    } catch (error) {
-      console.error('[NotesService.upsert] Erro:', error);
-      throw error;
+    if (existingNote) {
+      // Atualizar nota existente
+      return this.update(existingNote.id, { note_text: noteText });
+    } else {
+      // Criar nova nota
+      return this.create({
+        project_id: projectId,
+        note_text: noteText,
+        created_by: createdBy,
+      });
     }
   },
 

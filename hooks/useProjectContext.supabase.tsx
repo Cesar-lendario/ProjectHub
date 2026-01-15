@@ -27,7 +27,7 @@ interface ProjectContextType {
   addProject: (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files'>) => Promise<void>;
   updateProject: (projectData: Project) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
-  
+
   addTask: (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments'>) => Promise<void>;
   updateTask: (taskData: Task) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
@@ -36,7 +36,7 @@ interface ProjectContextType {
   addUser: (userData: Omit<User, 'id'>) => Promise<User>;
   updateUser: (userData: User) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
-  
+
   addUserToProject: (projectId: string, userId: string, role: TeamMember['role']) => Promise<void>;
   removeUserFromProject: (projectId: string, userId: string) => Promise<void>;
   updateTeamMemberRole: (projectId: string, userId: string, role: TeamMember['role']) => Promise<void>;
@@ -73,12 +73,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       // Carregar projetos com equipes
       const dbProjects = await ProjectsService.getAll();
-      
+
       // Para cada projeto, carregar tarefas e arquivos
       const projectsWithDetails = await Promise.all(
         dbProjects.map(async (dbProject) => {
           const project = mapProject(dbProject);
-          
+
           // Carregar tarefas do projeto
           const dbTasks = await TasksService.getByProject(project.id);
           project.tasks = dbTasks.map(mapTask);
@@ -133,10 +133,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addProject = useCallback(async (projectData: Omit<Project, 'id' | 'tasks' | 'team' | 'files'>) => {
     try {
       setLoading(true);
-      
+
       console.log('addProject - Dados recebidos:', projectData);
       console.log('addProject - ID do usuário logado:', profile?.id);
-      
+
       // Criar projeto no Supabase
       const dbProject = await ProjectsService.create({
         name: projectData.name,
@@ -149,7 +149,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         cliente_email: projectData.clientEmail,
         created_by: profile?.id || null, // Usar o ID do usuário logado
       });
-      
+
       console.log('addProject - Projeto criado no Supabase:', dbProject);
 
       const newProject = mapProject(dbProject);
@@ -193,10 +193,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateProject = useCallback(async (projectData: Project) => {
     try {
       setLoading(true);
-      
+
       console.log('updateProject - Dados recebidos:', projectData);
       console.log('updateProject - ID do usuário logado:', profile?.id);
-      
+
       const updatedProject = await ProjectsService.update(projectData.id, {
         name: projectData.name,
         description: projectData.description,
@@ -247,7 +247,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addTask = useCallback(async (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments'>) => {
     try {
       setLoading(true);
-      
+
       const dbTask = await TasksService.create({
         project_id: taskData.project_id,
         name: taskData.name,
@@ -281,11 +281,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setLoading(false);
     }
   }, [users]);
-  
+
   const updateTask = useCallback(async (taskData: Task) => {
     try {
       setLoading(true);
-      
+
       await TasksService.update(taskData.id, {
         name: taskData.name,
         description: taskData.description,
@@ -360,7 +360,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     try {
       setLoading(true);
-      
+
       const dbUser = await UsersService.create({
         id: uuidv4(),
         name: userData.name,
@@ -384,7 +384,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateUser = useCallback(async (userData: User) => {
     try {
       setLoading(true);
-      
+
       await UsersService.update(userData.id, {
         name: userData.name,
         avatar: userData.avatar,
@@ -411,7 +411,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       setLoading(true);
       await UsersService.delete(userId);
-      
+
       setUsers(prev => prev.filter(u => u.id !== userId));
       setProjects(prevProjects => prevProjects.map(p => ({
         ...p,
@@ -429,11 +429,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addUserToProject = useCallback(async (projectId: string, userId: string, role: TeamMember['role']) => {
     const user = users.find(u => u.id === userId);
     if (!user) throw new Error("User not found");
-    
+
     try {
       setLoading(true);
       await TeamService.addMember({ project_id: projectId, user_id: userId, role });
-      
+
       setProjects(prev => prev.map(p => {
         if (p.id === projectId && !p.team.some(tm => tm.user.id === userId)) {
           return { ...p, team: [...p.team, { user, role }] };
@@ -452,7 +452,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       setLoading(true);
       await TeamService.removeMember(projectId, userId);
-      
+
       setProjects(prev => prev.map(p => {
         if (p.id === projectId) {
           return { ...p, team: p.team.filter(tm => tm.user.id !== userId) };
@@ -471,7 +471,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       setLoading(true);
       await TeamService.updateMemberRole(projectId, userId, role);
-      
+
       setProjects(prev => prev.map(p => {
         if (p.id === projectId) {
           return { ...p, team: p.team.map(tm => tm.user.id === userId ? { ...tm, role } : tm) };
@@ -489,10 +489,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addFile = useCallback(async (projectId: string, file: File) => {
     try {
       setLoading(true);
-      
+
       // Upload do arquivo para o Supabase Storage
       const fileUrl = await AttachmentsService.uploadFile('project-files', file, projectId);
-      
+
       // Criar registro no banco
       const dbAttachment = await AttachmentsService.create({
         project_id: projectId,
@@ -522,10 +522,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addMessage = useCallback(async (messageData: Omit<Message, 'id' | 'sender' | 'isRead'>) => {
     const sender = users.find(u => u.id === messageData.sender_id);
     if (!sender) throw new Error("Sender not found");
-    
+
     try {
       setLoading(true);
-      
+
       const dbMessage = await MessagesService.create({
         sender_id: messageData.sender_id,
         channel: messageData.channel,

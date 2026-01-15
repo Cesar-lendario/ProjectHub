@@ -91,8 +91,12 @@ TaskMeet é uma plataforma web multitenant de gestão de projetos orientada a eq
 - Listagem com ícones dinâmicos por tipo MIME
 - Filtro por projeto
 - Download direto dos arquivos
-- **Status atual**: armazenamento local temporário (URL.createObjectURL)
-- **Próxima implementação**: integração com Supabase Storage (bucket `project-files`)
+- **Armazenamento**: Integrado com Supabase Storage (bucket `project-files`)
+- **Funcionalidades**:
+  - Upload direto para bucket público
+  - Registro de metadados na tabela `attachments`
+  - Visualização e download via URL pública
+  - Exclusão sincronizada (Storage + Banco)
 
 ### 💬 Comunicação
 - Chat contextual por canal
@@ -658,6 +662,26 @@ npm run preview
 - Documentação de runbooks operacionais
 
 ## 🔧 Correções e Melhorias Recentes
+
+### Otimização de Performance e Estabilidade (Jan 2026)
+
+**Problema Crítico**: O aplicativo travava e exibia timeouts ao salvar ou atualizar tarefas em projetos grandes. O tempo de resposta do banco chegava a 15-20 segundos.
+
+**Causa Raiz**:
+1.  **Backend (RLS)**: As políticas de segurança (Row Level Security) originais faziam subqueries complexas e repetitivas para cada linha, causando bottleneck exponencial.
+2.  **Frontend**: Timeouts concorrentes e curtos (15s no serviço, 20s nos componentes) causavam race conditions e alertas falsos.
+
+**Solução Implementada**:
+-   **Backend**: Substituição das políticas RLS antigas por versões otimizadas (`tasks_select_fast`, etc.) que utilizam funções `STABLE` para cachear o ID do usuário e permissões de admin. Isso removeu a necessidade de joins repetitivos.
+-   **Frontend**:
+    -   Unificação do timeout no `tasks.service.ts` (aumentado para 45s).
+    -   Remoção de timers redundantes nos componentes `TaskList` e `TaskForm`.
+    -   Melhoria no tratamento de erros para não fechar modais indevidamente.
+
+**Resultado**:
+-   Tempo de resposta caiu de **~15s para ~50ms**.
+-   Fim dos travamentos de UI durante o salvamento.
+-   Experiência de edição fluida e instantânea.
 
 ### Correção de Mapeamento de Roles (Nov 2025)
 

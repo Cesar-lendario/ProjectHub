@@ -73,7 +73,7 @@ export const AttachmentsService = {
   // Upload de arquivo para storage
   async uploadFile(bucket: string, file: File, projectId: string) {
     const filePath = `${projectId}/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
-    
+
     const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(filePath, file);

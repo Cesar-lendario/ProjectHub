@@ -218,20 +218,7 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
   };
 
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'assignee' | 'comments' | 'attachments'>) => {
-    const startTime = Date.now();
-    const timeoutId = setTimeout(() => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      console.error('[TaskList] ⚠️ Timeout ao salvar tarefa após', elapsed, 'segundos');
-
-      // Verificar se é problema de conexão ou servidor
-      const errorMsg = 'A operação está demorando muito (' + elapsed + 's). Isso pode indicar:\n\n• Problema de conexão com a internet\n• Servidor sobrecarregado\n• Token de autenticação expirado\n• Cache do navegador corrompido\n\nPor favor:\n1. Verifique sua conexão\n2. Recarregue a página (Ctrl+Shift+R)\n3. Tente novamente\n\nSe o problema persistir, limpe o cache do navegador completamente.';
-
-      alert(errorMsg);
-
-      // Fechar modal mesmo em caso de timeout
-      setIsFormOpen(false);
-      setTaskToEdit(null);
-    }, 20000); // 20 segundos de timeout (reduzido de 30s)
+    // Timer removido: confiando no timeout do TasksService (45s)
 
     try {
       console.log('[TaskList] Iniciando salvamento...', {
@@ -283,10 +270,11 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
         console.log('[TaskList] ✅ Nova tarefa criada');
       }
 
-      clearTimeout(timeoutId);
       console.log('[TaskList] Salvamento concluído com sucesso');
+      setIsFormOpen(false);
+      setTaskToEdit(null);
+      console.log('[TaskList] Modal fechado e estado limpo');
     } catch (error) {
-      clearTimeout(timeoutId);
       console.error('[TaskList] ❌ Erro ao salvar tarefa:', error);
 
       // Tratamento específico para erros de autenticação
@@ -298,15 +286,14 @@ const TaskList: React.FC<TaskListProps> = ({ globalProjectFilter, setGlobalProje
         return;
       }
 
-      alert(errorMessage);
-      // Não fechar o modal em caso de erro para permitir correção
-      throw error; // Re-throw para que o TaskForm possa tratar
+      // Não mostramos alert aqui pois o TaskForm já pode ter mostrado, ou deixamos o erro subir
+      // Mas garantimos que o modal NÃO fecha, para o usuário não perder dados
+      throw error;
     } finally {
-      // Sempre fechar o formulário e limpar o estado de edição
-      // Mesmo em caso de erro, fechamos para evitar estado inconsistente
-      setIsFormOpen(false);
-      setTaskToEdit(null);
-      console.log('[TaskList] Modal fechado e estado limpo');
+      // SÓ fechamos o modal se deu tudo certo (não houve erro lançado)
+      // O catch acima faz re-throw, então se cair lá, não chegaria aqui se fosse lógica síncrona,
+      // mas como é finally, executa sempre.
+      // Precisamos mudar a lógica: mover o fechar modal para dentro do try, logo após o sucesso.
     }
   };
 

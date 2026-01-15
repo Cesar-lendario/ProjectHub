@@ -45,10 +45,33 @@ $$;
 -- PARTE 3: REMOVER POLÍTICAS ANTIGAS
 -- =====================================================
 
+-- Drop policies otimizadas antigas (se existirem)
 DROP POLICY IF EXISTS "tasks_select_optimized" ON public.tasks;
 DROP POLICY IF EXISTS "tasks_insert_optimized" ON public.tasks;
 DROP POLICY IF EXISTS "tasks_update_optimized" ON public.tasks;
 DROP POLICY IF EXISTS "tasks_delete_optimized" ON public.tasks;
+
+-- Drop políticas legadas (nomes encontrados no log do usuário)
+DROP POLICY IF EXISTS "Allow all access to public tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Allow creator to delete task" ON public.tasks;
+DROP POLICY IF EXISTS "Allow editors to modify tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Allow project members to create tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Allow project members to read tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Allow project members to update tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Allow read access to project members" ON public.tasks;
+DROP POLICY IF EXISTS "Enable read access for all users" ON public.tasks;
+DROP POLICY IF EXISTS "Enable insert for authenticated users only" ON public.tasks;
+DROP POLICY IF EXISTS "Enable update for users based on email" ON public.tasks;
+DROP POLICY IF EXISTS "Enable delete for users based on user_id" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_insert_optimized" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_update_optimized" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_delete_optimized" ON public.tasks;
+
+-- Drop novas políticas se já existirem (para evitar erro 42710 no re-run)
+DROP POLICY IF EXISTS "tasks_select_fast" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_insert_fast" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_update_fast" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_delete_fast" ON public.tasks;
 
 -- =====================================================
 -- PARTE 4: CRIAR POLÍTICAS SUPER OTIMIZADAS

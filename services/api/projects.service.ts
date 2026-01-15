@@ -6,40 +6,20 @@ type ProjectRow = Database['public']['Tables']['projects']['Row'];
 type ProjectInsert = Database['public']['Tables']['projects']['Insert'];
 type ProjectUpdate = Database['public']['Tables']['projects']['Update'];
 
-// Helper para timeout de promessas
-const withTimeout = <T>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> => {
-  return new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(() => reject(new Error(errorMsg)), ms);
-    promise
-      .then((res) => {
-        clearTimeout(timeoutId);
-        resolve(res);
-      })
-      .catch((err) => {
-        clearTimeout(timeoutId);
-        reject(err);
-      });
-  });
-};
-
 export const ProjectsService = {
   // Buscar todos os projetos com suas equipes
   async getAll() {
-    const { data, error } = await withTimeout(
-      supabase
-        .from('projects')
-        .select(`
-          *,
-          project_team (
-            role,
-            user_id,
-            user:user_id (*)
-          )
-        `)
-        .order('atualizado_at', { ascending: false }) as any,
-      10000,
-      'Timeout ao buscar projetos'
-    );
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        project_team (
+          role,
+          user_id,
+          user:user_id (*)
+        )
+      `)
+      .order('atualizado_at', { ascending: false });
 
     if (error) throw error;
     return data;
@@ -47,22 +27,18 @@ export const ProjectsService = {
 
   // Buscar projeto por ID
   async getById(id: string) {
-    const { data, error } = await withTimeout(
-      supabase
-        .from('projects')
-        .select(`
-          *,
-          project_team (
-            role,
-            user_id,
-            user:user_id (*)
-          )
-        `)
-        .eq('id', id)
-        .single() as any,
-      10000,
-      'Timeout ao buscar projeto'
-    );
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        project_team (
+          role,
+          user_id,
+          user:user_id (*)
+        )
+      `)
+      .eq('id', id)
+      .single();
 
     if (error) throw error;
     return data;

@@ -31,7 +31,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.Medium);
   const [status, setStatus] = useState<TaskStatus>(TaskStatus.Pending);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Refs para rastrear estado anterior
   const wasOpenRef = useRef(false);
   const lastTaskIdRef = useRef<string | null>(null);
@@ -40,23 +40,23 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
   // Registrar callback de limpeza no sistema de recuperação
   useEffect(() => {
     const componentId = `TaskForm_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     autoRecoverySystem.registerRecoveryCallback(componentId, () => {
       console.log('[TaskForm] 🔄 Limpeza automática acionada');
-      
+
       // Limpar timeout se existir
       if (timeoutIdRef.current) {
         clearTimeout(timeoutIdRef.current);
         timeoutIdRef.current = null;
       }
-      
+
       // Resetar loading
       setIsLoading(false);
     });
-    
+
     return () => {
       autoRecoverySystem.unregisterRecoveryCallback(componentId);
-      
+
       // Cleanup ao desmontar
       if (timeoutIdRef.current) {
         clearTimeout(timeoutIdRef.current);
@@ -68,17 +68,17 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
   useEffect(() => {
     const justOpened = isOpen && !wasOpenRef.current;
     const taskChanged = taskToEdit?.id !== lastTaskIdRef.current;
-    
+
     // Só sincronizar campos quando:
     // 1. Modal acabou de abrir (transição de fechado para aberto)
     // 2. OU a tarefa em edição mudou
     if (justOpened || taskChanged) {
       console.log('[TaskForm] Sincronizando campos:', { justOpened, taskChanged, taskId: taskToEdit?.id });
-      
+
       // Atualizar refs APENAS quando sincronizamos
       wasOpenRef.current = isOpen;
       lastTaskIdRef.current = taskToEdit?.id || null;
-      
+
       setIsLoading(false);
 
       if (taskToEdit) {
@@ -102,7 +102,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
         setStatus(TaskStatus.Pending);
       }
     }
-    
+
     // Atualizar wasOpenRef quando modal fecha
     if (!isOpen && wasOpenRef.current) {
       wasOpenRef.current = false;
@@ -110,7 +110,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
     // Remover 'projects' das dependências para evitar re-renderizações desnecessárias
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, taskToEdit?.id, initialProjectId]);
-  
+
   // Reset loading quando modal fecha
   useEffect(() => {
     if (!isOpen) {
@@ -121,88 +121,67 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, taskToEdit
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name || !projectId || !dueDate) {
-        alert("Por favor, preencha os campos obrigatórios: Nome da Tarefa, Projeto e Data de Início.");
-        return;
+      alert("Por favor, preencha os campos obrigatórios: Nome da Tarefa, Projeto e Data de Início.");
+      return;
     }
-    
+
     // Prevenir múltiplos submits
     if (isLoading) {
       console.warn('[TaskForm] Submit já em andamento, ignorando...');
       return;
     }
-    
+
     setIsLoading(true);
-    const startTime = Date.now();
-    const timeoutId = setTimeout(() => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      console.error('[TaskForm] ⚠️ Timeout ao salvar tarefa após', elapsed, 'segundos');
-      setIsLoading(false);
-      
-      // Mensagem mais clara sobre o problema
-      const errorMsg = 'A operação está demorando muito (' + elapsed + 's). Isso pode indicar:\n\n• Problema de conexão com a internet\n• Servidor sobrecarregado\n• Token de autenticação expirado\n• Cache do navegador corrompido\n\nTentando recuperação automática...';
-      
-      alert(errorMsg);
-      
-      // Acionar recuperação automática
-      autoRecoverySystem.attemptRecovery({
-        refreshToken: true,
-        resetUIStates: true
-      });
-    }, 20000); // 20 segundos de timeout (reduzido de 30s para detectar problemas mais cedo)
-    
-    // Salvar referência do timeout para limpeza
-    timeoutIdRef.current = timeoutId;
-    
+
+    // Tratamos o erro no catch abaixo, confiando no timeout do Service (45s)
+    // Não precisamos de um segudo timer aqui competindo com o service
+
     try {
-        console.log('[TaskForm] Iniciando salvamento da tarefa...', { 
-          isEdit: !!taskToEdit, 
-          taskId: taskToEdit?.id,
-          name,
-          projectId 
-        });
-        
-        await onSave({
-          name,
-          description,
-          project_id: projectId,
-          assignee_id: assigneeId,
-          dueDate,
-          priority,
-          status,
-          duration: 1, // Valor padrão fixo
-          dependencies: taskToEdit?.dependencies || [],
-        });
-        
-        clearTimeout(timeoutId);
-        timeoutIdRef.current = null;
-        console.log('[TaskForm] ✅ Tarefa salva com sucesso');
-        
-        // Resetar loading e fechar modal após sucesso
-        setIsLoading(false);
-        // O modal será fechado pelo TaskList, mas garantimos que o loading seja resetado
-    } catch(error) {
-        clearTimeout(timeoutId);
-        timeoutIdRef.current = null;
-        console.error('[TaskForm] ❌ Erro ao salvar tarefa:', error);
-        
-        // Tratamento específico para erros de autenticação
-        const errorMessage = error instanceof Error ? error.message : "Não foi possível salvar a tarefa.";
-        
-        if (errorMessage.includes('Sessão expirada') || errorMessage.includes('expired') || errorMessage.includes('401')) {
-          alert('Sua sessão expirou. A página será recarregada para renovar a autenticação.');
-          window.location.reload();
-          return;
-        }
-        
-        alert(errorMessage);
-        setIsLoading(false); // Resetar loading em caso de erro
+      console.log('[TaskForm] Iniciando salvamento da tarefa...', {
+        isEdit: !!taskToEdit,
+        taskId: taskToEdit?.id,
+        name,
+        projectId
+      });
+
+      await onSave({
+        name,
+        description,
+        project_id: projectId,
+        assignee_id: assigneeId,
+        dueDate,
+        priority,
+        status,
+        duration: 1, // Valor padrão fixo
+        dependencies: taskToEdit?.dependencies || [],
+      });
+
+      console.log('[TaskForm] ✅ Tarefa salva com sucesso');
+
+      // Resetar loading e fechar modal após sucesso
+      setIsLoading(false);
+      // O modal será fechado pelo TaskList, mas garantimos que o loading seja resetado
+    } catch (error) {
+      console.error('[TaskForm] ❌ Erro ao salvar tarefa:', error);
+
+      // Tratamento específico para erros de autenticação
+      const errorMessage = error instanceof Error ? error.message : "Não foi possível salvar a tarefa.";
+
+      if (errorMessage.includes('Sessão expirada') || errorMessage.includes('expired') || errorMessage.includes('401')) {
+        alert('Sua sessão expirou. A página será recarregada para renovar a autenticação.');
+        window.location.reload();
+        return;
+      }
+
+      alert(errorMessage);
+      setIsLoading(false); // Resetar loading em caso de erro
     }
   };
-  
+
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
       title={taskToEdit ? 'Editar Tarefa' : 'Adicionar Nova Tarefa'}
       size="lg"
     >
