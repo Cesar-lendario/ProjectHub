@@ -82,7 +82,7 @@ export const TasksService = {
 
       // Usar a função auxiliar com timeout de 15s para a query do banco
       const { data, error } = await withTimeout(
-        createPromise,
+        createPromise as any,
         15000,
         'Timeout: A requisição demorou mais de 15 segundos. Possíveis causas:\n\n• Conexão lenta com internet\n• Servidor Supabase sobrecarregado\n• Problema nas regras RLS do banco\n\nTente recarregar a página (Ctrl+Shift+R).'
       ) as any;
@@ -165,7 +165,7 @@ export const TasksService = {
 
       // Usar a função auxiliar com timeout de 15s
       const { data, error } = await withTimeout(
-        updatePromise,
+        updatePromise as any,
         15000,
         'Timeout: A requisição demorou mais de 15 segundos. Possíveis causas:\n\n• Conexão lenta com internet\n• Servidor Supabase sobrecarregado\n• Problema nas regras RLS do banco\n\nTente recarregar a página (Ctrl+Shift+R).'
       ) as any;

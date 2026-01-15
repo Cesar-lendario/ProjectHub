@@ -6,20 +6,40 @@ type ProjectRow = Database['public']['Tables']['projects']['Row'];
 type ProjectInsert = Database['public']['Tables']['projects']['Insert'];
 type ProjectUpdate = Database['public']['Tables']['projects']['Update'];
 
+// Helper para timeout de promessas
+const withTimeout = <T>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> => {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => reject(new Error(errorMsg)), ms);
+    promise
+      .then((res) => {
+        clearTimeout(timeoutId);
+        resolve(res);
+      })
+      .catch((err) => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
+  });
+};
+
 export const ProjectsService = {
   // Buscar todos os projetos com suas equipes
   async getAll() {
-    const { data, error } = await supabase
-      .from('projects')
-      .select(`
-        *,
-        project_team (
-          role,
-          user_id,
-          user:user_id (*)
-        )
-      `)
-      .order('atualizado_at', { ascending: false });
+    const { data, error } = await withTimeout(
+      supabase
+        .from('projects')
+        .select(`
+          *,
+          project_team (
+            role,
+            user_id,
+            user:user_id (*)
+          )
+        `)
+        .order('atualizado_at', { ascending: false }) as any,
+      10000,
+      'Timeout ao buscar projetos'
+    );
 
     if (error) throw error;
     return data;
@@ -27,18 +47,22 @@ export const ProjectsService = {
 
   // Buscar projeto por ID
   async getById(id: string) {
-    const { data, error } = await supabase
-      .from('projects')
-      .select(`
-        *,
-        project_team (
-          role,
-          user_id,
-          user:user_id (*)
-        )
-      `)
-      .eq('id', id)
-      .single();
+    const { data, error } = await withTimeout(
+      supabase
+        .from('projects')
+        .select(`
+          *,
+          project_team (
+            role,
+            user_id,
+            user:user_id (*)
+          )
+        `)
+        .eq('id', id)
+        .single() as any,
+      10000,
+      'Timeout ao buscar projeto'
+    );
 
     if (error) throw error;
     return data;
@@ -49,10 +73,10 @@ export const ProjectsService = {
     console.log('[ProjectsService.create] 📝 Dados enviados:', project);
     console.log('[ProjectsService.create] 📧 Tamanho do email:', project.cliente_email?.length || 0);
     console.log('[ProjectsService.create] 🔄 Usando fetch autenticado...');
-    
+
     try {
       const supabaseUrl = 'https://siujbzskkmjxipcablao.supabase.co';
-      
+
       const response = await authenticatedFetch(`${supabaseUrl}/rest/v1/rpc/create_project`, {
         method: 'POST',
         headers: {
@@ -76,12 +100,12 @@ export const ProjectsService = {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[ProjectsService.create] ❌ Erro HTTP:', response.status, errorText);
-        
+
         // Tratamento específico para erros de autenticação
         if (response.status === 401) {
           throw new Error('Sessão expirada. Por favor, recarregue a página.');
         }
-        
+
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
@@ -90,7 +114,7 @@ export const ProjectsService = {
 
       // RPC retorna array, pegar o primeiro item
       const projectData = Array.isArray(data) ? data[0] : data;
-      
+
       console.log('[ProjectsService.create] ✅ Projeto criado com sucesso!');
       return projectData;
     } catch (err) {
@@ -105,10 +129,10 @@ export const ProjectsService = {
     console.log('[ProjectsService.update] 📝 Dados enviados:', project);
     console.log('[ProjectsService.update] 📧 Tamanho do email:', project.cliente_email?.length || 0);
     console.log('[ProjectsService.update] 🔄 Usando RPC autenticado para atualizar projeto...');
-    
+
     try {
       const supabaseUrl = 'https://siujbzskkmjxipcablao.supabase.co';
-      
+
       const response = await authenticatedFetch(`${supabaseUrl}/rest/v1/rpc/update_project`, {
         method: 'POST',
         headers: {
@@ -132,21 +156,21 @@ export const ProjectsService = {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[ProjectsService.update] ❌ Erro HTTP:', response.status, errorText);
-        
+
         // Tratamento específico para erros de autenticação
         if (response.status === 401) {
           throw new Error('Sessão expirada. Por favor, recarregue a página.');
         }
-        
+
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
       console.log('[ProjectsService.update] 📦 Data recebida:', data);
-      
+
       // RPC retorna array, pegar o primeiro item
       const projectData = Array.isArray(data) ? data[0] : data;
-      
+
       console.log('[ProjectsService.update] ✅ Projeto atualizado com sucesso!');
       return projectData;
     } catch (err) {
@@ -169,7 +193,7 @@ export const ProjectsService = {
   async updateEmailNotification(projectId: string) {
     const { error } = await supabase
       .from('projects')
-      .update({ 
+      .update({
         last_email_notification: new Date().toISOString()
         // atualizado_at é atualizado automaticamente pelo trigger
       })
@@ -182,7 +206,7 @@ export const ProjectsService = {
   async updateWhatsappNotification(projectId: string) {
     const { error } = await supabase
       .from('projects')
-      .update({ 
+      .update({
         last_whatsapp_notification: new Date().toISOString()
         // atualizado_at é atualizado automaticamente pelo trigger
       })
