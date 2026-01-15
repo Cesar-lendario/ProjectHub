@@ -6,4 +6,5 @@ export { TeamService } from './team.service';
 export { AttachmentsService } from './attachments.service';
 export { MessagesService } from './messages.service';
 export { InvitesService, type InviteRow } from './invites.service';
+export { NotesService } from './notes.service';
 

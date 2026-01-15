@@ -49,7 +49,7 @@ const ProjectCard: React.FC<{
   const progress = project.status === ProjectStatus.Completed ? 100 : baseProgress;
 
 
-  
+
   return (
     <Card className="flex flex-col cursor-pointer group hover:shadow-xl hover:border-indigo-300 transition-all duration-200" onClick={onViewDetails}>
       <div className="flex-1">
@@ -63,14 +63,35 @@ const ProjectCard: React.FC<{
         </div>
         <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 line-clamp-2">{project.description}</p>
       </div>
-      
+
       <div className="mt-4">
         <div className="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400 mb-2">
           <span>Progresso</span>
-          <span className="font-semibold">{Math.round(progress)}%</span>
+          <span className={`font-semibold ${progress >= 100
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : progress >= 75
+                ? 'text-indigo-600 dark:text-indigo-400'
+                : progress >= 50
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : progress >= 25
+                    ? 'text-orange-600 dark:text-orange-400'
+                    : 'text-red-600 dark:text-red-400'
+            }`}>{Math.round(progress)}%</span>
         </div>
-        <div className="w-full bg-slate-200 rounded-full h-2">
-          <div className="bg-indigo-600 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+          <div
+            className={`h-2 rounded-full transition-all duration-300 ${progress >= 100
+                ? 'bg-emerald-500'
+                : progress >= 75
+                  ? 'bg-indigo-500'
+                  : progress >= 50
+                    ? 'bg-amber-500'
+                    : progress >= 25
+                      ? 'bg-orange-500'
+                      : 'bg-red-500'
+              }`}
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
 
@@ -87,22 +108,22 @@ const ProjectCard: React.FC<{
         </div>
         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
           <button onClick={onSelect} title="Visualizar Projeto" className="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 rounded-full transition-colors">
-            <EyeIcon className="h-5 w-5"/>
+            <EyeIcon className="h-5 w-5" />
           </button>
           <button onClick={onUploadFile} title="Upload de Arquivo" className="p-2 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/20 rounded-full transition-colors">
-            <UploadIcon className="h-5 w-5"/>
+            <UploadIcon className="h-5 w-5" />
           </button>
           <button onClick={onOpenCondition} title="Condição do Projeto / Anotações" className="p-2 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/20 rounded-full transition-colors">
-            <DocumentTextIcon className="h-5 w-5"/>
+            <DocumentTextIcon className="h-5 w-5" />
           </button>
           <button onClick={onManageTeam} title="Gerenciar Equipe" className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 rounded-full transition-colors">
-            <UsersIcon className="h-5 w-5"/>
+            <UsersIcon className="h-5 w-5" />
           </button>
           <button onClick={onEdit} title="Editar Projeto" className="p-2 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/20 rounded-full transition-colors">
-            <EditIcon className="h-5 w-5"/>
+            <EditIcon className="h-5 w-5" />
           </button>
           <button onClick={onDelete} title="Excluir Projeto" className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 rounded-full transition-colors">
-            <TrashIcon className="h-5 w-5"/>
+            <TrashIcon className="h-5 w-5" />
           </button>
         </div>
       </div>
@@ -149,18 +170,18 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
       })
       .sort((a, b) => {
         // Calcular progresso de cada projeto
-        const progressA = a.status === ProjectStatus.Completed 
-          ? 100 
-          : a.tasks.length > 0 
-            ? (a.tasks.filter(t => t.status === TaskStatus.Done).length / a.tasks.length) * 100 
+        const progressA = a.status === ProjectStatus.Completed
+          ? 100
+          : a.tasks.length > 0
+            ? (a.tasks.filter(t => t.status === TaskStatus.Done).length / a.tasks.length) * 100
             : 0;
-        
-        const progressB = b.status === ProjectStatus.Completed 
-          ? 100 
-          : b.tasks.length > 0 
-            ? (b.tasks.filter(t => t.status === TaskStatus.Done).length / b.tasks.length) * 100 
+
+        const progressB = b.status === ProjectStatus.Completed
+          ? 100
+          : b.tasks.length > 0
+            ? (b.tasks.filter(t => t.status === TaskStatus.Done).length / b.tasks.length) * 100
             : 0;
-        
+
         // Ordenar do menos concluído ao mais concluído (crescente)
         return progressA - progressB;
       });
@@ -192,21 +213,21 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
       }
       setIsFormOpen(false);
       setProjectToEdit(null);
-      
+
       // Atualizar dados sem recarregar a página
       await refreshData();
     } catch (error) {
       console.error('[ProjectList] ❌ Erro ao salvar projeto:', error);
-      
+
       // Tratamento específico para erros de autenticação
       const errorMessage = error instanceof Error ? error.message : 'Erro ao salvar projeto. Verifique o console para mais detalhes.';
-      
+
       if (errorMessage.includes('Sessão expirada') || errorMessage.includes('expired') || errorMessage.includes('401')) {
         alert('Sua sessão expirou. A página será recarregada para renovar a autenticação.');
         window.location.reload();
         return;
       }
-      
+
       alert(errorMessage);
     }
   };
@@ -215,7 +236,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
     try {
       await addFile(projectId, file);
       setUploadModalProjectId(null);
-      
+
       // Mostrar mensagem de sucesso
       setShowSuccessMessage(true);
     } catch (error) {
@@ -227,7 +248,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
   return (
     <div className="space-y-6">
       {/* Mensagem de Sucesso */}
-      <SuccessToast 
+      <SuccessToast
         message="Arquivo enviado com sucesso!"
         isVisible={showSuccessMessage}
         onClose={() => setShowSuccessMessage(false)}
@@ -236,23 +257,23 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
 
       <div className="flex flex-wrap justify-between items-center gap-4">
         <div>
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Projetos</h1>
-            <p className="mt-1 text-slate-600 dark:text-slate-300">Acompanhe todos os seus projetos em um só lugar.</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-50">Projetos</h1>
+          <p className="mt-1 text-slate-600 dark:text-slate-300">Acompanhe todos os seus projetos em um só lugar.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
             <button
               onClick={() => setViewMode('cards')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'cards' 
-                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'cards'
+                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
                 : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
             >
               Cartões
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'list' 
-                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'list'
+                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
                 : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
             >
               Lista
@@ -352,9 +373,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
       {filteredProjects.length > 0 && viewMode === 'cards' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map(project => (
-            <ProjectCard 
-              key={project.id} 
-              project={project} 
+            <ProjectCard
+              key={project.id}
+              project={project}
               onSelect={() => handleProjectSelect(project.id)}
               onViewDetails={() => setProjectDetailModal(project)}
               onEdit={() => handleEdit(project)}
@@ -400,7 +421,39 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
                       <span>Início: {new Date(project.startDate).toLocaleDateString('pt-BR')}</span>
                       <span>Fim: {new Date(project.endDate).toLocaleDateString('pt-BR')}</span>
                       <span>Tarefas: {completedTasks}/{totalTasks}</span>
-                      <span className="font-bold">Progresso: {Math.round(progress)}%</span>
+                    </div>
+
+                    {/* Barra de Progresso Sutil */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="flex-1">
+                        <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${progress >= 100
+                              ? 'bg-emerald-500'
+                              : progress >= 75
+                                ? 'bg-indigo-500'
+                                : progress >= 50
+                                  ? 'bg-amber-500'
+                                  : progress >= 25
+                                    ? 'bg-orange-500'
+                                    : 'bg-red-500'
+                              }`}
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </div>
+                      <span className={`text-xs font-semibold min-w-[38px] text-right ${progress >= 100
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : progress >= 75
+                          ? 'text-indigo-600 dark:text-indigo-400'
+                          : progress >= 50
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : progress >= 25
+                              ? 'text-orange-600 dark:text-orange-400'
+                              : 'text-red-600 dark:text-red-400'
+                        }`}>
+                        {Math.round(progress)}%
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 sm:ml-auto" onClick={e => e.stopPropagation()}>
@@ -427,34 +480,34 @@ const ProjectList: React.FC<ProjectListProps> = ({ setCurrentView, setGlobalProj
         </div>
       )}
 
-      <ProjectForm 
+      <ProjectForm
         isOpen={isFormOpen}
         onClose={() => { setIsFormOpen(false); setProjectToEdit(null); }}
         onSave={handleSave}
         projectToEdit={projectToEdit}
       />
       {teamModalProject && (
-        <TeamManagementModal 
-            isOpen={!!teamModalProject}
-            onClose={() => setTeamModalProject(null)}
-            project={teamModalProject}
+        <TeamManagementModal
+          isOpen={!!teamModalProject}
+          onClose={() => setTeamModalProject(null)}
+          project={teamModalProject}
         />
       )}
-      
-      <FileUpload 
+
+      <FileUpload
         isOpen={!!uploadModalProjectId}
         onClose={() => setUploadModalProjectId(null)}
         onUpload={handleUploadFile}
         preSelectedProjectId={uploadModalProjectId || undefined}
       />
-      
-      <ProjectConditionModal 
+
+      <ProjectConditionModal
         isOpen={!!conditionModalProjectId}
         onClose={() => setConditionModalProjectId(null)}
         projectId={conditionModalProjectId || undefined}
       />
-      
-      <ProjectDetailModal 
+
+      <ProjectDetailModal
         isOpen={!!projectDetailModal}
         onClose={() => setProjectDetailModal(null)}
         project={projectDetailModal}

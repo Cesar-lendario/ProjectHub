@@ -26,8 +26,16 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
   const [taskToDelete, setTaskToDelete] = useState<EnhancedTask | null>(null);
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
 
+  // Verificar se há um projeto selecionado (não 'all' e não vazio)
+  const hasProjectSelected = globalProjectFilter && globalProjectFilter !== '' && globalProjectFilter !== 'all';
+
   // Coletar todas as tarefas dos projetos
   const allTasks = useMemo(() => {
+    // Se não há projeto selecionado, retornar array vazio
+    if (!hasProjectSelected) {
+      return [];
+    }
+
     let tasks = projects.flatMap(project =>
       project.tasks.map(task => {
         // Garantir que o ID existe
@@ -52,9 +60,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
     });
 
     // Aplicar filtro de projeto
-    if (globalProjectFilter !== 'all') {
-      tasks = tasks.filter(task => task.projectId === globalProjectFilter);
-    }
+    tasks = tasks.filter(task => task.projectId === globalProjectFilter);
 
     // Aplicar filtro de status
     if (statusFilter !== 'all') {
@@ -75,7 +81,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
     }
 
     return tasks;
-  }, [projects, globalProjectFilter, statusFilter, sortBy]);
+  }, [projects, globalProjectFilter, statusFilter, sortBy, hasProjectSelected]);
 
   // Função para atualizar o status da tarefa
   const handleStatusChange = async (task: EnhancedTask, newStatus: TaskStatus) => {
@@ -84,24 +90,24 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
       console.log('[ChecklistView] ⚠️ Atualização já em andamento para esta tarefa');
       return;
     }
-    
+
     // Validar se a tarefa tem ID
     if (!task.id) {
       console.error('[ChecklistView] ❌ Tentando atualizar tarefa sem ID:', task);
       return;
     }
-    
+
     try {
       setUpdatingTaskId(task.id);
       console.log(`[ChecklistView] 📝 Mudando status de "${task.name}" de ${task.status} para ${newStatus}`);
-      
+
       // A função updateTask do useProjectContext espera apenas o objeto Task completo
       const updatedTask = {
         ...task,
         status: newStatus,
         project_id: task.projectId,
       };
-      
+
       await updateTask(updatedTask);
       console.log(`[ChecklistView] ✅ Status atualizado com sucesso`);
     } catch (error) {
@@ -135,16 +141,16 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
   // Confirmar exclusão
   const confirmDeleteTask = async () => {
     if (!taskToDelete) return;
-    
+
     try {
       console.log('[ChecklistView] 🗑️ Excluindo tarefa:', {
         taskId: taskToDelete.id,
         taskName: taskToDelete.name,
         projectId: taskToDelete.projectId
       });
-      
+
       await deleteTask(taskToDelete.id);
-      
+
       console.log('[ChecklistView] ✅ Tarefa excluída com sucesso');
       setTaskToDelete(null);
     } catch (error) {
@@ -186,9 +192,9 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
           Lista de Verificação - TaskMeet
         </h1>
         <div className="text-sm text-gray-600 mb-1">
-          <strong>Data:</strong> {new Date().toLocaleDateString('pt-BR', { 
-            day: '2-digit', 
-            month: '2-digit', 
+          <strong>Data:</strong> {new Date().toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
@@ -220,7 +226,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
             Visualize e atualize o status das tarefas rapidamente
           </p>
         </div>
-        
+
         {/* Botão Imprimir - Oculto na impressão */}
         <button
           onClick={handlePrint}
@@ -511,7 +517,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ globalProjectFilter, setG
       {/* Modal de Confirmação de Exclusão */}
       {taskToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setTaskToDelete(null)}>
-          <div 
+          <div
             className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
