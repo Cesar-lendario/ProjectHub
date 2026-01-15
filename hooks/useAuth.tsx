@@ -28,18 +28,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let isMounted = true;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let hasCompletedInitialLoad = false; // Flag para evitar múltiplos carregamentos
-    
+
     // Registrar callback de recuperação no sistema
     autoRecoverySystem.registerRecoveryCallback('useAuth', async () => {
       console.log('[useAuth] 🔄 Recuperação automática acionada');
-      
+
       // Limpar estados
       if (isMounted) {
         setLoading(true);
         setSession(null);
         setProfile(null);
       }
-      
+
       // Tentar recarregar sessão
       try {
         const { data: { session: recoveredSession } } = await supabase.auth.getSession();
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               .select('*')
               .eq('auth_id', recoveredSession.user.id)
               .single();
-            
+
             if (userProfile) {
               const mapped = mapUser(userProfile);
               setProfile({ ...mapped, email: recoveredSession.user.email ?? mapped.email });
@@ -66,76 +66,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
     });
-    
+
     const loadInitialSession = async () => {
       try {
         console.log('[useAuth] 🔄 Carregando sessão inicial...');
         console.log('[useAuth] 🌐 Hostname:', window.location.hostname);
         console.log('[useAuth] 🔑 localStorage disponível:', !!window.localStorage);
         console.log('[useAuth] 📊 Estado atual - loading:', loading, 'hasCompletedInitialLoad:', hasCompletedInitialLoad);
-        
-        // Verificar se há token no localStorage
-        const storageKey = 'taskmeet-auth-token';
-        let storedAuth: string | null = null;
-        
-        try {
-          storedAuth = localStorage.getItem(storageKey);
-          
-          // Validar se o token não está corrompido
-          if (storedAuth) {
-            try {
-              const parsed = JSON.parse(storedAuth);
-              
-              // Verificar estrutura básica
-              if (!parsed || typeof parsed !== 'object') {
-                console.warn('[useAuth] ⚠️ Token corrompido, limpando...');
-                localStorage.removeItem(storageKey);
-                storedAuth = null;
-              } else {
-                console.log('[useAuth] 💾 Token no localStorage: ✅ Encontrado e válido');
-              }
-            } catch (parseError) {
-              console.error('[useAuth] ❌ Erro ao parsear token, limpando...', parseError);
-              localStorage.removeItem(storageKey);
-              storedAuth = null;
-            }
-          } else {
-            console.log('[useAuth] 💾 Token no localStorage: ❌ Não encontrado');
-          }
-        } catch (storageError) {
-          console.error('[useAuth] ❌ Erro ao acessar localStorage:', storageError);
-          storedAuth = null;
-        }
-        
+
+        // Remover verificação manual de localStorage para evitar falsos positivos de corrupção
         setLoading(true);
-        
-        // Timeout de segurança: se não carregar em 8 segundos, forçar loading = false
+
+        // Timeout de segurança: se não carregar em 10 segundos, forçar loading = false
         timeoutId = setTimeout(() => {
           if (isMounted && !hasCompletedInitialLoad) {
-            console.warn('[useAuth] ⚠️ Timeout ao carregar sessão inicial (8s)');
-            console.warn('[useAuth] 🧹 Limpando possível sessão corrompida...');
-            
-            // Limpar localStorage do Supabase
-            try {
-              const storageKey = 'taskmeet-auth-token';
-              localStorage.removeItem(storageKey);
-              console.log('[useAuth] ✅ Storage limpo após timeout');
-            } catch (cleanupError) {
-              console.error('[useAuth] ❌ Erro ao limpar storage:', cleanupError);
-            }
-            
+            console.warn('[useAuth] ⚠️ Timeout ao carregar sessão inicial (10s)');
+            // Não limpamos mais o storage automaticamente aqui para nãop prejudicar recuperações lentas
             hasCompletedInitialLoad = true;
             setSession(null);
             setProfile(null);
             setLoading(false);
           }
-        }, 8000);
-        
+        }, 10000);
+
         // Buscar sessão atual explicitamente
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
-        
+
         if (sessionError) {
           console.error('[useAuth] ❌ Erro ao buscar sessão:', sessionError);
+          // Em caso de erro, apenas assumimos que não há sessão, sem limpar storage agressivamente
           if (isMounted) {
             setSession(null);
             setProfile(null);
@@ -144,12 +103,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
           return;
         }
-        
+
         console.log('[useAuth] 📝 Sessão inicial obtida:', initialSession ? '✅ Sessão encontrada' : '❌ Sem sessão');
-        
+
         if (isMounted) {
           setSession(initialSession);
-          
+
           if (initialSession?.user) {
             try {
               console.log('[useAuth] 👤 Buscando perfil do usuário...');
@@ -163,9 +122,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 console.error('[useAuth] ❌ Erro ao buscar perfil:', error);
                 throw error;
               }
-              
+
               if (userProfile) {
-                console.log('[useAuth] ✅ Perfil encontrado:', userProfile.full_name);
+                console.log('[useAuth] ✅ Perfil encontrado:', (userProfile as any).name);
                 const mapped = mapUser(userProfile);
                 const authEmail = initialSession.user.email ?? mapped.email;
                 if (isMounted) {
@@ -189,7 +148,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               setProfile(null);
             }
           }
-          
+
           if (isMounted && timeoutId) {
             clearTimeout(timeoutId);
             hasCompletedInitialLoad = true;
@@ -220,15 +179,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
     };
-    
+
     // Carregar sessão inicial
     loadInitialSession();
-    
+
     // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (!isMounted) return;
-        
+
         // Se já completou o carregamento inicial e for apenas um TOKEN_REFRESHED, ignorar
         // MAS GARANTIR que loading=false está setado
         if (hasCompletedInitialLoad && _event === 'TOKEN_REFRESHED') {
@@ -240,19 +199,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
           return;
         }
-        
+
         try {
           console.log('[useAuth] 🔔 Mudança de estado de autenticação:', _event);
           console.log('[useAuth] 📊 hasCompletedInitialLoad:', hasCompletedInitialLoad);
-          
+
           // Sempre limpar timeout ao receber evento de autenticação
           if (timeoutId) {
             clearTimeout(timeoutId);
             timeoutId = null;
           }
-          
+
           setSession(session);
-          
+
           if (session?.user) {
             try {
               console.log('[useAuth] 👤 Buscando perfil do usuário (onAuthStateChange)...');
@@ -266,9 +225,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 console.error('[useAuth] ❌ Erro ao buscar perfil:', error);
                 throw error;
               }
-              
+
               if (userProfile) {
-                console.log('[useAuth] ✅ Perfil encontrado (onAuthStateChange):', userProfile.full_name);
+                console.log('[useAuth] ✅ Perfil encontrado (onAuthStateChange):', (userProfile as any).name);
                 const mapped = mapUser(userProfile);
                 const authEmail = session.user.email ?? mapped.email;
                 if (isMounted) {
@@ -312,18 +271,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Monitoramento preventivo de sessão: verificar a cada 2 minutos se o token está próximo de expirar
     const sessionCheckInterval = setInterval(async () => {
       if (!isMounted) return;
-      
+
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
-        
+
         if (currentSession?.expires_at) {
           const expiresIn = currentSession.expires_at - Math.floor(Date.now() / 1000);
-          
+
           // Se o token expira em menos de 5 minutos, fazer refresh preventivo
           if (expiresIn < 300 && expiresIn > 0) {
             console.log('[useAuth] 🔄 Token próximo de expirar (' + expiresIn + 's), fazendo refresh preventivo...');
             const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
-            
+
             if (refreshError) {
               console.error('[useAuth] ❌ Erro ao fazer refresh preventivo:', refreshError);
             } else if (refreshedSession) {
@@ -353,15 +312,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       subscription?.unsubscribe();
       clearInterval(sessionCheckInterval);
-      
+
       // Desregistrar callback de recuperação
       autoRecoverySystem.unregisterRecoveryCallback('useAuth');
     };
   }, []);
-  
+
   const signInWithEmail = async (email: string, password: string) => {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      return { error };
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error };
   };
 
   const signUp = async (email: string, password: string, fullName: string, role: GlobalRole) => {
@@ -380,7 +339,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     return { error };
   };
-  
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     return { error };
