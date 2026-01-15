@@ -11,12 +11,12 @@
 -- =====================================================
 
 CREATE OR REPLACE FUNCTION public.get_current_user_id()
-RETURNS TEXT
+RETURNS UUID
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
 AS $$
-  SELECT id::text 
+  SELECT id 
   FROM public.users 
   WHERE auth_id = auth.uid()
   LIMIT 1;

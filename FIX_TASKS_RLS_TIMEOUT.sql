@@ -37,6 +37,12 @@ DROP POLICY IF EXISTS "Membros podem criar tarefas" ON public.tasks;
 DROP POLICY IF EXISTS "Membros podem atualizar tarefas" ON public.tasks;
 DROP POLICY IF EXISTS "Membros podem deletar tarefas" ON public.tasks;
 
+-- Remover políticas otimizadas que podem ter sido criadas em tentativas anteriores
+DROP POLICY IF EXISTS "tasks_select_optimized" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_insert_optimized" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_update_optimized" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_delete_optimized" ON public.tasks;
+
 -- =====================================================
 -- PARTE 3: CRIAR POLÍTICAS RLS OTIMIZADAS
 -- =====================================================
@@ -60,7 +66,7 @@ USING (
     FROM public.project_team pt
     WHERE pt.project_id = tasks.project_id
       AND pt.user_id = (
-        SELECT id::text 
+        SELECT id 
         FROM public.users 
         WHERE auth_id = auth.uid()
         LIMIT 1
@@ -92,7 +98,7 @@ WITH CHECK (
     FROM public.project_team pt
     WHERE pt.project_id = tasks.project_id
       AND pt.user_id = (
-        SELECT id::text 
+        SELECT id 
         FROM public.users 
         WHERE auth_id = auth.uid()
         LIMIT 1
@@ -126,7 +132,7 @@ USING (
     FROM public.project_team pt
     WHERE pt.project_id = tasks.project_id
       AND pt.user_id = (
-        SELECT id::text 
+        SELECT id 
         FROM public.users 
         WHERE auth_id = auth.uid()
         LIMIT 1
@@ -151,7 +157,7 @@ WITH CHECK (
     FROM public.project_team pt
     WHERE pt.project_id = tasks.project_id
       AND pt.user_id = (
-        SELECT id::text 
+        SELECT id 
         FROM public.users 
         WHERE auth_id = auth.uid()
         LIMIT 1
@@ -184,7 +190,7 @@ USING (
     FROM public.project_team pt
     WHERE pt.project_id = tasks.project_id
       AND pt.user_id = (
-        SELECT id::text 
+        SELECT id 
         FROM public.users 
         WHERE auth_id = auth.uid()
         LIMIT 1
